@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" role="img" aria-label="Velora desktop">
+  <title>Velora</title>
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+      <head>
+        <style>html,body,#velora-mount{margin:0;width:100%;height:100%;overflow:hidden;background:#161a20}#velora-status{position:absolute;inset:0;display:grid;place-items:center;color:#eee9e1;font:16px Arial,sans-serif}</style>
+      </head>
+      <body>
+        <div id="velora-mount"><div id="velora-status">Loading Velora…</div></div>
+        <script><![CDATA[
+          (() => {
+            const mount = document.getElementById('velora-mount');
+            const status = document.getElementById('velora-status');
+            const frame = document.createElementNS('http://www.w3.org/1999/xhtml', 'iframe');
+            frame.setAttribute('title', 'Velora');
+            frame.setAttribute('style', 'position:absolute;inset:0;display:block;width:100%;height:100%;border:0;background:#161a20');
+            frame.setAttribute('allow', 'fullscreen; clipboard-read; clipboard-write; autoplay; gamepad; picture-in-picture');
+            frame.setAttribute('allowfullscreen', 'allowfullscreen');
+            frame.addEventListener('load', () => status.remove(), { once: true });
+            frame.setAttribute('src', 'https://ixl.pozzi-pozzi.workers.dev/');
+            mount.appendChild(frame);
+          })();
+        ]]></script>
+      </body>
+    </html>
+  </foreignObject>
+</svg>
