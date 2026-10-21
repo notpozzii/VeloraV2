@@ -12,7 +12,7 @@ export async function registerProxyWorker(serviceWorker = navigator.serviceWorke
 	try {
 		const startup = async () => {
 			const registration = await serviceWorker.register('/servy.js', {
-				type: 'classic', updateViaCache: 'none'
+				type: 'classic', updateViaCache: import.meta.env?.VITE_VELORA_S3 === '1' ? 'imports' : 'none'
 			});
 			await serviceWorker.ready;
 			if (cancelled) throw new Error(blockedMessage);

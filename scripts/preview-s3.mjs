@@ -8,7 +8,7 @@ const routes = new Set(manifest.routes);
 const mime = { '.html': 'text/html', '.js': 'application/javascript', '.mjs': 'application/javascript',
 	'.css': 'text/css', '.wasm': 'application/wasm', '.json': 'application/json',
 	'.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.svg': 'image/svg+xml',
-	'.webp': 'image/webp', '.woff2': 'font/woff2' };
+	'.webp': 'image/webp', '.woff2': 'font/woff2', '.gz': 'application/octet-stream' };
 createServer((req, res) => {
 	let pathname;
 	try { pathname = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); }

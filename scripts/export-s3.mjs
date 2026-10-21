@@ -28,9 +28,15 @@ fi
 package_dir="$(cd -- "$(dirname -- "$0")" && pwd)"
 bucket_url="s3://$1"
 aws s3 sync "$package_dir/site/" "$bucket_url/" --cache-control no-cache
+# Bundles are gzip files decoded by the downloader, not HTTP content-encoding.
+aws s3 cp "$package_dir/site/" "$bucket_url/" --recursive --exclude '*' --include 'velora-bundle.*.gz' --content-type application/octet-stream --cache-control 'public,max-age=31536000,immutable'
 # Ensure JavaScript modules and WASM get browser-compatible MIME types.
 aws s3 cp "$package_dir/site/" "$bucket_url/" --recursive --exclude '*' --include '*.mjs' --content-type application/javascript --cache-control no-cache
 aws s3 cp "$package_dir/site/" "$bucket_url/" --recursive --exclude '*' --include '*.wasm' --content-type application/wasm --cache-control no-cache
+# These worker imports carry a release hash in their query string.
+for asset in velora-static-worker.js glass/glass.bundle.js glass/glass.config.js glass/glass.sw.js poly/polygon.all.js prism/prism.sw.js; do
+  aws s3 cp "$package_dir/site/$asset" "$bucket_url/$asset" --content-type application/javascript --cache-control 'public,max-age=31536000,immutable'
+done
 ${aliases}
 echo "Uploaded. Open your bucket's HTTPS object URL ending in /index.html."
 `);

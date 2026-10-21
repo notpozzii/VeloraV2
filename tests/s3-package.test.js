@@ -43,7 +43,9 @@ test('export contains local app routes, required worker assets, and S3 aliases',
 	const manifest = JSON.parse(readFileSync('build/s3/manifest.json', 'utf8'));
 	const shell = readFileSync(join(root, 'index.html'), 'utf8');
 	assert.doesNotMatch(shell, /<iframe/i);
-	assert.match(shell, /_app\/immutable\/entry\/start\./);
+	assert.match(shell, /velora-bootstrap\.js/);
+	assert.doesNotMatch(shell, /_app\/immutable\/entry\/start\./);
+	assert.match(readFileSync(join(root, 'velora-app.html'), 'utf8'), /_app\/immutable\/entry\/start\./);
 	assert.equal(readFileSync(join(root, 'test.html'), 'utf8'), readFileSync('static/test.html', 'utf8'));
 	const upload = readFileSync('build/s3/upload-s3.sh', 'utf8');
 	for (const route of ['/', '/os', '/slate', '/api', '/apps', '/settings', '/download']) {

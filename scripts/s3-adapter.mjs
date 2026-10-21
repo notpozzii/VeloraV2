@@ -1,5 +1,6 @@
 import { cpSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { addBootstrap } from './s3-bootstrap.mjs';
 
 /** Export the client app without a Worker or a remotely hosted UI iframe. */
 export default function staticPackage() {
@@ -33,8 +34,12 @@ export default function staticPackage() {
 			const missingAssets = ['books/gmes.json', 'pyrite/index.html']
 				.filter((asset) => !existsSync(join(output, asset)));
 			for (const asset of missingAssets) builder.log.warn(`Optional app assets missing: static/${asset}`);
+			const release = addBootstrap(output, routes);
 			writeFileSync('build/s3/manifest.json', JSON.stringify({
-				version: 1, routes, missingAssets,
+				version: 1, routes, missingAssets, bootstrap: {
+					release: release.version, compressedBytes: release.compressedBytes,
+					installedBytes: release.installedBytes, manifest: '/velora-release.json'
+				},
 				serverOnly: ['/api/byod'],
 				proxyWorker: '/servy.js',
 				requires: ['HTTPS', 'A reachable Wisp server']
