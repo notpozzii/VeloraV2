@@ -197,6 +197,7 @@
 	}
 	async function fullscreenWindow() {
 		fullscreenError = '';
+		keepGeForceMaximized();
 		try {
 			await toggleElementFullscreen(appFrame);
 		} catch (error) {
@@ -224,6 +225,12 @@
 			animatePlacement();
 		}
 	}
+	function keepGeForceMaximized() {
+		if (name !== 'GeForce NOW' || minimizedStat) return;
+		if (!maximizedStat) maximizeWindow();
+		rightSplit = false;
+		fitWorkspace();
+	}
 	onMount(() => {
 		mounted = true;
 		const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -233,6 +240,21 @@
 		syncMotion();
 		checkBoundaries();
 		updateTaskbarHeight();
+		keepGeForceMaximized();
+		let wasGeForceFullscreen = false;
+		const syncGeForceFullscreen = () => {
+			const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
+			const isGeForceFullscreen = name === 'GeForce NOW' &&
+				(fullscreenElement === appFrame || fullscreenElement === windowElement);
+			// Keep the desktop window large when Esc exits native fullscreen.
+			// Do not capture Esc: games and the browser still receive it normally.
+			if (isGeForceFullscreen || (wasGeForceFullscreen && !fullscreenElement)) {
+				keepGeForceMaximized();
+			}
+			wasGeForceFullscreen = isGeForceFullscreen;
+		};
+		document.addEventListener('fullscreenchange', syncGeForceFullscreen);
+		document.addEventListener('webkitfullscreenchange', syncGeForceFullscreen);
 		window.addEventListener('resize', checkBoundaries);
 		motion.addEventListener('change', syncMotion);
 		gsap.fromTo(
@@ -252,6 +274,8 @@
 			mounted = false;
 			clearTimeout(transitionTimer);
 			gsap.killTweensOf(windowElement);
+			document.removeEventListener('fullscreenchange', syncGeForceFullscreen);
+			document.removeEventListener('webkitfullscreenchange', syncGeForceFullscreen);
 			window.removeEventListener('resize', checkBoundaries);
 			window.removeEventListener('mousemove', dragging);
 			window.removeEventListener('mouseup', dragStop);
