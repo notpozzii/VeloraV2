@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" aria-labelledby="title description">
+  <title id="title">Velora launcher</title>
+  <desc id="description">A static image with a link that opens the hosted Velora app in this tab.</desc>
+  <rect width="1280" height="720" fill="#171a20" />
+  <text x="640" y="310" text-anchor="middle" fill="#eee9e1" font-family="Arial, Helvetica, sans-serif" font-size="44" letter-spacing="-1">Velora</text>
+  <text x="640" y="350" text-anchor="middle" fill="#a7a7aa" font-family="Arial, Helvetica, sans-serif" font-size="16">Your space, your way.</text>
+  <a href="https://ixl.pozzi-pozzi.workers.dev/" target="_self" aria-label="Open Velora">
+    <title>Open Velora</title>
+    <rect x="528" y="395" width="224" height="56" rx="8" fill="#d0b99a" />
+    <text x="640" y="430" text-anchor="middle" fill="#24211e" font-family="Arial, Helvetica, sans-serif" font-size="18">Open Velora &#8599;</text>
+  </a>
+  <text x="640" y="487" text-anchor="middle" fill="#84868d" font-family="Arial, Helvetica, sans-serif" font-size="13">Opens Velora in this tab</text>
+</svg>

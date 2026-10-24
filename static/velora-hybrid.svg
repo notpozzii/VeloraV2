@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xhtml="http://www.w3.org/1999/xhtml" width="100%" height="100%" role="img" aria-label="Velora desktop">
+  <title>Velora</title>
+  <!-- Standard SVG content remains usable if the host removes embedded HTML. -->
+  <rect width="100%" height="100%" fill="#171a20" />
+  <text x="50%" y="42%" text-anchor="middle" fill="#eee9e1" font-family="Arial, Helvetica, sans-serif" font-size="44">Velora</text>
+  <a href="https://ixl.pozzi-pozzi.workers.dev/" target="_self" aria-label="Open Velora">
+    <title>Open Velora</title>
+    <rect x="35%" y="48%" width="30%" height="56" rx="8" fill="#d0b99a" />
+    <text x="50%" y="48%" dy="35" text-anchor="middle" fill="#24211e" font-family="Arial, Helvetica, sans-serif" font-size="18">Open Velora &#8599;</text>
+  </a>
+  <text x="50%" y="48%" dy="83" text-anchor="middle" fill="#a7a7aa" font-family="Arial, Helvetica, sans-serif" font-size="13">Opens the hosted app in this tab</text>
+  <foreignObject x="0" y="0" width="100%" height="100%">
+    <xhtml:div style="width:100%;height:100%;margin:0;overflow:hidden;background:#161a20">
+      <xhtml:iframe
+        title="Velora"
+        src="https://ixl.pozzi-pozzi.workers.dev/"
+        style="display:block;width:100%;height:100%;border:0;background:#161a20"
+        allow="fullscreen; clipboard-read; clipboard-write; autoplay; gamepad; picture-in-picture"
+        allowfullscreen="allowfullscreen"></xhtml:iframe>
+    </xhtml:div>
+  </foreignObject>
+  <!-- A small direct link is also available while the embedded app is visible. -->
+  <a href="https://ixl.pozzi-pozzi.workers.dev/" target="_self" aria-label="Open Velora directly">
+    <title>Open Velora directly</title>
+    <rect x="12" y="12" width="148" height="32" rx="6" fill="#171a20" fill-opacity="0.9" stroke="#d0b99a" stroke-opacity="0.3" />
+    <text x="86" y="33" text-anchor="middle" fill="#eee9e1" font-family="Arial, Helvetica, sans-serif" font-size="12">Open Velora directly &#8599;</text>
+  </a>
+</svg>
