@@ -7,8 +7,6 @@
 
 	import Shell from '$lib/utils/library/shell.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
-	import Rocket from '$lib/utils/loading/rocket.svelte';
-	import { frameLoading } from '$lib/utils/loading/frame-loading.js';
 
 	const displayNames = {
 		Discor: 'Discord',
@@ -43,7 +41,6 @@
 	let failedImages = $state([]);
 	let pins = $state(loadPins());
 	let openingApp = $state(false);
-	let contentLoading = $state(false);
 	let launchId = 0;
 	let launchAbort;
 	onDestroy(() => launchAbort?.abort());
@@ -159,7 +156,6 @@
 		launchId++;
 		launchAbort?.abort();
 		openingApp = false;
-		contentLoading = false;
 		loadError = '';
 		frameDisplay = 'none';
 		overflow = false;
@@ -172,7 +168,6 @@
 		launchAbort = new AbortController();
 		loadError = '';
 		openingApp = true;
-		contentLoading = true;
 		frameDisplay = 'block';
 		overflow = true;
 		try {
@@ -298,11 +293,9 @@
 	allow="fullscreen; autoplay; picture-in-picture"
 	allowfullscreen
 	bind:this={iframeEl}
-	use:frameLoading={(value) => (contentLoading = value)}
 	title="App content"
 	style:display={frameDisplay}
 ></iframe>
-{#if overflow && !loadError && (openingApp || contentLoading)}<Rocket fullscreen layer={100} />{/if}
 {#if loadError}<div class="app-launch-error" role="alert">
 		<span>{loadError}</span><button onclick={closeFrame}>Back to apps</button>
 	</div>{/if}
