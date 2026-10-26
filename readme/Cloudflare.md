@@ -37,3 +37,14 @@ A local edit does not trigger deployment until it is committed and pushed to
 this repository. The local Games/Apps redesign is not part of this setup.
 
 Reference: https://developers.cloudflare.com/workers/ci-cd/builds/configuration/
+
+## Verify the GitHub connection
+
+After saving both connections, push a commit to `main`. The commit should get
+separate `Workers Builds: clever-learning` and `Workers Builds: ixl` checks.
+Both must finish successfully, and each Worker should show a new active
+deployment in Cloudflare. A successful `velorav2` build alone does not verify
+either of the other Workers.
+
+An ordinary `main` push should not deploy S3. That workflow still requires a
+stable release or a manual workflow run.
