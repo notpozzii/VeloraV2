@@ -1,0 +1,9 @@
+{
+	"repository": "notpozzii/VeloraV2",
+	"owner_id": "113958523",
+	"repository_id": "1367408333",
+	"bucket": "velorastudy",
+	"region": "us-east-2",
+	"environment": "s3-production",
+	"role_name": "VeloraGitHubS3Deploy"
+}

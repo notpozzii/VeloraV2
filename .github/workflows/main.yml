@@ -1,25 +1,84 @@
-name: Mirror to GitLab
+name: Deploy Velora to S3
 
 on:
-  push:
+  release:
+    types: [published]
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: velora-s3-${{ github.event_name == 'pull_request' && github.event.pull_request.number || 'production' }}
+  cancel-in-progress: false
 
 jobs:
-  mirror:
-    runs-on: ubuntu-latest
-
+  build:
+    if: github.event_name != 'release' || !github.event.release.prerelease
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: '1.4.2'
+      - name: Verify deployment access boundaries
+        run: python3 -m unittest discover -s tests -p test_s3_github_setup.py
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      - name: Build the standalone S3 site
+        run: bun run export:s3
+      - name: Verify the S3 routes and uploader
+        run: node --test tests/s3-package.test.js
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: velora-s3
+          path: build/s3/
+          if-no-files-found: error
+          retention-days: 7
 
-      - name: Push to GitLab
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment:
+      name: s3-production
+      url: https://velorastudy.s3.us-east-2.amazonaws.com/index.html
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+      AWS_REGION: us-east-2
+      S3_BUCKET: velorastudy
+    steps:
+      - name: Check deployment configuration
         run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-
-          git remote add gitlab https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/Hydra.Network/galaxy/galaxyv7.git
-
-          git push --force --all gitlab
-          git push --force --tags gitlab
+          if [ -z "$AWS_ROLE_ARN" ]; then
+            echo 'Set AWS_ROLE_ARN in the s3-production environment variables.' >&2
+            exit 1
+          fi
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: velora-s3
+          path: s3-package/
+      - name: Get temporary AWS credentials
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ env.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+          role-session-name: VeloraS3-${{ github.run_id }}
+          role-duration-seconds: 900
+          mask-aws-account-id: true
+      - name: Update Velora on S3
+        run: bash s3-package/upload-s3.sh "$S3_BUCKET"
+      - name: Deployment link
+        run: printf 'Updated [Velora on S3](https://velorastudy.s3.us-east-2.amazonaws.com/index.html).\n' >> "$GITHUB_STEP_SUMMARY"
