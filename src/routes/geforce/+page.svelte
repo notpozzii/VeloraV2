@@ -4,6 +4,7 @@
   import { loadSetting } from '$lib/utils/localspace.js';
   import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
   import Icon from '$lib/utils/browser/icon.svelte';
+  import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 
   let frame;
   let app;
@@ -57,7 +58,7 @@
 
 <section class="geforce-app" bind:this={app} aria-label="GeForce NOW app">
   <iframe bind:this={frame} title="GeForce NOW"
-    allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write; encrypted-media; picture-in-picture"
+    allow={`${mediaPermissions}; clipboard-read; clipboard-write`}
     allowfullscreen onload={() => { if (frame?.getAttribute('src')) loading = false; }}></iframe>
   {#if loading && !error}
     <div class="startup" role="status"><span class="spinner" aria-hidden="true"></span>Connecting to GeForce NOW…</div>
