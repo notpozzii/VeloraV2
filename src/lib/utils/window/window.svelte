@@ -4,6 +4,7 @@
 	import '$lib/utils/window/window.css';
 	import gsap from 'gsap';
 	import Icon from '$lib/utils/browser/icon.svelte';
+	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { snapTarget } from './snap.js';
 	import { toggleElementFullscreen } from '$lib/utils/browser/fullscreen.js';
 	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
@@ -664,7 +665,7 @@
 		</p>{/if}
 	<iframe
 		bind:this={appFrame}
-		allow="fullscreen; autoplay; picture-in-picture"
+		allow={mediaPermissions}
 		allowfullscreen
 		class="noSelect"
 		src={url}

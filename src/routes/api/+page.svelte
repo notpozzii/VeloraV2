@@ -16,6 +16,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { onMount, onDestroy } from 'svelte';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
 	import { prepareProxyFrame } from '$lib/lethe/prepare-frame.js';
+	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
 		if (!trimmed) return null;
@@ -92,7 +93,7 @@ autoSW:    legacy parameter; apps now load automatically
 
 
 <iframe
-	allow="fullscreen; autoplay; picture-in-picture"
+	allow={mediaPermissions}
 	allowfullscreen
 	bind:this={iframeEl}
 	title=""

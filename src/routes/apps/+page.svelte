@@ -7,6 +7,7 @@
 
 	import Shell from '$lib/utils/library/shell.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
+	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 
 	const displayNames = {
 		Discor: 'Discord',
@@ -290,7 +291,7 @@
 {/if}
 <iframe
 	class="library-frame"
-	allow="fullscreen; autoplay; picture-in-picture"
+	allow={mediaPermissions}
 	allowfullscreen
 	bind:this={iframeEl}
 	title="App content"

@@ -2,6 +2,7 @@
 	import { activeTab, reloadSignal, goBackSignal, goForwardSignal } from '$lib/stores/index.js';
 	import { getOriginalUrl } from '$lib/lethe/decode';
 	import { newTabEventName, newTabQueueName } from '$lib/lethe/popup-events.js';
+	import { mediaPermissions } from './media-permissions.js';
 	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true } = $props();
 	let frame;
 
@@ -307,7 +308,7 @@
 </script>
 
 <iframe
-	allow="fullscreen; autoplay; picture-in-picture"
+	allow={mediaPermissions}
 	allowfullscreen
 	bind:this={frame}
 	{src}
