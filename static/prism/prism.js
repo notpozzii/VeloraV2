@@ -3025,10 +3025,7 @@ return { apply, construct };
 							A && s.searchParams.set(o.QP.crossSiteRedirect, '1'),
 							i && s.searchParams.set(o.QP.fetchSite, i),
 							r &&
-								s.searchParams.set(
-									o.QP.initiatorOrigin,
-									u.isModule ? r.origin : e.context.interface.codecEncode(r.origin)
-								),
+								s.searchParams.set(o.QP.initiatorOrigin, e.context.interface.codecEncode(r.origin)),
 							u.isModule && s.searchParams.set(o.QP.isModule, 'module'),
 							b.set('location', s.href));
 					}
@@ -3405,11 +3402,7 @@ return { apply, construct };
 							hadExtraParams: h,
 							crossSiteRedirect: '1' === l.crossSiteRedirect,
 							fetchSiteState: p,
-							// WASM module imports use a plain initiator origin. Accept both
-							// formats so older pages and non-module requests keep working.
-							fetchInitiatorOrigin: /^https?:\/\//.test(l.initiatorOrigin ?? '')
-								? l.initiatorOrigin
-								: t.context.interface.codecDecode(l.initiatorOrigin) || void 0,
+							fetchInitiatorOrigin: t.context.interface.codecDecode(l.initiatorOrigin) || void 0,
 							fetchCredentialsInclude: 'include' === l.credentials,
 							fetchMode: f,
 							destination: m,
@@ -4621,9 +4614,7 @@ ${c}`;
 							s?.credentials && c.set(n.QP.credentials, s.credentials),
 							s?.destination && c.set(n.QP.destination, s.destination),
 							r.origin.origin !== t.prefix.origin &&
-								// Match WASM's static-import URLs exactly. Module identity includes
-								// the query string; different encodings instantiate React twice.
-								c.set(n.QP.initiatorOrigin, s?.isModule ? r.origin.origin : t.interface.codecEncode(r.origin.origin)));
+								c.set(n.QP.initiatorOrigin, t.interface.codecEncode(r.origin.origin)));
 						let g = '';
 						return (
 							c.toString() && (g = '?' + c.toString()),
