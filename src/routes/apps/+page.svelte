@@ -1,8 +1,9 @@
 <script>
 	import appCatalog from '$lib/a/a.json';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
+	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
 
 	import Shell from '$lib/utils/library/shell.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
@@ -44,6 +45,8 @@
 	let openingApp = $state(false);
 	let contentLoading = $state(false);
 	let launchId = 0;
+	let launchAbort;
+	onDestroy(() => launchAbort?.abort());
 	let loadError = $state('');
 	let iframeEl;
 	const runtime = createProxyRuntime();
@@ -154,16 +157,19 @@
 
 	function closeFrame() {
 		launchId++;
+		launchAbort?.abort();
 		openingApp = false;
 		contentLoading = false;
 		loadError = '';
 		frameDisplay = 'none';
 		overflow = false;
-		iframeEl.src = '';
+		resetProxyFrame(iframeEl);
+		iframeEl.src = 'about:blank';
 	}
 	async function handleSubmit(url, type) {
 		if (openingApp) return;
 		const request = ++launchId;
+		launchAbort = new AbortController();
 		loadError = '';
 		openingApp = true;
 		contentLoading = true;
@@ -171,6 +177,8 @@
 		overflow = true;
 		try {
 			const session = await runtime.prepare(type, car);
+			if (request !== launchId) return;
+			await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 			if (request !== launchId) return;
 			if (session.engine === 'uv') {
 				iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
