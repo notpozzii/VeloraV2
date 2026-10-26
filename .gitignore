@@ -34,3 +34,5 @@ curate-deleted.json
 
 .dev.vars*
 !.dev.vars.example
+
+/dist

@@ -6,24 +6,6 @@
 		"genre": "Shopping"
 	},
 	{
-		"name": "AniWatch",
-		"url": "https://ww2.aniwatch.fit/",
-		"image": "3.png",
-		"genre": "Streaming"
-	},
-	{
-		"name": "Animex",
-		"url": "https://animex.one/",
-		"image": "29.png",
-		"genre": "Streaming"
-	},
-	{
-		"name": "AniWave",
-		"url": "https://aniwaves.ru/home",
-		"image": "4.png",
-		"genre": "Streaming"
-	},
-	{
 		"name": "Chess",
 		"url": "https://www.chess.com/",
 		"image": "6.png",
@@ -117,12 +99,6 @@
 		"genre": "Social Media"
 	},
 	{
-		"name": "VidLink",
-		"url": "https://vidlink.pro/",
-		"image": "28.png",
-		"genre": "Streaming"
-	},
-	{
 		"name": "VS Code",
 		"url": "https://vscode.dev/",
 		"image": "22.png",
@@ -140,11 +116,5 @@
 		"url": "https://x.com",
 		"image": "24.png",
 		"genre": "Social Media"
-	},
-	{
-		"name": "Y8 G",
-		"url": "https://www.y8.com/",
-		"image": "25.png",
-		"genre": "Other"
 	}
 ]

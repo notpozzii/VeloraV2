@@ -2,22 +2,27 @@
 	import { onMount } from 'svelte';
 	import { loadSetting, saveSetting, onSettingChange } from '$lib/utils/localspace.js';
 	import Icon from '$lib/utils/browser/icon.svelte';
-	import defaultBackground from '$lib/img/bg/dark-mountains.jpg';
-	import atrium from '$lib/img/bg/dark-green-room.jpg';
-	import sea from '$lib/img/bg/calmSea.png';
-	import sunset from '$lib/img/bg/pink-sunset.jpg';
-	import cottage from '$lib/img/bg/cozyCottageNight.png';
-	import city from '$lib/img/bg/londonNight.png';
-	import defaultThumbnail from '$lib/img/bg-downsized/dark-mountains.jpg';
-	import atriumThumbnail from '$lib/img/bg-downsized/dark-green-room.jpg';
-	import seaThumbnail from '$lib/img/bg-downsized/calmSea.png';
-	import sunsetThumbnail from '$lib/img/bg-downsized/pink-sunset.jpg';
-	import cottageThumbnail from '$lib/img/bg-downsized/cozyCottageNight.png';
-	import cityThumbnail from '$lib/img/bg-downsized/londonNight.png';
+	import curatedWallpapers from './curated-wallpapers.json';
+	import defaultBackground from '$lib/img/bg/highlands.jpg';
+	import mountains from '$lib/img/bg/dark-mountains.webp';
+	import atrium from '$lib/img/bg/dark-green-room.webp';
+	import sea from '$lib/img/bg/calmSea.webp';
+	import sunset from '$lib/img/bg/pink-sunset.webp';
+	import cottage from '$lib/img/bg/cozyCottageNight.webp';
+	import city from '$lib/img/bg/londonNight.webp';
+	import defaultThumbnail from '$lib/img/bg-downsized/highlands.jpg';
+	import mountainsThumbnail from '$lib/img/bg-downsized/dark-mountains.webp';
+	import atriumThumbnail from '$lib/img/bg-downsized/dark-green-room.webp';
+	import seaThumbnail from '$lib/img/bg-downsized/calmSea.webp';
+	import sunsetThumbnail from '$lib/img/bg-downsized/pink-sunset.webp';
+	import cottageThumbnail from '$lib/img/bg-downsized/cozyCottageNight.webp';
+	import cityThumbnail from '$lib/img/bg-downsized/londonNight.webp';
 
 	/** @type {{ onclose?: () => void, onapply?: (background: string, fit: 'cover' | 'contain') => void }} */
 	let { onclose = () => {}, onapply = () => {} } = $props();
 	let background = $state(defaultBackground);
+	let collection = $state('All');
+	const collections = ['All', 'Nature', 'City'];
 	/** @type {'cover' | 'contain'} */
 	let fit = $state('cover');
 	/** @type {string[]} */
@@ -33,17 +38,59 @@
 	const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 	const wallpapers = [
 		{
-			title: 'Alpine',
-			subtitle: 'Velora original',
+			title: 'Highlands',
+			category: 'Nature',
+
 			src: defaultBackground,
 			thumbnail: defaultThumbnail
 		},
-		{ title: 'Atrium', subtitle: 'Room to breathe', src: atrium, thumbnail: atriumThumbnail },
-		{ title: 'Still water', subtitle: 'A slower pace', src: sea, thumbnail: seaThumbnail },
-		{ title: 'Afterglow', subtitle: 'The golden hour', src: sunset, thumbnail: sunsetThumbnail },
-		{ title: 'Hideaway', subtitle: 'Somewhere cozy', src: cottage, thumbnail: cottageThumbnail },
-		{ title: 'Nightfall', subtitle: 'City after dark', src: city, thumbnail: cityThumbnail }
+		{
+			title: 'Mountains',
+			category: 'Nature',
+
+			src: mountains,
+			thumbnail: mountainsThumbnail
+		},
+		{
+			title: 'Atrium',
+			category: 'Spaces',
+
+			src: atrium,
+			thumbnail: atriumThumbnail
+		},
+		{
+			title: 'Still water',
+			category: 'Nature',
+
+			src: sea,
+			thumbnail: seaThumbnail
+		},
+		{
+			title: 'Afterglow',
+			category: 'Nature',
+
+			src: sunset,
+			thumbnail: sunsetThumbnail
+		},
+		{
+			title: 'Hideaway',
+			category: 'Nature',
+
+			src: cottage,
+			thumbnail: cottageThumbnail
+		},
+		{
+			title: 'Nightfall',
+			category: 'City',
+
+			src: city,
+			thumbnail: cityThumbnail
+		},
+		...curatedWallpapers
 	];
+	let visibleWallpapers = $derived(
+		wallpapers.filter((wallpaper) => collection === 'All' || wallpaper.category === collection)
+	);
 
 	onMount(() => {
 		alive = true;
@@ -144,7 +191,14 @@
 		if (busy || !loaded) return;
 		busy = true;
 		try {
-			await apply(nextBackground, nextFit);
+			await decodeImage(nextBackground);
+			if (alive) await apply(nextBackground, nextFit);
+		} catch (reason) {
+			if (alive)
+				error =
+					reason instanceof Error
+						? reason.message
+						: 'The background could not be loaded. Please try again.';
 		} finally {
 			if (alive) busy = false;
 		}
@@ -226,9 +280,8 @@
 >
 	<header>
 		<div>
-			<p class="eyebrow">MAKE IT YOURS</p>
-			<h2 id="wallpaper-heading">A space of your own.</h2>
-			<p id="wallpaper-description">Choose a view for your Velora desktop.</p>
+			<h2 id="wallpaper-heading">Wallpaper</h2>
+			<p id="wallpaper-description">Choose a desktop background.</p>
 		</div>
 		<button
 			class="close-button"
@@ -241,10 +294,17 @@
 	<div class="panel-body">
 		<div class="section-label">
 			<h3>Curated backgrounds</h3>
-			<span>06 views</span>
+			<span>{String(visibleWallpapers.length).padStart(2, '0')} views</span>
+		</div>
+		<div class="collection-filters" role="group" aria-label="Background collection">
+			{#each collections as name}
+				<button type="button" aria-pressed={collection === name} onclick={() => (collection = name)}
+					>{name}</button
+				>
+			{/each}
 		</div>
 		<div class="wallpaper-grid" aria-busy={!loaded || busy}>
-			{#each wallpapers as wallpaper}
+			{#each visibleWallpapers as wallpaper (wallpaper.src)}
 				<button
 					class="wallpaper-choice"
 					class:selected={background === wallpaper.src}
@@ -263,9 +323,7 @@
 								>✓</span
 							>{/if}
 					</div>
-					<span class="wallpaper-name">{wallpaper.title}</span><span class="wallpaper-description"
-						>{wallpaper.subtitle}</span
-					>
+					<span class="wallpaper-name">{wallpaper.title}</span>
 				</button>
 			{/each}
 		</div>
@@ -352,25 +410,25 @@
 
 <style>
 	.wallpaper-panel {
-		width: min(640px, calc(100vw - 32px));
+		width: min(690px, calc(100vw - 32px));
 		max-height: min(850px, calc(100dvh - 40px));
 		margin: auto;
 		padding: 0;
 		overflow: auto;
-		color: #e8e9ed;
-		background: rgba(21, 24, 31, 0.96);
-		border: 1px solid rgba(255, 255, 255, 0.13);
-		border-radius: 18px;
+		color: #edece4;
+		background: rgba(32, 35, 30, 0.98);
+		border: 1px solid rgba(237, 236, 228, 0.18);
+		border-radius: 16px;
 		box-shadow:
-			0 32px 100px #0008,
-			0 4px 20px #0003;
+			0 40px 120px -24px #080c07b3,
+			0 6px 24px #080c0733;
 		backdrop-filter: blur(30px);
 		font-family: var(--zen-font, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
 		animation: panel-enter 200ms cubic-bezier(0.16, 1, 0.3, 1);
 	}
 	.wallpaper-panel::backdrop {
-		background: #07090f75;
-		backdrop-filter: blur(9px);
+		background: #10160f75;
+		backdrop-filter: blur(12px);
 	}
 	.wallpaper-panel,
 	.wallpaper-panel * {
@@ -382,36 +440,38 @@
 		color: inherit;
 	}
 	button:focus-visible {
-		outline: 2px solid #d0bea1;
+		outline: 1px solid #d3e5b0;
 		outline-offset: 4px;
+	}
+	button {
+		transition:
+			background 180ms ease-out,
+			color 180ms ease-out,
+			border-color 180ms ease-out;
 	}
 	button:disabled {
 		cursor: wait;
 		opacity: 0.6;
 	}
 	header {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		background: #20231e;
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		padding: 28px 28px 24px;
+		padding: 32px 32px 28px;
 		border-bottom: 1px solid #ffffff0d;
-	}
-	.eyebrow {
-		margin: 0 0 10px;
-		color: #b6a487;
-		font-size: 10px;
-		letter-spacing: 2px;
-		font-weight: 600;
 	}
 	h2 {
 		margin: 0;
-		font-size: 25px;
-		font-weight: 500;
-		letter-spacing: -0.7px;
+		font: 400 35px/1.15 var(--velora-editorial, Georgia, serif);
+		letter-spacing: -0.9px;
 	}
 	header p:last-child {
 		margin: 10px 0 0;
-		color: #979da9;
+		color: #a6ad9f;
 		font-size: 12px;
 	}
 	.close-button {
@@ -423,16 +483,16 @@
 		margin: -6px -6px 0 12px;
 		border: 0;
 		border-radius: 8px;
-		background: #ffffff05;
-		color: #a8aebb;
+		background: #edece407;
+		color: #a6ad9f;
 		transition: background 180ms ease-out;
 	}
 	.close-button:hover {
 		background: #ffffff12;
-		color: #fff;
+		color: #f4f3eb;
 	}
 	.panel-body {
-		padding: 22px 28px 10px;
+		padding: 24px 32px 12px;
 	}
 	h3 {
 		margin: 0;
@@ -448,12 +508,33 @@
 	}
 	.section-label > span {
 		font-size: 10px;
-		color: #777f8d;
+		color: #8c9485;
+	}
+	.collection-filters {
+		display: flex;
+		gap: 6px;
+		margin-bottom: 20px;
+	}
+	.collection-filters button {
+		padding: 7px 15px;
+		border: 1px solid #edece414;
+		border-radius: 20px;
+		background: transparent;
+		color: #a6ad9f;
+		font-size: 12px;
+	}
+	.collection-filters button[aria-pressed='true'] {
+		background: #d3e5b01c;
+		border-color: #d3e5b055;
+		color: #d3e5b0;
+	}
+	.collection-filters button:hover {
+		border-color: #d3e5b088;
 	}
 	.wallpaper-grid {
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 18px 12px;
+		gap: 20px 14px;
 	}
 	.wallpaper-choice {
 		display: flex;
@@ -469,10 +550,10 @@
 	.thumbnail {
 		position: relative;
 		width: 100%;
-		aspect-ratio: 1.7;
+		aspect-ratio: 1.55;
 		border-radius: 8px;
 		overflow: hidden;
-		border: 2px solid transparent;
+		border: 1px solid #edece412;
 		box-shadow: inset 0 0 0 1px #ffffff12;
 		transition:
 			border-color 180ms ease-out,
@@ -490,7 +571,10 @@
 	}
 	.selected .thumbnail,
 	.recent-choice.selected {
-		border-color: #c5b394;
+		border-color: #d3e5b0;
+		box-shadow:
+			0 0 0 2px #20221f,
+			0 0 0 3px #d3e5b099;
 	}
 	.selected-mark {
 		position: absolute;
@@ -501,8 +585,8 @@
 		width: 20px;
 		height: 20px;
 		border-radius: 50%;
-		background: #e0ceb0;
-		color: #302a23;
+		background: #d3e5b0;
+		color: #27331e;
 		font-size: 12px;
 		font-weight: 600;
 		box-shadow: 0 1px 6px #0005;
@@ -510,11 +594,7 @@
 	.wallpaper-name {
 		margin: 9px 0 3px;
 		font-size: 12px;
-		color: #d9dce3;
-	}
-	.wallpaper-description {
-		color: #7d8592;
-		font-size: 10px;
+		color: #edece4;
 	}
 	.upload-row,
 	.fit-row {
@@ -531,7 +611,7 @@
 	.upload-row p,
 	.fit-row p {
 		margin: 6px 0 0;
-		color: #858d9b;
+		color: #a0aa96;
 		font-size: 10px;
 	}
 	.upload-button {
@@ -542,8 +622,8 @@
 		flex-shrink: 0;
 		padding: 9px 11px;
 		border-radius: 7px;
-		border: 1px solid #ffffff12;
-		background: #ffffff08;
+		border: 1px solid #edece41f;
+		background: #edece409;
 		font-size: 11px;
 		transition: background 180ms ease-out;
 	}
@@ -564,7 +644,7 @@
 		width: 94px;
 		height: 56px;
 		padding: 0;
-		border: 2px solid transparent;
+		border: 1px solid #edece412;
 		border-radius: 7px;
 		overflow: hidden;
 		background: #ffffff09;
@@ -580,25 +660,25 @@
 		padding: 3px;
 		border: 1px solid #ffffff0d;
 		border-radius: 7px;
-		background: #05080c40;
+		background: #12170f60;
 	}
 	.fit-control button {
 		padding: 6px 14px;
 		border: 0;
 		border-radius: 4px;
 		background: transparent;
-		color: #858d9b;
+		color: #a0aa96;
 		font-size: 11px;
 	}
 	.fit-control button[aria-pressed='true'] {
-		background: #ffffff12;
-		color: #e1d2b9;
+		background: #d3e5b01c;
+		color: #d3e5b0;
 		box-shadow: 0 1px 4px #0003;
 	}
 	.status {
 		min-height: 14px;
 		margin: 0 0 8px;
-		color: #858d9b;
+		color: #a0aa96;
 		font-size: 10px;
 		line-height: 1.5;
 	}
@@ -613,33 +693,37 @@
 		line-height: 1.5;
 	}
 	footer {
+		position: sticky;
+		bottom: 0;
+		z-index: 2;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 16px 28px;
+		padding: 19px 32px;
 		border-top: 1px solid #ffffff0d;
-		background: #00000010;
+		background: #1e211c;
 	}
 	.reset-button {
 		padding: 7px 0;
 		border: 0;
 		background: transparent;
-		color: #969da9;
+		color: #a0aa96;
 		font-size: 11px;
 	}
 	.reset-button:hover {
-		color: #fff;
+		color: #f4f3eb;
 	}
 	.done-button {
-		padding: 9px 22px;
-		border: 1px solid #d6c8af24;
+		padding: 10px 25px;
+		border: 1px solid #d3e5b0;
 		border-radius: 7px;
-		background: #d6c8af15;
-		color: #e3d7c0;
+		background: #d3e5b0;
+		color: #25301d;
+		font-weight: 600;
 		font-size: 11px;
 	}
 	.done-button:hover {
-		background: #d6c8af25;
+		background: #e1edc8;
 	}
 	@keyframes panel-enter {
 		from {
@@ -662,7 +746,7 @@
 			padding: 20px 20px 8px;
 		}
 		h2 {
-			font-size: 22px;
+			font-size: 29px;
 		}
 		.wallpaper-grid {
 			grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -6,7 +6,7 @@ export async function toggleElementFullscreen(element, doc = document) {
 		doc.fullscreenEnabled === false
 	) {
 		throw new Error(
-			'Full screen is unavailable here. Open Velora directly in your browser and try again.'
+			'Full screen is unavailable in this browser context.'
 		);
 	}
 	await element.requestFullscreen({ navigationUI: 'hide' });

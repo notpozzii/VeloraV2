@@ -10,7 +10,6 @@ export default function staticPackage() {
 			builder.rimraf('build/s3');
 			builder.mkdirp(output);
 			builder.writeClient(output);
-			cpSync('src/lib/assets/learning-hub-splash.png', join(output, 'learning-hub-splash.png'));
 			await builder.generateFallback(join(output, 'index.html'));
 			const routes = builder.routes
 				.filter((route) => route.page.methods.includes('GET'))

@@ -11,7 +11,8 @@
 	} from '$lib/stores/index.js';
 	import '$lib/style/os.css';
 	import { onMount } from 'svelte';
-	import mainBG from '$lib/img/bg/dark-mountains.jpg';
+	import mainBG from '$lib/img/bg/highlands.jpg';
+	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import Wallpaper from '$lib/utils/os/wallpaper.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import { getGeForceLauncherUrl } from '$lib/utils/browser/geforce.js';
@@ -19,7 +20,6 @@
 	import g from '$lib/img/icons/controller.png';
 	import a from '$lib/img/icons/apps.png';
 	import s from '$lib/img/icons/settings.png';
-	import p from '$lib/img/icons/pyrite.png';
 	import sp from '$lib/img/icons/nvidia.png';
 	import { get } from 'svelte/store';
 	import { applyStartupSettings } from '$lib/utils/cloak.js';
@@ -38,11 +38,32 @@
 	let hoverTimeout = null;
 	let timeString = $state('');
 	let dateString = $state('');
+	let clockFace = $state('');
+	let clockPeriod = $state('');
+	let shortcutModifier = $state('⌘');
+	const appDetails = {
+		1: 'Web browser',
+		6: 'Cloud gaming',
+		2: 'Game library',
+		4: 'App library',
+		7: 'Watch short videos',
+		5: 'Settings'
+	};
+	const filteredApps = $derived(
+		apps.filter((app) => app.name.toLowerCase().includes(launcherSearch.trim().toLowerCase()))
+	);
 	let bgURL = $state(mainBG);
 	let bgFit = $state('cover');
 	let wallpaperOpen = $state(false);
 	let launcherOpen = $state(false);
 	let launcherSearch = $state('');
+	let launcherBusy = $state(false);
+	let launcherError = $state('');
+	const launcherQuery = $derived(launcherSearch.trim());
+	const launcherIsUrl = $derived(
+		/^(https?:\/\/|[a-z0-9.-]+\.[a-z]{2,}(?:[/:?#]|$))/i.test(launcherQuery) &&
+			!/\s/.test(launcherQuery)
+	);
 	let customWisp = $state('');
 	let fullscreen = $state(false);
 	let hydrated = $state(false);
@@ -51,8 +72,6 @@
 	let accumY = 0;
 	let dragging = $state(false);
 	let windowComps = [];
-	let hostname = $state(null);
-	let proxApi = '%2Fapi%3Furl%3D%7Burl%7D%26type%3Dprism%26transport%3DlibcurlRaw%26autoSW%3Dfalse';
 	function startNavResize(e) {
 		dragging = true;
 		temp = navSizeMulti;
@@ -112,17 +131,6 @@
 			left: 110
 		},
 		{
-			id: 3,
-			url: `https://${hostname}/pyrite/?api=https%3A%2F%2F${hostname}${proxApi}`,
-			name: 'Pyrite',
-			icon: p,
-			height: '76%',
-			width: '80%',
-			center: true,
-			top: 30,
-			left: 110
-		},
-		{
 			id: 4,
 			url: '/apps',
 			name: 'Apps',
@@ -132,6 +140,22 @@
 			center: true,
 			top: 90,
 			left: 160
+		},
+		{
+			id: 7,
+			url: `/api?${new URLSearchParams({
+				url: 'https://www.tiktok.com/',
+				type: 'prism',
+				transport: 'libcurlRaw',
+				...(customWisp ? { wisp: customWisp } : {})
+			})}`,
+			name: 'TikTok',
+			icon: '/img/tiktok-dock.svg',
+			height: '80%',
+			width: '80%',
+			top: 0,
+			left: 0,
+			center: true
 		},
 		{
 			id: 5,
@@ -192,8 +216,7 @@
 	});
 	onMount(() => {
 		applyStartupSettings();
-		hostname = location.hostname;
-		if (hostname.includes('localhost')) hostname = 'v7.galxy.it.com';
+		shortcutModifier = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
 		const syncFullscreen = () => {
 			fullscreen = !!document.fullscreenElement;
 		};
@@ -477,6 +500,10 @@
 		const now = new Date();
 		timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 		dateString = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+		clockFace = now
+			.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
+			.replace(/\s*[AP]M$/i, '');
+		clockPeriod = now.getHours() >= 12 ? 'PM' : 'AM';
 	}
 
 	onMount(() => {
@@ -523,6 +550,54 @@
 		launcherOpen = false;
 		openWindow(app.url, app.name, app.height, app.width, app.top, app.left, app.id);
 	}
+	function toggleLauncher(event) {
+		event?.stopPropagation();
+		launcherSearch = '';
+		launcherError = '';
+		launcherOpen = !launcherOpen;
+	}
+	async function browseFromLauncher() {
+		const value = launcherQuery;
+		if (!value || !hydrated || launcherBusy) return;
+		launcherBusy = true;
+		launcherError = '';
+		try {
+			const browserApp = getAppConfig(1);
+			const existing = getAppWindows(1).at(-1);
+			let accepted = false;
+			if (existing) {
+				const index = $windowList.findIndex((entry) => entry.id === existing.id);
+				accepted = (await windowComps[index]?.openBrowserSearch(value)) || false;
+				if (accepted) focusWindow(existing.sender);
+			}
+			if (!accepted) {
+				const url = `/slate?${new URLSearchParams({ q: value })}`;
+				const open = existing ? openNewWindow : openWindow;
+				open(
+					url,
+					browserApp.name,
+					browserApp.height,
+					browserApp.width,
+					browserApp.top,
+					browserApp.left,
+					browserApp.id
+				);
+			}
+			launcherOpen = false;
+		} catch (error) {
+			launcherError =
+				error instanceof Error ? error.message : 'The browser could not open. Please try again.';
+		} finally {
+			launcherBusy = false;
+		}
+	}
+	function submitLauncher(event) {
+		if (event.key !== 'Enter' || event.isComposing) return;
+		event.preventDefault();
+		if (!launcherQuery || !hydrated || launcherBusy) return;
+		if (filteredApps[0] && !event.metaKey && !event.ctrlKey) launchApp(filteredApps[0]);
+		else void browseFromLauncher();
+	}
 	function runningCount(appId) {
 		return $windowList.filter((win) => win.sender === appId || win.parentApp === appId).length;
 	}
@@ -562,6 +637,10 @@
 		launcherOpen = false;
 	}}
 	onkeydown={(e) => {
+		if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+			e.preventDefault();
+			toggleLauncher(e);
+		}
 		if (e.key === 'Escape') {
 			closeAddApp();
 			closeMenu();
@@ -580,9 +659,11 @@
 	<header class="desktop-menubar">
 		<div class="desktop-identity">
 			<button class="brand-button" onclick={openChangelogs} aria-label="About Velora"
-				><span class="velora-mark">v</span>Velora</button
-			><span class="desktop-label">Desktop</span>
-			<a href="/download" class="desktop-download">Download</a>
+				><span class="velora-mark">v.</span><span>velora</span></button
+			>
+			<span class="header-divider"></span>
+			<span class="desktop-label">Workspace</span>
+			<a href="/download" class="desktop-download">Download <Icon name="arrow" size={12} /></a>
 		</div>
 		<div class="desktop-status">
 			<a href="/slate" class="browser-mode" title="Open browser without desktop windows"
@@ -592,7 +673,7 @@
 				class="menubar-icon"
 				onclick={toggleFullscreen}
 				aria-label={fullscreen ? 'Exit full screen' : 'Enter full screen'}
-				><Icon name="fullscreen" size={15} /></button
+				><Icon name="fullscreen" size={14} /></button
 			>
 			<time>{timeString}</time>
 		</div>
@@ -603,83 +684,115 @@
 		aria-label="Velora desktop"
 		oncontextmenu={(e) => openMenu(e, 'navBar')}
 	>
-		<div class="desktop-shortcuts" aria-label="Desktop apps">
-			{#each apps.filter((app) => [1, 6, 2, 4].includes(app.id)) as app (app.id)}
-				<button
-					class="desktop-shortcut"
-					onclick={() => launchApp(app)}
-					disabled={!hydrated}
-					oncontextmenu={(e) =>
-						openMenu(
-							e,
-							'apps',
-							app.id,
-							app.url,
-							app.name,
-							app.height,
-							app.width,
-							app.top,
-							app.left
-						)}
-				>
-					<span class="shortcut-icon"><img src={app.icon} alt="" /></span><span>{app.name}</span>
-				</button>
-			{/each}
-		</div>
-		<div class="desktop-clock" aria-hidden="true">
+		<section class="desktop-clock" aria-label="Clock">
+			<div class="clock-digits">{clockFace}<span>{clockPeriod}</span></div>
 			<p>{dateString}</p>
-			<span>{timeString}</span>
-		</div>
-		<div class="desktop-signature">
-			<span>VELORA</span>
-			<p>Your space, your way.</p>
-		</div>
-		<button class="personalize-button" onclick={personalize}
-			><Icon name="settings" size={15} /><span>Change wallpaper</span></button
-		>
+		</section>
+		<section class="desktop-search" aria-label="App and web search">
+			<button class="desktop-command" onclick={toggleLauncher} aria-label="Search apps or the web">
+				<Icon name="search" size={18} /><span>Search apps or the web</span><kbd
+					>{shortcutModifier} K</kbd
+				><Icon name="arrow" size={16} />
+			</button>
+		</section>
 	</main>
 
 	{#if launcherOpen}
-		<section class="app-launcher" aria-label="App launcher" onclick={(e) => e.stopPropagation()}>
+		<dialog
+			class="app-launcher"
+			aria-modal="true"
+			aria-label="App launcher"
+			onclose={() => (launcherOpen = false)}
+			onclick={(e) => {
+				e.stopPropagation();
+				if (e.target !== e.currentTarget) return;
+				const bounds = e.currentTarget.getBoundingClientRect();
+				if (
+					e.clientX < bounds.left ||
+					e.clientX > bounds.right ||
+					e.clientY < bounds.top ||
+					e.clientY > bounds.bottom
+				)
+					launcherOpen = false;
+			}}
+			{@attach (node) => {
+				const previous = document.activeElement;
+				node.showModal();
+				node.querySelector('input')?.focus();
+				return () => {
+					node.close();
+					if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+				};
+			}}
+		>
 			<div class="launcher-heading">
-				<h2>Your apps</h2>
+				<div>
+					<h2>Apps and search</h2>
+				</div>
 				<button
 					class="menubar-icon"
-					onclick={() => {
-						launcherOpen = false;
-					}}
-					aria-label="Close app launcher"><Icon name="close" size={16} /></button
+					onclick={() => (launcherOpen = false)}
+					aria-label="Close app launcher"><Icon name="close" size={18} /></button
 				>
 			</div>
 			<label class="launcher-search"
-				><Icon name="search" size={17} /><input
-					placeholder="Find an app"
-					aria-label="Find an app"
+				><Icon name="search" size={19} /><input
+					placeholder="Search apps or enter a URL"
+					aria-label="Search apps or the web"
 					bind:value={launcherSearch}
+					onkeydown={submitLauncher}
+					disabled={launcherBusy}
+					oninput={() => (launcherError = '')}
 					{@attach (node) => {
 						node.focus();
 					}}
-				/></label
+				/><kbd>ESC</kbd></label
 			>
-			<div class="launcher-grid">
-				{#each apps.filter((app) => app.name
-						.toLowerCase()
-						.includes(launcherSearch.toLowerCase())) as app (app.id)}
-					<button onclick={() => launchApp(app)}
-						><span class="shortcut-icon"><img src={app.icon} alt="" /></span><span>{app.name}</span
-						></button
+			{#if filteredApps.length}
+				<div class="launcher-grid" aria-label="Matching apps">
+					{#each filteredApps as app (app.id)}
+						<button onclick={() => launchApp(app)} disabled={!hydrated || launcherBusy}>
+							<AppIcon {app} size={46} /><span class="launcher-app-copy"
+								><strong>{app.name}</strong><small
+									>{appDetails[app.id] || 'Your own corner of the web'}</small
+								></span
+							><Icon name="arrow" size={16} />
+						</button>
+					{/each}
+				</div>
+			{/if}
+			{#if launcherQuery}
+				<button
+					class="launcher-web-result"
+					onclick={browseFromLauncher}
+					disabled={!hydrated || launcherBusy}
+					aria-busy={launcherBusy}
+				>
+					<span class="web-result-icon"
+						><Icon name={launcherIsUrl ? 'globe' : 'search'} size={21} /></span
 					>
-				{:else}<p class="no-apps">No apps found.</p>{/each}
-			</div>
+					<span class="web-result-copy"
+						><strong
+							>{launcherBusy
+								? 'Opening…'
+								: launcherIsUrl
+									? `Go to ${launcherQuery}`
+									: `Search the web for “${launcherQuery}”`}</strong
+						><small>Open in Velora Browser</small></span
+					>
+					<kbd>{filteredApps.length ? `${shortcutModifier} ↵` : '↵'}</kbd>
+				</button>
+			{/if}
+			{#if launcherError}<p class="launcher-error" role="alert">{launcherError}</p>{/if}
 			<div class="launcher-footer">
 				<button
 					onclick={() => {
 						launcherOpen = false;
 						openAddApp();
-					}}><Icon name="plus" size={15} />Add app</button
+					}}><Icon name="plus" size={15} />Add your own app</button
 				><button onclick={personalize}><Icon name="settings" size={15} />Personalize</button>
 			</div>
-		</section>
+		</dialog>
 	{/if}
 	{#if wallpaperOpen}
 		<Wallpaper
@@ -894,7 +1007,7 @@
 				e.stopPropagation();
 				launcherSearch = '';
 				launcherOpen = !launcherOpen;
-			}}><Icon name="apps" size={24} /></button
+			}}><Icon name="apps" size={21} /><span class="dock-tooltip">All apps</span></button
 		>
 		<span class="dock-divider"></span>
 		<div class="dock-apps" oncontextmenu={(e) => openMenu(e, 'navBar')}>
@@ -922,7 +1035,9 @@
 					onmouseenter={(e) => hoverStart(e, app.id)}
 					onmouseleave={hoverEnd}
 				>
-					<img src={app.icon} alt="" /><span class="dock-indicator"></span>
+					<AppIcon {app} size={Math.round(25 + navSizeMulti * 0.55)} /><span class="dock-tooltip"
+						>{app.name}</span
+					><span class="dock-indicator"></span>
 				</button>
 			{/each}
 		</div>
@@ -931,7 +1046,8 @@
 			class="dock-personalize"
 			onclick={personalize}
 			aria-label="Change wallpaper"
-			title="Change wallpaper"><Icon name="desktop" size={23} /></button
+			title="Change wallpaper"
+			><Icon name="desktop" size={21} /><span class="dock-tooltip">Wallpaper</span></button
 		>
 	</nav>
 

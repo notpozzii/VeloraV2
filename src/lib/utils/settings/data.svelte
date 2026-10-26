@@ -60,7 +60,6 @@
 	}
 </script>
 
-<h1>Data</h1>
 <div class="group">
 	<div class="subGroup">
 		<p class="subHeading">Export</p>
@@ -75,6 +74,7 @@
 			<button
 				class="toggleBtn"
 				class:active={includeSession}
+				aria-pressed={includeSession}
 				onclick={() => (includeSession = !includeSession)}>Include session storage</button
 			>
 		</div>

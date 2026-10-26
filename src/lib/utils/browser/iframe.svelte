@@ -1,7 +1,7 @@
 <script>
 	import { activeTab, reloadSignal, goBackSignal, goForwardSignal } from '$lib/stores/index.js';
 	import { getOriginalUrl } from '$lib/lethe/decode';
-	import { newTabEventName, newTabQueueName } from '$lib/lethe/reflux';
+	import { newTabEventName, newTabQueueName } from '$lib/lethe/popup-events.js';
 	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true } = $props();
 	let frame;
 

@@ -30,9 +30,10 @@ var $scramjetController;
 					counter = 0;
 					promiseCallbacks = new Map();
 					constructor(e, t, r) {
-						((this.methods = e), (this.id = t), (this.sendRaw = r));
+						((this.methods = e), (this.id = t), (this.sendRaw = (data, transfers) => globalThis.$veloraStreamRPC ? globalThis.$veloraStreamRPC.send(r, data, transfers) : r(data, transfers)));
 					}
 					recieve(e) {
+						if (globalThis.$veloraStreamRPC) e = globalThis.$veloraStreamRPC.decode(e);
 						if (null == e || 'object' != typeof e) return;
 						let t = e[this.id];
 						if (null == t || 'object' != typeof t) return;
@@ -613,6 +614,12 @@ var $scramjetController;
 					(this.transport = t.transport),
 					this.cookieSyncChannel.addEventListener('message', this.onCookieSyncMessage),
 					this.setupMessagePort(),
+					navigator.serviceWorker.addEventListener('controllerchange', () => {
+						const worker = navigator.serviceWorker.controller;
+						if (!worker || worker === this.serviceWorkerController) return;
+						this.serviceWorkerController = worker;
+						this.setupMessagePort();
+					}),
 					navigator.serviceWorker.addEventListener('message', (e) => {
 						if (e.data?.$controller$setCookie && 'object' == typeof e.data.$controller$setCookie) {
 							let t = e.data.$controller$setCookie;
@@ -623,7 +630,8 @@ var $scramjetController;
 							return;
 						}
 						if (e.data.$controller$swrevive) {
-							if (this.guardServiceWorkerRevive) return;
+							if (Array.isArray(e.data.$controller$swrevive.registered) ? e.data.$controller$swrevive.registered.includes(this.id) : this.guardServiceWorkerRevive) return;
+							this.serviceWorkerController = navigator.serviceWorker.controller ?? this.serviceWorkerController;
 							this.setupMessagePort();
 						}
 					}));
@@ -710,6 +718,7 @@ var $scramjetController;
 								var h;
 								return [
 									d(t.scramjetPath),
+									d('/prism/stream-transfer.js'),
 									d(o.href + t.virtualWasmPath),
 									d(t.injectPath),
 									d(

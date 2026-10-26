@@ -2,14 +2,12 @@
 	// @ts-nocheck
 
 	import '$lib/utils/window/window.css';
-	import minimize from '$lib/img/icons/minimize-sign.png';
-	import maximize from '$lib/img/icons/stop.png';
-	import close from '$lib/img/icons/close.png';
-	import layers from '$lib/img/icons/layers.png';
 	import gsap from 'gsap';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import { snapTarget } from './snap.js';
 	import { toggleElementFullscreen } from '$lib/utils/browser/fullscreen.js';
+	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
+	import { requestBrowserSearch } from '$lib/utils/browser/desktop-search-request.js';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { loadSetting } from '$lib/utils/localspace.js';
@@ -195,6 +193,10 @@
 		taskbarHeight = 40 + (Number(size) || 0);
 		if (mounted) checkBoundaries();
 	}
+	export function openBrowserSearch(query) {
+		if (new URL(url, window.location.href).pathname !== '/slate') return Promise.resolve(false);
+		return requestBrowserSearch(appFrame?.contentWindow, query);
+	}
 	async function fullscreenWindow() {
 		fullscreenError = '';
 		keepGeForceMaximized();
@@ -233,6 +235,10 @@
 	}
 	onMount(() => {
 		mounted = true;
+		const removeGameKeyboard =
+			name === 'GeForce NOW' && window.top === window
+				? installGameKeyboard({ document, navigator, desktop: appFrame })
+				: () => {};
 		const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 		const syncMotion = () => {
 			reducedMotion = motion.matches;
@@ -244,7 +250,8 @@
 		let wasGeForceFullscreen = false;
 		const syncGeForceFullscreen = () => {
 			const fullscreenElement = document.fullscreenElement || document.webkitFullscreenElement;
-			const isGeForceFullscreen = name === 'GeForce NOW' &&
+			const isGeForceFullscreen =
+				name === 'GeForce NOW' &&
 				(fullscreenElement === appFrame || fullscreenElement === windowElement);
 			// Keep the desktop window large when Esc exits native fullscreen.
 			// Do not capture Esc: games and the browser still receive it normally.
@@ -272,6 +279,7 @@
 		);
 		return () => {
 			mounted = false;
+			removeGameKeyboard();
 			clearTimeout(transitionTimer);
 			gsap.killTweensOf(windowElement);
 			document.removeEventListener('fullscreenchange', syncGeForceFullscreen);
@@ -588,7 +596,7 @@
 		<div class="bar-middle"></div>
 		<div class="bar-right">
 			<button
-				class="navControl"
+				class="navControl fullscreen-control"
 				onclick={fullscreenWindow}
 				type="button"
 				aria-label={`Full screen ${name}`}
@@ -601,7 +609,15 @@
 				aria-label={`Minimize ${name}`}
 				title="Minimize"
 			>
-				<img class="minimize noSelect" src={minimize} alt="" />
+				<svg
+					width="13"
+					height="13"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					stroke-linecap="round"
+					aria-hidden="true"><path d="M4 8h8" /></svg
+				>
 			</button>
 			<button
 				class="navControl"
@@ -610,7 +626,22 @@
 				aria-label={`${maximizedStat ? 'Restore' : 'Maximize'} ${name}`}
 				title={maximizedStat ? 'Restore' : 'Maximize'}
 			>
-				<img class="maximize noSelect" src={maximizedStat ? layers : maximize} alt="" />
+				<svg
+					width="13"
+					height="13"
+					viewBox="0 0 16 16"
+					fill="none"
+					stroke="currentColor"
+					stroke-linejoin="round"
+					aria-hidden="true"
+					>{#if maximizedStat}<path d="M6 4V2.5h7.5V10H12M2.5 6H10v7.5H2.5z" />{:else}<rect
+							x="3.5"
+							y="3.5"
+							width="9"
+							height="9"
+							rx="1.5"
+						/>{/if}</svg
+				>
 			</button>
 			<button
 				class="navControl closeDiv"
@@ -619,7 +650,7 @@
 				aria-label={`Close ${name}`}
 				title="Close"
 			>
-				<img class="close noSelect" src={close} alt="" />
+				<Icon name="close" size={14} />
 			</button>
 		</div>
 	</div>

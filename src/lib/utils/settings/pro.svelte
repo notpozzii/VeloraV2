@@ -50,75 +50,33 @@
 		{ value: 'brave', label: 'Brave' }
 	];
 	const transports = [
-		{ value: 'libcurl', label: 'Lib', labeltwo: 'curl' },
-		{ value: 'epoxy', label: 'Ep', labeltwo: 'oxy' }
+		{ value: 'libcurl', label: 'Libcurl' },
+		{ value: 'epoxy', label: 'Epoxy' }
 	];
 </script>
 
-<div class="group">
-	<div class="subGroup">
-		<p class="subHeading">Pr<span class="filler">ha67</span>oxy</p>
-		<p class="desc">
-			Change the bro<span class="filler">ha67</span>wser's back<span class="filler">ha67</span>end
-			engi<span class="filler">ha67</span>ne; The default is Scra<span class="filler">ha67</span
-			>mjet V2 and supports most sites
-		</p>
-
-		<div class="content">
-			{#each proxies as proxy}
-				<button
-					class="toggleBtn"
-					class:active={lethe === proxy.value}
-					onclick={() => selectProxy(proxy.value)}>{proxy.label}</button
-				>
-			{/each}
-		</div>
+<div class="settings-card">
+	<div class="setting-row">
+		<div class="setting-copy"><label for="settings-search">Search engine</label><p>Used for searches in the browser.</p></div>
+		<select id="settings-search" value={searchEngine} onchange={(e) => selectSearch(e.currentTarget.value)}>
+			{#each searchEngines as engine}<option value={engine.value}>{engine.label}</option>{/each}
+		</select>
 	</div>
-	<div class="subGroup">
-		<p class="subHeading">Sea<span class="filler">ha67</span>rch</p>
-		<p class="desc">Change the brow<span class="filler">ha67</span>ser's search engine</p>
-		<div class="content">
-			{#each searchEngines as engine}
-				<button
-					class="toggleBtn"
-					class:active={searchEngine === engine.value}
-					onclick={() => selectSearch(engine.value)}>{engine.label}</button
-				>
-			{/each}
-		</div>
+	<div class="setting-row">
+		<div class="setting-copy"><label for="settings-proxy">Browser engine</label><p>SJ2 is recommended for most sites.</p></div>
+		<select id="settings-proxy" value={lethe} onchange={(e) => selectProxy(e.currentTarget.value)}>
+			{#each proxies as proxy}<option value={proxy.value}>{proxy.label}</option>{/each}
+		</select>
+	</div>
+	<div class="setting-row">
+		<div class="setting-copy"><label for="settings-transport">Transport</label></div>
+		<select id="settings-transport" value={car} onchange={(e) => selectTransport(e.currentTarget.value)}>
+			{#each transports as transport}<option value={transport.value}>{transport.label}</option>{/each}
+		</select>
 	</div>
 </div>
-<div class="group">
-	<div class="subGroup">
-		<p class="subHeading">Tran<span class="filler">ha67</span>sport</p>
-		<p class="desc">
-			The thing that retrieves website data. Lib<span class="filler">ha67</span>curl has better site
-			support while Ep<span class="filler">ha67</span>oxy is faster with less site support.
-		</p>
-		<div class="content">
-			{#each transports as transport}
-				<button
-					class="toggleBtn"
-					class:active={car === transport.value}
-					onclick={() => selectTransport(transport.value)}
-					>{transport.label}<span class="filler">ha67</span>{transport.labeltwo}</button
-				>
-			{/each}
-		</div>
-	</div>
-	<div class="subGroup">
-		<p class="subHeading">Wi<span class="filler">ha67</span>sp</p>
-		<p class="desc">
-			Backe<span class="filler">ha67</span>nd ser<span class="filler">ha67</span>ver used to rel<span
-				class="filler">ha67</span
-			>ay connections
-		</p>
-		<input
-			class="textInput"
-			type="text"
-			placeholder="keep blank for default"
-			bind:value={customWisp}
-			oninput={(e) => updateWisp(e.currentTarget.value)}
-		/>
-	</div>
+<div class="subGroup">
+	<label class="subHeading" for="settings-wisp">Custom relay</label>
+	<p class="desc">Leave blank to use the default Wisp server.</p>
+	<input id="settings-wisp" class="textInput" type="text" placeholder="wss://…" bind:value={customWisp} oninput={(e) => updateWisp(e.currentTarget.value)} />
 </div>

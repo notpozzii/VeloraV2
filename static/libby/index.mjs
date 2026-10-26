@@ -6397,6 +6397,10 @@ var LibcurlClient = class {
   async init() {
     if (this.transport)
       libcurl.transport = this.transport;
+    if (!libcurl.ready) {
+      await libcurl.load_wasm();
+      console.log("loaded libcurl.js v" + libcurl.version.lib);
+    }
     libcurl.set_websocket(this.wisp);
     this.session = new libcurl.HTTPSession({
       proxy: this.proxy
@@ -6404,18 +6408,7 @@ var LibcurlClient = class {
     if (this.connections)
       this.session.set_connections(...this.connections);
     this.ready = libcurl.ready;
-    if (this.ready) {
-      console.log("running libcurl.js v" + libcurl.version.lib);
-      return;
-    }
-    ;
-    await new Promise((resolve, reject) => {
-      libcurl.onload = () => {
-        console.log("loaded libcurl.js v" + libcurl.version.lib);
-        this.ready = true;
-        resolve(null);
-      };
-    });
+    console.log("running libcurl.js v" + libcurl.version.lib);
   }
   ready = false;
   async meta() {

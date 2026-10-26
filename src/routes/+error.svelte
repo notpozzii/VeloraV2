@@ -6,9 +6,9 @@
 	const status = $page.status;
 
 	const messages = {
-		404: { title: 'Lost in space', sub: "That page doesn't exist — or maybe it never did." },
-		403: { title: 'Off limits', sub: "You're not supposed to be here." },
-		500: { title: 'Something exploded', sub: 'A server-side gremlin caused this. Not your fault.' }
+		404: { title: 'Page not found', sub: 'Check the URL or return to the desktop.' },
+		403: { title: 'Access denied', sub: 'You do not have access to this page.' },
+		500: { title: 'Server error', sub: 'The page could not load. Please try again.' }
 	};
 
 	const info = messages[status] ?? { title: 'Unknown error', sub: 'Something went wrong.' };
@@ -23,7 +23,7 @@
 		<p class="code">{status}</p>
 		<h1>{info.title}</h1>
 		<p class="sub">{info.sub}</p>
-		<a href="/" class="home-btn">take me home</a>
+		<a href="/" class="home-btn">Back to desktop</a>
 	</div>
 </div>
 
