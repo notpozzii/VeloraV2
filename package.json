@@ -53,5 +53,6 @@
   },
   "patchedDependencies": {
     "@mercuryworkshop/libcurl-transport@1.5.2": "patches/@mercuryworkshop%2Flibcurl-transport@1.5.2.patch"
-  }
+  },
+  "packageManager": "bun@1.4.2"
 }

@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ixl",
+  "compatibility_date": "2026-09-11",
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".svelte-kit/cloudflare"
+  },
+  "keep_vars": true,
+  "workers_dev": true,
+  "preview_urls": true
+}
