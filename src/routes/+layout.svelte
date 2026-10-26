@@ -6,7 +6,6 @@
 	import { initTheme } from '$lib/utils/theme.js';
 	import { onMount, setContext, tick } from 'svelte';
 	import { STARTUP_CONTEXT } from '$lib/utils/startup.js';
-	import Rocket from '$lib/utils/loading/rocket.svelte';
 	let { children } = $props();
 	let opening = $state(true);
 	let contentAllowed = $state(false);
@@ -54,7 +53,6 @@
 		{@render children()}
 	{/if}
 </main>
-{#if opening}<Rocket fullscreen label="Loading Velora…" layer={1000} />{/if}
 
 <style>
 	.site-content {

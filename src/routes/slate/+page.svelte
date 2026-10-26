@@ -623,7 +623,6 @@
 				<Iframe
 					id={frame.id}
 					src={frame.url}
-					pending={frame.preparing}
 					onnavigate={(info) => handleNavigate(frame.id, info)}
 					onnewtab={(url) => openInNewTab(url)}
 					interceptEnabled={popupInterceptor}
