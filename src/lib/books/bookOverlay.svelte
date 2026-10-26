@@ -1,10 +1,13 @@
 <script lang="ts">
 	import type { Game } from './types';
+	import Rocket from '$lib/utils/loading/rocket.svelte';
+	import { frameLoading } from '$lib/utils/loading/frame-loading.js';
 
 	let { game, onclose }: { game: Game | null; onclose: () => void } = $props();
 
 	let frame = $state<HTMLIFrameElement>();
 	let proxied = $state(false);
+	let contentLoading = $state(true);
 	const src = $derived.by(() => {
 		if (!game) return '';
 		if (!proxied) return game.url;
@@ -94,17 +97,21 @@
 			</button>
 		</div>
 
-		{#key proxied}
-			<iframe
-				bind:this={frame}
-				{src}
-				title={game.name}
-				sandbox={proxied
-					? undefined
-					: 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-pointer-lock'}
-				allow="autoplay; fullscreen; gamepad"
-			></iframe>
-		{/key}
+		<div class="game-content">
+			{#key proxied}
+				<iframe
+					bind:this={frame}
+					use:frameLoading={(value) => (contentLoading = value)}
+					{src}
+					title={game.name}
+					sandbox={proxied
+						? undefined
+						: 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-pointer-lock'}
+					allow="autoplay; fullscreen; gamepad"
+				></iframe>
+			{/key}
+			{#if contentLoading}<Rocket />{/if}
+		</div>
 	</div>
 {/if}
 
@@ -165,9 +172,15 @@
 		text-overflow: ellipsis;
 	}
 
-	iframe {
+	.game-content {
+		position: relative;
 		flex: 1;
+		min-height: 0;
+	}
+	iframe {
+		display: block;
 		width: 100%;
+		height: 100%;
 		border: none;
 		background: #191f19;
 	}

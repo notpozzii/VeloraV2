@@ -4,6 +4,8 @@
 	import '$lib/utils/window/window.css';
 	import gsap from 'gsap';
 	import Icon from '$lib/utils/browser/icon.svelte';
+	import Rocket from '$lib/utils/loading/rocket.svelte';
+	import { frameLoading } from '$lib/utils/loading/frame-loading.js';
 	import { snapTarget } from './snap.js';
 	import { toggleElementFullscreen } from '$lib/utils/browser/fullscreen.js';
 	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
@@ -26,6 +28,7 @@
 	let taskbarHeight = $state(64);
 	let windowElement;
 	let appFrame;
+	let contentLoading = $state(true);
 	let fullscreenError = $state('');
 	let viewportHeight = $state(800);
 	let reducedMotion = $state(false);
@@ -664,6 +667,7 @@
 		</p>{/if}
 	<iframe
 		bind:this={appFrame}
+		use:frameLoading={(value) => (contentLoading = value)}
 		allow="fullscreen; autoplay; picture-in-picture"
 		allowfullscreen
 		class="noSelect"
@@ -671,6 +675,7 @@
 		title={name}
 		style:pointer-events={draggingState ? 'none' : 'auto'}
 	></iframe>
+	{#if contentLoading}<Rocket inset="42px 0 0" label={`Loading ${name}…`} />{/if}
 </div>
 
 <div

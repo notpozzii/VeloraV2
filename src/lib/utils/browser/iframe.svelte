@@ -2,8 +2,11 @@
 	import { activeTab, reloadSignal, goBackSignal, goForwardSignal } from '$lib/stores/index.js';
 	import { getOriginalUrl } from '$lib/lethe/decode';
 	import { newTabEventName, newTabQueueName } from '$lib/lethe/popup-events.js';
-	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true } = $props();
+	import Rocket from '$lib/utils/loading/rocket.svelte';
+	import { frameLoading } from '$lib/utils/loading/frame-loading.js';
+	let { id, src = null, pending = false, onnavigate, onnewtab, interceptEnabled = true } = $props();
 	let frame;
+	let contentLoading = $state(false);
 
 	function reportUrl() {
 		try {
@@ -291,6 +294,7 @@
 			$goForwardSignal = null;
 		}
 		if ($reloadSignal === id) {
+			if (src) contentLoading = true;
 			try {
 				frame.contentWindow.location.reload();
 			} catch (e) {}
@@ -310,11 +314,13 @@
 	allow="fullscreen; autoplay; picture-in-picture"
 	allowfullscreen
 	bind:this={frame}
+	use:frameLoading={(value) => (contentLoading = value)}
 	{src}
 	onload={handleLoad}
 	frameborder="0"
 	style="display: {id === $activeTab ? 'block' : 'none'};"
 ></iframe>
+{#if id === $activeTab && (pending || contentLoading)}<Rocket />{/if}
 
 <style>
 	iframe {

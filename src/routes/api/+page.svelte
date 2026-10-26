@@ -15,6 +15,8 @@ autoSW:    legacy parameter; apps now load automatically
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
+	import Rocket from '$lib/utils/loading/rocket.svelte';
+	import { frameLoading } from '$lib/utils/loading/frame-loading.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
 		if (!trimmed) return null;
@@ -33,6 +35,7 @@ autoSW:    legacy parameter; apps now load automatically
 	let ready = $state(false);
 	let loadError = $state('');
 	let starting = $state(false);
+	let contentLoading = $state(true);
 	let iframeEl;
 	const runtime = createProxyRuntime();
 	let car = $state('libcurl');
@@ -53,6 +56,7 @@ autoSW:    legacy parameter; apps now load automatically
 	async function start() {
 		if (starting) return;
 		starting = true;
+		contentLoading = true;
 		loadError = '';
 		ready = false;
 		try {
@@ -91,9 +95,13 @@ autoSW:    legacy parameter; apps now load automatically
 	allow="fullscreen; autoplay; picture-in-picture"
 	allowfullscreen
 	bind:this={iframeEl}
+	use:frameLoading={(value) => (contentLoading = value)}
 	title=""
 	style="opacity: {apiUrl ? '100%' : '0'};"
 ></iframe>
+{#if apiUrl && !loadError && (starting || contentLoading)}
+	<Rocket fullscreen label="Loading…" />
+{/if}
 
 {#if loadError}
 	<div class="start">
