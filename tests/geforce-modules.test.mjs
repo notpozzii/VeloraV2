@@ -4,20 +4,21 @@ import vm from 'node:vm';
 import test from 'node:test';
 
 // The bundled engine uses RegExp modifiers, supported by Node 24+.
-const publicDir = new URL('../static/geforce-runtime/', import.meta.url);
 globalThis.self = globalThis;
-vm.runInThisContext(readFileSync(new URL('prism.js', publicDir), 'utf8'));
-const api = self.$scramjet;
-api.setWasm(new Uint8Array(readFileSync(new URL('prism.wasm', publicDir))));
 const codecSource = readFileSync(new URL('../src/lib/lethe/codec.js', import.meta.url), 'utf8');
 const { codec } = await import(`data:text/javascript;base64,${Buffer.from(codecSource).toString('base64')}`);
 
+for (const engine of ['prism', 'geforce-runtime']) {
+const publicDir = new URL(`../static/${engine}/`, import.meta.url);
+vm.runInThisContext(readFileSync(new URL('prism.js', publicDir), 'utf8'));
+const api = self.$scramjet;
+api.setWasm(new Uint8Array(readFileSync(new URL('prism.wasm', publicDir))));
 for (const [name, encode, decode] of [
   ['Velora XOR', codec.encode, codec.decode],
   ['URI', encodeURIComponent, decodeURIComponent],
   ['identity', (s) => s, (s) => s]
 ]) {
-  test(`${name}: HTML module and cyclic static import share one module identity`, () => {
+  test(`${engine} ${name}: HTML module and cyclic static import share one module identity`, () => {
     const context = {
       prefix: new URL('https://proxy.test/prism/controller/frame/'),
       config: structuredClone(api.defaultConfig),
@@ -35,4 +36,5 @@ for (const [name, encode, decode] of [
     const ordinary = new URL(api.rewriteUrl('./index.js', context, meta));
     assert.equal(ordinary.searchParams.get('$io'), encode(origin.origin), 'ordinary fetch metadata remains compatible');
   });
+}
 }
