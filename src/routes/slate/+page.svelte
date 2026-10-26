@@ -196,29 +196,37 @@
 	async function navigateTo(rawQuery, { signal } = {}) {
 		inputFocused = false;
 		const target = activeFrame;
-		const session = await prepareBrowserEngine();
-		if (signal?.aborted || !target) {
-			return;
-		}
-		const fixedUrl = search(rawQuery, searchEngine);
-		let encoded;
-		if (session.engine === 'sj2') {
-			const sjFrame = await tabFrames.get(target.id);
-			encoded = prismEncode(fixedUrl, sjFrame);
-		} else if (session.engine === 'uv') {
-			// @ts-ignore
-			encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(fixedUrl);
-		} else {
-			encoded = session.polygon.encodeUrl(fixedUrl);
-		}
-		if (signal?.aborted || !frames.includes(target)) return;
-		target.url = encoded;
-		if (rawQuery.includes('discord')) {
-			LastPopupIntState = popupInterceptor;
-			popupInterceptor = false;
-		}
-		if (!rawQuery.includes('discord')) {
-			popupInterceptor = LastPopupIntState;
+		if (!target || signal?.aborted) return;
+		const navigation = (target.navigation || 0) + 1;
+		target.navigation = navigation;
+		target.preparing = true;
+		try {
+			const session = await prepareBrowserEngine();
+			if (signal?.aborted || !target) {
+				return;
+			}
+			const fixedUrl = search(rawQuery, searchEngine);
+			let encoded;
+			if (session.engine === 'sj2') {
+				const sjFrame = await tabFrames.get(target.id);
+				encoded = prismEncode(fixedUrl, sjFrame);
+			} else if (session.engine === 'uv') {
+				// @ts-ignore
+				encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(fixedUrl);
+			} else {
+				encoded = session.polygon.encodeUrl(fixedUrl);
+			}
+			if (signal?.aborted || !frames.includes(target) || target.navigation !== navigation) return;
+			target.url = encoded;
+			if (rawQuery.includes('discord')) {
+				LastPopupIntState = popupInterceptor;
+				popupInterceptor = false;
+			}
+			if (!rawQuery.includes('discord')) {
+				popupInterceptor = LastPopupIntState;
+			}
+		} finally {
+			if (target.navigation === navigation) target.preparing = false;
 		}
 	}
 
@@ -615,11 +623,12 @@
 				<Iframe
 					id={frame.id}
 					src={frame.url}
+					pending={frame.preparing}
 					onnavigate={(info) => handleNavigate(frame.id, info)}
 					onnewtab={(url) => openInNewTab(url)}
 					interceptEnabled={popupInterceptor}
 				/>
-				{#if frame.id === $activeTab && !frame.url}<Home
+				{#if frame.id === $activeTab && !frame.url && !frame.preparing}<Home
 						{ready}
 						onsearch={openHomeShortcut}
 						onopen={openHomeShortcut}
