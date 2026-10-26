@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Game } from './types';
-	import FillerName from './fillerName.svelte';
 
 	let { game, onclose }: { game: Game | null; onclose: () => void } = $props();
 
@@ -55,9 +54,14 @@
 				Back
 			</button>
 
-			<span class="title"><FillerName text={game.name} /></span>
+			<span class="title">{game.name}</span>
 
-			<button class="tbtn" class:active={proxied} onclick={() => (proxied = !proxied)}>
+			<button
+				class="tbtn"
+				class:active={proxied}
+				aria-label={proxied ? 'Use direct connection' : 'Use proxy connection'}
+				onclick={() => (proxied = !proxied)}
+			>
 				<svg
 					viewBox="0 0 24 24"
 					width="14"
@@ -71,8 +75,7 @@
 					<circle cx="12" cy="12" r="9" />
 					<path d="M3 12h18M12 3a15 15 0 0 1 0 18a15 15 0 0 1 0-18" />
 				</svg>
-				<span class=""> {proxied ? 'Run Dir' : 'Run via Pr'} </span>
-				<span class="none"> {proxied ? 'ect' : 'oxy'} </span>
+				<span>{proxied ? 'Use direct connection' : 'Use proxy connection'}</span>
 			</button>
 
 			<button class="tbtn" onclick={requestFullscreen} aria-label="Fullscreen">
@@ -95,7 +98,7 @@
 			<iframe
 				bind:this={frame}
 				{src}
-				title=""
+				title={game.name}
 				sandbox={proxied
 					? undefined
 					: 'allow-scripts allow-same-origin allow-popups allow-forms allow-modals allow-pointer-lock'}
@@ -112,7 +115,7 @@
 		z-index: 200;
 		display: flex;
 		flex-direction: column;
-		background: var(--color-bg);
+		background: #191d19;
 	}
 
 	.toolbar {
@@ -120,21 +123,21 @@
 		align-items: center;
 		gap: 10px;
 		padding: 10px 16px;
-		background: var(--color-black);
-		border-bottom: 1px solid var(--color-border);
+		background: #191f19;
+		border-bottom: 1px solid #ffffff16;
 	}
 
 	.tbtn {
 		display: inline-flex;
 		align-items: center;
 		gap: 8px;
-		background: var(--overlay-hover);
-		color: var(--color-text-muted);
-		border: 1px solid var(--color-border);
-		padding: 8px 18px;
-		border-radius: 999px;
+		background: #2a3526;
+		color: #c4d1b9;
+		border: 1px solid #ffffff22;
+		padding: 8px 12px;
+		border-radius: 7px;
 		cursor: pointer;
-		font-size: 14px;
+		font-size: 12px;
 		font-family: var(--font-family-body);
 		backdrop-filter: blur(12px);
 		transition:
@@ -142,13 +145,13 @@
 			color 0.2s;
 	}
 	.tbtn:hover {
-		background: var(--overlay-hover-strong);
-		color: var(--color-text);
+		background: #3b4a32;
+		color: #edf4e7;
 	}
 	.tbtn.active {
-		background: var(--color-white);
-		border-color: var(--color-white);
-		color: var(--color-black);
+		background: #d3e8b2;
+		border-color: #d3e8b2;
+		color: #23331c;
 	}
 
 	.title {
@@ -156,7 +159,7 @@
 		font-family: var(--font-family-heading);
 		font-weight: 600;
 		font-size: 15px;
-		color: var(--color-text);
+		color: #edf4e7;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -166,11 +169,25 @@
 		flex: 1;
 		width: 100%;
 		border: none;
-		background: var(--color-black);
+		background: #191f19;
 	}
-	.none {
-		margin: 0px;
-		border: 0px;
-		margin-left: -7px;
+	.tbtn:focus-visible {
+		outline: 2px solid #d3e8b2;
+		outline-offset: 3px;
+	}
+	@media (max-width: 560px) {
+		.toolbar {
+			gap: 7px;
+			padding: 9px;
+		}
+		.tbtn {
+			padding: 8px;
+		}
+		.tbtn span {
+			display: none;
+		}
+		.title {
+			font-size: 12px;
+		}
 	}
 </style>

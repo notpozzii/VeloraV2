@@ -47,7 +47,6 @@
 		"image": "11.png",
 		"genre": "AI"
 	},
-
 	{
 		"name": "Github",
 		"url": "https://github.com",
@@ -84,14 +83,12 @@
 		"image": "19.png",
 		"genre": "Other"
 	},
-
 	{
 		"name": "Squibler AI",
 		"url": "https://www.squibler.io/ai-text-generator/",
 		"image": "20.png",
 		"genre": "AI"
 	},
-
 	{
 		"name": "TikTok",
 		"url": "https://TikTok.com",
@@ -104,7 +101,6 @@
 		"image": "22.png",
 		"genre": "Development"
 	},
-
 	{
 		"name": "Writify AI",
 		"url": "https://writify.ai/tool/ai-chat/",
@@ -116,5 +112,95 @@
 		"url": "https://x.com",
 		"image": "24.png",
 		"genre": "Social Media"
+	},
+	{
+		"name": "YouTube",
+		"url": "https://www.youtube.com/",
+		"image": "apps/youtube.png",
+		"genre": "Streaming"
+	},
+	{
+		"name": "Twitch",
+		"url": "https://www.twitch.tv/",
+		"image": "apps/twitch.png",
+		"genre": "Streaming"
+	},
+	{
+		"name": "Spotify",
+		"url": "https://open.spotify.com/",
+		"image": "apps/spotify.png",
+		"genre": "Music"
+	},
+	{
+		"name": "SoundCloud",
+		"url": "https://soundcloud.com/",
+		"image": "apps/soundcloud.png",
+		"genre": "Music"
+	},
+	{
+		"name": "Reddit",
+		"url": "https://www.reddit.com/",
+		"image": "apps/reddit.png",
+		"genre": "Social Media"
+	},
+	{
+		"name": "Instagram",
+		"url": "https://www.instagram.com/",
+		"image": "apps/instagram.png",
+		"genre": "Social Media"
+	},
+	{
+		"name": "Bluesky",
+		"url": "https://bsky.app/",
+		"image": "apps/bluesky.png",
+		"genre": "Social Media"
+	},
+	{
+		"name": "Telegram",
+		"url": "https://web.telegram.org/",
+		"image": "apps/telegram.png",
+		"genre": "Social Media"
+	},
+	{
+		"name": "WhatsApp",
+		"url": "https://web.whatsapp.com/",
+		"image": "apps/whatsapp.png",
+		"genre": "Social Media"
+	},
+	{
+		"name": "Photopea",
+		"url": "https://www.photopea.com/",
+		"image": "apps/photopea.png",
+		"genre": "Design"
+	},
+	{
+		"name": "Figma",
+		"url": "https://www.figma.com/",
+		"image": "apps/figma.png",
+		"genre": "Design"
+	},
+	{
+		"name": "Excalidraw",
+		"url": "https://excalidraw.com/",
+		"image": "apps/excalidraw.png",
+		"genre": "Design"
+	},
+	{
+		"name": "Notion",
+		"url": "https://www.notion.so/",
+		"image": "apps/notion.png",
+		"genre": "Productivity"
+	},
+	{
+		"name": "Replit",
+		"url": "https://replit.com/",
+		"image": "apps/replit.png",
+		"genre": "Development"
+	},
+	{
+		"name": "CodePen",
+		"url": "https://codepen.io/",
+		"image": "apps/codepen.png",
+		"genre": "Development"
 	}
 ]
