@@ -1,8 +1,8 @@
 import { RefluxAPI } from '@nightnetwork/reflux/api';
+import { newTabEventName, newTabQueueName } from './popup-events.js';
+export { newTabEventName, newTabQueueName } from './popup-events.js';
 const api = new RefluxAPI();
 
-export const newTabEventName = '__galaxyNewTab';
-export const newTabQueueName = '__galaxyPendingNewTabs';
 export async function enablePopupInterceptor() {
 	await api.addPlugin({
 		name: 'windowOpen',

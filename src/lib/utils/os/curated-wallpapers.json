@@ -1,0 +1,194 @@
+[
+	{
+		"title": "Alpine lake",
+		"category": "Nature",
+		"src": "/wallpapers/alpine-lake.webp",
+		"thumbnail": "/wallpapers/thumbnails/alpine-lake.webp",
+		"source": "https://images.unsplash.com/photo-1470770841072-f978cf4d019e",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Forest light",
+		"category": "Nature",
+		"src": "/wallpapers/forest-light.webp",
+		"thumbnail": "/wallpapers/thumbnails/forest-light.webp",
+		"source": "https://images.unsplash.com/photo-1441974231531-c6227db76b6e",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Summit",
+		"category": "Nature",
+		"src": "/wallpapers/summit.webp",
+		"thumbnail": "/wallpapers/thumbnails/summit.webp",
+		"source": "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Pine valley",
+		"category": "Nature",
+		"src": "/wallpapers/pine-valley.webp",
+		"thumbnail": "/wallpapers/thumbnails/pine-valley.webp",
+		"source": "https://images.unsplash.com/photo-1448375240586-882707db888b",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Ocean drift",
+		"category": "Nature",
+		"src": "/wallpapers/ocean-drift.webp",
+		"thumbnail": "/wallpapers/thumbnails/ocean-drift.webp",
+		"source": "https://images.unsplash.com/photo-1518837695005-2083093ee35b",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Shoreline",
+		"category": "Nature",
+		"src": "/wallpapers/shoreline.webp",
+		"thumbnail": "/wallpapers/thumbnails/shoreline.webp",
+		"source": "https://images.unsplash.com/photo-1507525428034-b723cf961d3e",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Red rock",
+		"category": "Nature",
+		"src": "/wallpapers/dunes.webp",
+		"thumbnail": "/wallpapers/thumbnails/dunes.webp",
+		"source": "https://images.unsplash.com/photo-1509316785289-025f5b846b35",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Valley light",
+		"category": "Nature",
+		"src": "/wallpapers/valley-light.webp",
+		"thumbnail": "/wallpapers/thumbnails/valley-light.webp",
+		"source": "https://images.unsplash.com/photo-1469474968028-56623f02e42e",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Aurora",
+		"category": "Nature",
+		"src": "/wallpapers/aurora.webp",
+		"thumbnail": "/wallpapers/thumbnails/aurora.webp",
+		"source": "https://images.unsplash.com/photo-1483347756197-71ef80e95f73",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Waterfall",
+		"category": "Nature",
+		"src": "/wallpapers/waterfall.webp",
+		"thumbnail": "/wallpapers/thumbnails/waterfall.webp",
+		"source": "https://images.unsplash.com/photo-1432405972618-c60b0225b8f9",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Winter",
+		"category": "Nature",
+		"src": "/wallpapers/winter.webp",
+		"thumbnail": "/wallpapers/thumbnails/winter.webp",
+		"source": "https://images.unsplash.com/photo-1418985991508-e47386d96a71",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Mirror lake",
+		"category": "Nature",
+		"src": "/wallpapers/mirror-lake.webp",
+		"thumbnail": "/wallpapers/thumbnails/mirror-lake.webp",
+		"source": "https://images.unsplash.com/photo-1550947819-98400828e3e0",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "First light",
+		"category": "Nature",
+		"src": "/wallpapers/green-hills.webp",
+		"thumbnail": "/wallpapers/thumbnails/green-hills.webp",
+		"source": "https://images.unsplash.com/photo-1500534623283-312aade485b7",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Chicago",
+		"category": "City",
+		"src": "/wallpapers/new-york.webp",
+		"thumbnail": "/wallpapers/thumbnails/new-york.webp",
+		"source": "https://images.unsplash.com/photo-1477959858617-67f85cf4f1df",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Manhattan",
+		"category": "City",
+		"src": "/wallpapers/manhattan.webp",
+		"thumbnail": "/wallpapers/thumbnails/manhattan.webp",
+		"source": "https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Golden Gate",
+		"category": "City",
+		"src": "/wallpapers/golden-gate.webp",
+		"thumbnail": "/wallpapers/thumbnails/golden-gate.webp",
+		"source": "https://images.unsplash.com/photo-1501594907352-04cda38ebc29",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "London",
+		"category": "City",
+		"src": "/wallpapers/london.webp",
+		"thumbnail": "/wallpapers/thumbnails/london.webp",
+		"source": "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Paris",
+		"category": "City",
+		"src": "/wallpapers/paris.webp",
+		"thumbnail": "/wallpapers/thumbnails/paris.webp",
+		"source": "https://images.unsplash.com/photo-1502602898657-3e91760cbb34",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Hong Kong",
+		"category": "City",
+		"src": "/wallpapers/sydney.webp",
+		"thumbnail": "/wallpapers/thumbnails/sydney.webp",
+		"source": "https://images.unsplash.com/photo-1506970845246-18f21d533b20",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Singapore",
+		"category": "City",
+		"src": "/wallpapers/singapore.webp",
+		"thumbnail": "/wallpapers/thumbnails/singapore.webp",
+		"source": "https://images.unsplash.com/photo-1525625293386-3f8f99389edd",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Dubai",
+		"category": "City",
+		"src": "/wallpapers/dubai.webp",
+		"thumbnail": "/wallpapers/thumbnails/dubai.webp",
+		"source": "https://images.unsplash.com/photo-1512453979798-5ea266f8880c",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Waterfront",
+		"category": "City",
+		"src": "/wallpapers/waterfront.webp",
+		"thumbnail": "/wallpapers/thumbnails/waterfront.webp",
+		"source": "https://images.unsplash.com/photo-1729433321272-9243b22c5f6e",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "Blue hour",
+		"category": "City",
+		"src": "/wallpapers/blue-hour.webp",
+		"thumbnail": "/wallpapers/thumbnails/blue-hour.webp",
+		"source": "https://images.unsplash.com/photo-1505273471770-de630b5d5c5d",
+		"license": "https://unsplash.com/license"
+	},
+	{
+		"title": "City reflections",
+		"category": "City",
+		"src": "/wallpapers/city-reflections.webp",
+		"thumbnail": "/wallpapers/thumbnails/city-reflections.webp",
+		"source": "https://images.unsplash.com/photo-1602940659697-ec0ffdafb09d",
+		"license": "https://unsplash.com/license"
+	}
+]

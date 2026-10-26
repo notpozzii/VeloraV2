@@ -82,65 +82,42 @@
 	];
 </script>
 
-<h1>Preferences</h1>
-<div class="group">
-	<div class="subGroup">
-		<p class="subHeading">
-			Ab<span class="filler">ha67</span>out Bl<span class="filler">ha67</span>ank
-		</p>
-		<p class="desc">
-			Makes the tab invi<span class="filler">ha67</span>sible to teachers and your bro<span
-				class="filler">ha67</span
-			>wsing hist<span class="filler">ha67</span>ory
-		</p>
-
-		<div class="content">
-			<button class="actionBtn" onclick={openAboutBlank}>Launch</button>
-			<button class="toggleBtn" class:active={localAutoAB} onclick={toggleAB}>Auto AB</button>
-		</div>
+<div class="settings-card">
+	<div class="setting-row">
+		<div class="setting-copy"><h2>About:blank tab</h2><p>Open Velora inside an about:blank tab.</p></div>
+		<button class="actionBtn" onclick={openAboutBlank}>Open</button>
 	</div>
-	<div class="subGroup">
-		<p class="subHeading">B<span class="filler">ha67</span>lob</p>
-		<p class="desc">
-			Doesn't hi<span class="filler">ha67</span>de the tab but does pre<span class="filler"
-				>ha67</span
-			>vent the site from appearing in your his<span class="filler">ha67</span>tory
-		</p>
-		<div class="content">
-			<button class="actionBtn" onclick={openBlob}>Launch</button>
-			<button class="toggleBtn" class:active={localAutoBlob} onclick={toggleBlob}
-				>Au<span class="filler">ha67</span>to Blob</button
-			>
-		</div>
+	<div class="setting-row">
+		<div class="setting-copy"><h2>Open about:blank automatically</h2></div>
+		<button class="setting-switch" type="button" role="switch" aria-checked={localAutoAB} aria-label="Open about:blank automatically" disabled={!hydrated} onclick={toggleAB}><span></span></button>
 	</div>
 </div>
-<div class="divider"></div>
-<div class="subGroup">
-	<p class="subHeading">
-		An<span class="filler">ha67</span>ti-Clos<span class="filler">ha67</span>e
-	</p>
-	<p class="desc">
-		Preve<span class="filler">ha67</span>nts teach<span class="filler">ha67</span>ers from closing
-		your tab by lau<span class="filler">ha67</span>nching the
-		<code> `Changes you made may not be saved`</code> prompt
-	</p>
-	<div class="content">
-		<button class="toggleBtn" class:active={localAntiClose} onclick={toggleAntiClose}>Toggle</button
-		>
+<div class="settings-card">
+	<div class="setting-row">
+		<div class="setting-copy"><h2>Blob tab</h2><p>Open Velora using a temporary blob URL.</p></div>
+		<button class="actionBtn" onclick={openBlob}>Open</button>
+	</div>
+	<div class="setting-row">
+		<div class="setting-copy"><h2>Open blob automatically</h2></div>
+		<button class="setting-switch" type="button" role="switch" aria-checked={localAutoBlob} aria-label="Open blob automatically" disabled={!hydrated} onclick={toggleBlob}><span></span></button>
 	</div>
 </div>
-<div class="divider"></div>
+<div class="settings-card">
+	<div class="setting-row">
+		<div class="setting-copy"><h2>Confirm before closing</h2><p>Show a confirmation when you leave this tab.</p></div>
+		<button class="setting-switch" type="button" role="switch" aria-checked={localAntiClose} aria-label="Confirm before closing" disabled={!hydrated} onclick={toggleAntiClose}><span></span></button>
+	</div>
+</div>
 <div class="subGroup">
-	<p class="subHeading">Tab Pres<span class="filler">ha67</span>ets</p>
+	<h2 class="subHeading">Tab appearance</h2>
+	<p class="desc">Choose a title and icon preset, or enter your own.</p>
 	<div class="content">
 		{#each tabPresets as preset}
-			<button class="actionBtn" onclick={() => saveTabPreset(preset.name, preset.icon)}>
-				<img class="icons" src={preset.icon} alt="" />
-				{preset.label}
-			</button>
+			<button class="actionBtn" disabled={!hydrated} onclick={() => saveTabPreset(preset.name, preset.icon)}><img class="icons" src={preset.icon} alt="" />{preset.label}</button>
 		{/each}
 	</div>
-	<p class="subHeading">Cus<span class="filler">ha67</span>tom Tab</p>
-	<input class="textInput" type="text" placeholder="Tab Name" bind:value={name} />
-	<input class="textInput" type="text" placeholder="Icon URL" bind:value={icon} />
+	<div class="settings-fields">
+		<label>Tab title<input class="textInput" type="text" placeholder="Tab title" bind:value={name} disabled={!hydrated} /></label>
+		<label>Icon URL<input class="textInput" type="url" placeholder="https://…" bind:value={icon} disabled={!hydrated} /></label>
+	</div>
 </div>

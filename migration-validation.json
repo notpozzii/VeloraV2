@@ -1,0 +1,33 @@
+{
+  "source_commit": "dd10a017f4f54dcbf2cd4a248ef3549afe195b55",
+  "client_manifest_entries": 102,
+  "missing_built_assets": [],
+  "worker_bundle_bytes": 311873,
+  "test_status": "17 passed, 2 S3-specific tests skipped",
+  "local_routes_verified": [
+    "/",
+    "/os",
+    "/slate",
+    "/api",
+    "/apps",
+    "/books",
+    "/settings",
+    "/download",
+    "/servy.js",
+    "/prism/prism.js",
+    "/prism/prism.wasm",
+    "/poly/polygon.all.js",
+    "/glass/glass.bundle.js",
+    "/charon/worker.js",
+    "/libby/index.mjs",
+    "/download/files/index.html",
+    "/download/files/velora.svg"
+  ],
+  "preexisting_missing_source_assets": [
+    "static/books/gmes.json",
+    "static/pyrite/index.html"
+  ],
+  "browser_QA": "unavailable: local browser use disabled",
+  "live_status": "Ready for publishing; live browser verification pending",
+  "wallpaper_optimization": "32 images converted to WebP at original dimensions: 173 MiB to 7 MiB"
+}

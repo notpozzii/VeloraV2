@@ -10,11 +10,11 @@
 	/** @type {import('svelte/store').Writable<boolean | null>} */
 	const isTabDragging = draggingStore;
 	import faviconFetch from 'favicon-fetch';
-	import defaultIcon from '$lib/img/icons/earthWhite.png';
+	import defaultIcon from '$lib/assets/velora.svg';
 	import Icon from './icon.svelte';
 	import gsap from 'gsap';
 	import { onDestroy } from 'svelte';
-	let { id, displayUrl = '', title = 'New Tab', onDrop, collapsed = false } = $props();
+	let { id, displayUrl = '', title = 'New Tab', onDrop } = $props();
 	let tabEl;
 	let closing = $state(false);
 	let dragging = $state(false);
@@ -22,7 +22,7 @@
 	let pointerStart = 0;
 	let pointerId = null;
 	let startIndex = 0;
-	let tabLength = 44;
+	let tabLength = 184;
 	let faviconUrl = $derived.by(() => {
 		try {
 			return displayUrl ? faviconFetch({ hostname: new URL(displayUrl).hostname }) : defaultIcon;
@@ -37,11 +37,13 @@
 		closing = true;
 		const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 		gsap.to(tabEl, {
-			height: 0,
+			width: 0,
+			minWidth: 0,
+			flexBasis: 0,
 			opacity: 0,
-			marginBottom: -4,
-			paddingTop: 0,
-			paddingBottom: 0,
+			marginRight: -4,
+			paddingLeft: 0,
+			paddingRight: 0,
 			duration: reduced ? 0 : 0.18,
 			ease: 'power2.out',
 			onComplete: () => {
@@ -50,20 +52,20 @@
 		});
 	}
 
-	// Keep the existing drag stores and onDrop callback; measure the vertical axis.
+	// Keep the existing drag stores and onDrop callback; measure the horizontal axis.
 	function callDrag(event) {
 		if (event.button !== 0 || closing) return;
 		$activeTab = id;
 		tabEl.focus();
 		pointerId = event.pointerId;
-		pointerStart = event.clientY;
+		pointerStart = event.clientX;
 		startIndex = Array.from(tabEl.parentElement.children).indexOf(tabEl);
-		tabLength = tabEl.getBoundingClientRect().height + 4;
+		tabLength = tabEl.getBoundingClientRect().width + 4;
 		tabEl.setPointerCapture(pointerId);
 	}
 	function startDrag(event) {
 		if (pointerId !== event.pointerId) return;
-		const delta = event.clientY - pointerStart;
+		const delta = event.clientX - pointerStart;
 		if (!dragging && Math.abs(delta) < 5) return;
 		dragging = true;
 		$isTabDragging = true;
@@ -101,8 +103,8 @@
 		const rows = Array.from(tabEl.parentElement.querySelectorAll('[role="tab"]'));
 		const index = rows.indexOf(tabEl);
 		let next;
-		if (event.key === 'ArrowDown') next = rows[(index + 1) % rows.length];
-		if (event.key === 'ArrowUp') next = rows[(index - 1 + rows.length) % rows.length];
+		if (event.key === 'ArrowRight') next = rows[(index + 1) % rows.length];
+		if (event.key === 'ArrowLeft') next = rows[(index - 1 + rows.length) % rows.length];
 		if (event.key === 'Home') next = rows[0];
 		if (event.key === 'End') next = rows[rows.length - 1];
 		if (next) {
@@ -124,7 +126,6 @@
 <div
 	class="zen-tab"
 	class:active={id === $activeTab}
-	class:collapsed
 	class:dragging
 	class:closing
 	class:drop-before={id === $draggedOverRight}
@@ -134,7 +135,7 @@
 	role="tab"
 	aria-selected={id === $activeTab}
 	aria-label={title}
-	title={collapsed ? title : undefined}
+	title={title}
 	tabindex={id === $activeTab ? 0 : -1}
 	onfocus={() => {
 		$activeTab = id;
@@ -150,7 +151,7 @@
 			closeTab(event);
 		}
 	}}
-	style:transform={dragging ? `translateY(${offset}px)` : undefined}
+	style:transform={dragging ? `translateX(${offset}px)` : undefined}
 >
 	<img
 		class="tab-favicon"
@@ -177,12 +178,13 @@
 		position: relative;
 		display: flex;
 		align-items: center;
-		gap: 10px;
-		height: 40px;
-		flex: none;
-		min-width: 0;
-		border-radius: 6px;
-		padding: 0 11px;
+		gap: 9px;
+		height: 37px;
+		flex: 0 1 210px;
+		width: 210px;
+		min-width: 112px;
+		border-radius: 9px 9px 0 0;
+		padding: 0 12px;
 		color: var(--zen-muted);
 		background: transparent;
 		cursor: default;
@@ -198,27 +200,17 @@
 		background: var(--zen-hover);
 	}
 	.zen-tab.active {
-		background: var(--zen-selected);
+		background: #242920;
 		color: var(--zen-text);
-	}
-	.zen-tab.active::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 15px;
-		height: 10px;
-		width: 2px;
-		border-radius: 2px;
-		background: var(--zen-accent);
-		opacity: 0.8;
+		box-shadow: inset 0 0 0 1px #d3e5b00a;
 	}
 	.zen-tab:focus-visible {
 		outline: 1px solid var(--zen-accent);
 		outline-offset: -1px;
 	}
 	.tab-favicon {
-		width: 18px;
-		height: 18px;
+		width: 16px;
+		height: 16px;
 		object-fit: contain;
 		flex: none;
 		opacity: 0.85;
@@ -228,7 +220,7 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		font: 400 14px var(--zen-font);
+		font: 400 12px var(--zen-font);
 		flex: 1;
 		transition: opacity 160ms ease-out;
 	}
@@ -261,41 +253,16 @@
 	.tab-close:focus-visible {
 		outline: 1px solid var(--zen-accent);
 	}
-	.collapsed {
-		padding-left: 15px;
-		gap: 0;
-	}
-	.collapsed .tab-title {
-		opacity: 0;
-		width: 0;
-		flex: 0;
-	}
-	.collapsed .tab-close {
-		position: absolute;
-		right: 0;
-		top: 0;
-		width: 17px;
-		height: 17px;
-		opacity: 0;
-		background: var(--zen-sidebar);
-	}
-	.collapsed.active .tab-close {
-		opacity: 0;
-	}
-	.collapsed:hover .tab-close,
-	.collapsed:focus-within .tab-close {
-		opacity: 1;
-	}
 	.dragging {
 		z-index: 5;
 		background: var(--zen-selected);
 		box-shadow: 0 4px 12px #0002;
 	}
 	.drop-before {
-		box-shadow: 0 -1px 0 var(--zen-accent);
+		box-shadow: inset 2px 0 0 var(--zen-accent);
 	}
 	.drop-after {
-		box-shadow: 0 1px 0 var(--zen-accent);
+		box-shadow: inset -2px 0 0 var(--zen-accent);
 	}
 	.closing {
 		overflow: hidden;
@@ -311,6 +278,7 @@
 			translate: 0 0;
 		}
 	}
+	@media (max-width: 640px) { .zen-tab { width: 160px; flex-basis: 160px; min-width: 104px; padding-inline: 9px; gap: 7px; } }
 	@media (prefers-reduced-motion: reduce) {
 		.zen-tab,
 		.tab-title,

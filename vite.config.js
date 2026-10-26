@@ -8,6 +8,7 @@ import { refluxPath } from '@nightnetwork/reflux';
 import { server as wisp, logging } from '@mercuryworkshop/wisp-js/server';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { realpathSync } from 'node:fs';
 
 const lethePlugin = () => ({
 	name: 'lethe',
@@ -32,6 +33,14 @@ const lethePlugin = () => ({
 export default defineConfig({
 	server: {
 		port: 5173,
+		fs: {
+			// This local preview reuses dependencies through a node_modules symlink.
+			// Vite serves their resolved paths, so allow that directory explicitly.
+			allow: [
+				fileURLToPath(new URL('.', import.meta.url)),
+				realpathSync(fileURLToPath(new URL('./node_modules', import.meta.url)))
+			]
+		},
 		watch: {
 			ignored: ['**/static/books/**']
 		}

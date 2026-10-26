@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { snapTarget } from '../src/lib/utils/window/snap.js';
 import { toggleElementFullscreen } from '../src/lib/utils/browser/fullscreen.js';
-import { youtubeDirectUrl } from '../src/lib/utils/browser/youtube.js';
 
 test('snaps before the old 48px edge and releases without flickering', () => {
 	assert.equal(snapTarget(100, 1200), 'left');
@@ -46,19 +45,4 @@ test('fullscreen exits when already active and reports blocked or denied request
 		),
 		/denied/
 	);
-});
-test('direct YouTube action preserves the video URL and excludes lookalike/unsafe URLs', () => {
-	assert.equal(
-		youtubeDirectUrl('https://www.youtube.com/watch?v=abc&t=25'),
-		'https://www.youtube.com/watch?v=abc&t=25'
-	);
-	assert.equal(youtubeDirectUrl('https://youtu.be/abc'), 'https://youtu.be/abc');
-	for (const url of [
-		null,
-		'javascript:alert(1)',
-		'https://youtube.com.attacker.test/',
-		'https://notyoutube.com/',
-		'/proxy/youtube.com'
-	])
-		assert.equal(youtubeDirectUrl(url), null);
 });

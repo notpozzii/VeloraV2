@@ -6,7 +6,7 @@ export function createConnection() {
 	return new window.BareMux.BareMuxConnection('/charon/worker.js');
 }
 
-export async function setCar(connection, car, custom) {
+export async function setCar(connection, car = 'libcurl', custom) {
 	const wispUrl = getWispUrl(custom);
 
 	switch (car) {

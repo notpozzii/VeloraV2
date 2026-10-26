@@ -1,8 +1,7 @@
 <script>
 	import '$lib/style/settings.css';
 
-	const version = 'v1.12';
-	const stack = ['SvelteKit', 'Svelte 5', 'Vite', 'Fastify', 'GSAP', 'JS'];
+	const version = 'v1.3';
 	const info = [
 		{ key: 'Version', value: version },
 		{ key: 'Developer', value: 'pozzi' },
@@ -10,15 +9,7 @@
 	];
 
 	const credits = [
-		{ label: 'Disc', labeltwo: 'ord Server', url: 'https://discord.gg/qrZnbQuVs'
-		 },
-		{ label: 'Scra', labeltwo: 'mjet', url: 'https://tinyurl.com/galaxyiscool' },
-		{
-			label: 'Ultra',
-			labeltwo: 'violet',
-			url: 'https://tinyurl.com/tnnetworkuv'
-		},
-		{ label: 'Reflux', labeltwo: '', url: 'https://github.com/Obsidian-Dev-Labs/Reflux' },
+		{ label: 'Discord', url: 'https://discord.gg/3vcMsqJMd' }
 	];
 
 	let modal = $state(false);
@@ -57,12 +48,11 @@
 
 <svelte:window onkeydown={(e) => e.key === 'Escape' && closeModal()} />
 
-<h1>About</h1>
 
 <div class="group">
 	<div class="subGroup">
 		<p class="subHeading">Velora</p>
-		<p class="desc">A quieter space to browse.</p>
+
 		<div class="infoRows">
 			{#each info as row}
 				<div class="infoRow">
@@ -73,15 +63,6 @@
 		</div>
 	</div>
 
-	<div class="subGroup">
-		<p class="subHeading">Tech Stack</p>
-		<p class="desc">Svelte &#x3E; react</p>
-		<div class="content">
-			{#each stack as item}
-				<span class="chip">{item}</span>
-			{/each}
-		</div>
-	</div>
 </div>
 
 <div class="divider"></div>
@@ -92,7 +73,7 @@
 		<div class="content">
 			{#each credits as item}
 				<button class="actionBtn" onclick={() => launchModal(item)}
-					><span>{item.label}<span class="filler">ha67</span>{item.labeltwo}</span></button
+					><span>{item.label}</span></button
 				>
 			{/each}
 		</div>
@@ -160,21 +141,6 @@
 	.infoVal {
 		color: var(--color-text);
 		font-size: 15px;
-	}
-	.chip {
-		padding: 6px 14px;
-		border: 1px solid var(--color-border-strong);
-		border-radius: 20px;
-		color: var(--color-text-muted);
-		font-family: var(--font-family-heading);
-		font-size: 0.9rem;
-		font-weight: 900;
-		transition: all 0.2s ease;
-	}
-	.chip:hover {
-		border-color: var(--color-border-hover);
-		color: var(--color-text);
-		transform: translateY(-3px);
 	}
 
 	.modal {

@@ -70,19 +70,18 @@
 	);
 </script>
 
-<h1>Backgrounds</h1>
 {#snippet Card(url, x)}
 	<button
 		class="buttonCard"
 		onclick={() => {
 			updateBG(url, x);
-		}}><img class="card noSelect" src={url} loading="lazy" decoding="async" /></button
+		}}><img class="card noSelect" src={url} alt="Wallpaper" loading="lazy" decoding="async" /></button
 	>
 {/snippet}
 <div class="group">
 	<div class="subGroup">
-		<p class="subHeading">Backgrounds</p>
-		<p class="desc">Upscaled pinterest backgrounds</p>
+
+		<p class="desc">Choose a background for your desktop.</p>
 		<div class="content">
 			{#each bgDownscaled as src}
 				{@render Card(src, true)}
@@ -95,7 +94,7 @@
 <div class="group">
 	<div class="subGroup">
 		<p class="subHeading">Upload</p>
-		<p class="desc">Use gifs for live backgrounds</p>
+		<p class="desc">GIFs can be used as animated backgrounds.</p>
 		<div class="content">
 			<label class="actionBtn">
 				<img class="icons" src={uploadImg} alt="" />

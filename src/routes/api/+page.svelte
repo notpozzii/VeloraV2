@@ -3,10 +3,10 @@
 
 url:       required, https:// is added when missing, must contain a dot
 type:      prism (SJv2, default), polygon (SJ), glass (UV)
-transport: libcurlRaw (default), libcurl, epoxy
+transport: libcurl (default), libcurlRaw, epoxy
 wisp:      wss://..., defaults to the server's own wisp
 notif:     read by /os when it opens this page in a window, not by /api itself
-autoSW:    true loads on its own, false waits for a click first
+autoSW:    legacy parameter; apps now load automatically
 -->
 
 <script>
@@ -14,11 +14,7 @@ autoSW:    true loads on its own, false waits for a click first
 
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import { registerProxyWorker } from '$lib/lethe/serviceworker.js';
-	import { loadScriptsSequential } from '$lib/lethe/loader';
-	import { createConnection, setCar } from '$lib/lethe/car';
-	import { createScramjetController } from '$lib/lethe/poly';
-	import { createPrismController, setPrismTransport, getPrismController } from '$lib/lethe/prism';
+	import { createProxyRuntime } from '$lib/lethe/runtime.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
 		if (!trimmed) return null;
@@ -36,11 +32,10 @@ autoSW:    true loads on its own, false waits for a click first
 	const params = [];
 	let ready = $state(false);
 	let loadError = $state('');
-	let showButton = $state(false);
+	let starting = $state(false);
 	let iframeEl;
-	let polygon;
-	let car = $state('libcurlRaw');
-	let connection;
+	const runtime = createProxyRuntime();
+	let car = $state('libcurl');
 	let prismController;
 	let prismFrame;
 
@@ -48,83 +43,46 @@ autoSW:    true loads on its own, false waits for a click first
 	const apiType = $derived($page.url.searchParams.get('type'));
 	const apiTransport = $derived($page.url.searchParams.get('transport'));
 	const apiWisp = $derived($page.url.searchParams.get('wisp') || undefined);
-	const apiAutoSW = $derived($page.url.searchParams.get('autoSW') || 'true');
 	const apiHost = $derived(apiUrl ? new URL(apiUrl).hostname : '');
 
-	onMount(async () => {
+	onMount(() => {
 		if (apiUrl === null) return;
-
-		await loadScriptsSequential([
-			'/charon/index.js',
-			'/glass/glass.bundle.js',
-			'/glass/glass.config.js',
-			'/poly/polygon.all.js'
-		]);
-		polygon = createScramjetController();
-
-		if (apiAutoSW == 'true') {
-			await start();
-		} else {
-			showButton = true;
-		}
+		void start();
 	});
 
 	async function start() {
+		if (starting) return;
+		starting = true;
 		loadError = '';
-		try { await startProxy(); }
-		catch (error) { loadError = error instanceof Error ? error.message : 'Could not start the proxy.'; showButton = true; }
+		ready = false;
+		try {
+			await startProxy();
+		} catch (error) {
+			loadError = error instanceof Error ? error.message : 'Could not start the proxy.';
+		} finally {
+			starting = false;
+		}
 	}
 	async function startProxy() {
-		showButton = false;
-		try {
-			if (navigator.serviceWorker) {
-				polygon.init();
-				await registerProxyWorker();
-			} else {
-				throw new Error('The proxy could not start. Open Velora directly and try again.');
-			}
-		} catch (e) {
-			console.error('Failed to initialize SJ:', e);
-			throw e;
-		}
-		connection = createConnection();
 		if (['libcurl', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
-		await setCar(connection, car, apiWisp);
-
+		const session = await runtime.prepare(apiType, car, apiWisp);
+		if (session.engine === 'uv') {
+			iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(apiUrl);
+		} else if (session.engine === 'sj') {
+			iframeEl.src = session.polygon.encodeUrl(apiUrl);
+		} else {
+			prismController = session.controller;
+			if (!prismFrame) prismFrame = prismController.createFrame(iframeEl);
+			prismFrame.go(apiUrl);
+		}
 		ready = true;
-		await handleSubmit(apiUrl, apiType);
 	}
 
-	async function handleSubmit(url, type) {
-		if (apiUrl === null) return;
-
-		if (type === 'glass') {
-			// @ts-ignore
-			iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
-			return;
-		}
-		if (type === 'polygon') {
-			iframeEl.src = polygon.encodeUrl(url);
-			return;
-		}
-		if (!prismController) prismController = await createPrismController(car, apiWisp);
-		if (!prismFrame) prismFrame = prismController.createFrame(iframeEl);
-		prismFrame.go(url);
-	}
-
-	$effect(() => {
-		if (ready && connection) {
-			setCar(connection, car, apiWisp);
-		}
-		if (getPrismController()) {
-			setPrismTransport(car, apiWisp);
-		}
-	});
 </script>
 
 {#if loadError}
 	<div role="alert" style="position:fixed;inset:16px 16px auto;z-index:10000;padding:16px;border-radius:8px;background:#242526;color:#eee;font:14px system-ui">
-		{loadError} <a href="/os" target="_blank" rel="noopener noreferrer" style="color:#e4d5b9">Open Velora directly ↗</a>
+		{loadError}
 	</div>
 {/if}
 
@@ -137,9 +95,9 @@ autoSW:    true loads on its own, false waits for a click first
 	style="opacity: {apiUrl ? '100%' : '0'};"
 ></iframe>
 
-{#if showButton}
+{#if loadError}
 	<div class="start">
-		<button onclick={start}>Click to load</button>
+		<button onclick={start}>Try again</button>
 	</div>
 {/if}
 

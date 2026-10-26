@@ -14,9 +14,10 @@ var $scramjetController;
 					counter = 0;
 					promiseCallbacks = new Map();
 					constructor(e, t, o) {
-						((this.methods = e), (this.id = t), (this.sendRaw = o));
+						((this.methods = e), (this.id = t), (this.sendRaw = (data, transfers) => globalThis.$veloraStreamRPC ? globalThis.$veloraStreamRPC.send(o, data, transfers) : o(data, transfers)));
 					}
 					recieve(e) {
+						if (globalThis.$veloraStreamRPC) e = globalThis.$veloraStreamRPC.decode(e);
 						if (null == e || 'object' != typeof e) return;
 						let t = e[this.id];
 						if (null == t || 'object' != typeof t) return;

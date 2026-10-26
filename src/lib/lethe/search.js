@@ -1,4 +1,4 @@
-export function search(input, template) {
+export function search(input, template = 'google') {
 	let searchEngine;
 	if (template == 'ddg') {
 		searchEngine = 'https://www.duckduckgo.com/search?q=%s';
@@ -7,7 +7,7 @@ export function search(input, template) {
 	} else if (template == 'brave') {
 		searchEngine = 'https://search.brave.com/search?q=%s';
 	} else {
-		searchEngine = 'https://www.duckduckgo.com/search?q=%s';
+		searchEngine = 'https://google.com/search?q=%s';
 	}
 	try {
 		return new URL(input).toString();

@@ -7,7 +7,8 @@
 
 	async function addDomain() {
 		if (import.meta.env.VITE_VELORA_S3 === '1') {
-			error = 'Domain registration needs the Cloudflare-hosted version of Velora. This S3 package cannot register domains.';
+			error =
+				'Domain registration needs the Cloudflare-hosted version of Velora. This S3 package cannot register domains.';
 			return;
 		}
 		loading = true;
@@ -58,11 +59,8 @@
 						/></svg
 					>
 				</div>
-				<p class="eyebrow">YOUR SPACE ON THE WEB</p>
-				<h1 id="page-title">Bring your own domain.</h1>
-				<p class="intro">
-					Your address. The same Velora experience. Connect a domain you own in two simple steps.
-				</p>
+				<h1 id="page-title">Connect a domain</h1>
+				<p class="intro">Add your domain, then configure its DNS record.</p>
 			</header>
 
 			<form
@@ -110,7 +108,7 @@
 						<span class="check" aria-hidden="true">✓</span>
 						<div>
 							<p class="eyebrow">DOMAIN ADDED</p>
-							<h2 id="dns-title">Almost done!</h2>
+							<h2 id="dns-title">Configure DNS</h2>
 						</div>
 					</div>
 					<p class="registered-domain">{result.hostname}</p>
@@ -150,7 +148,6 @@
 				</div>
 			{/if}
 		</section>
-		<p class="footer-note">A familiar browser. An address that’s yours.</p>
 	</div>
 </div>
 
@@ -330,8 +327,7 @@
 	}
 	.hint,
 	.loading-status,
-	.dns-note,
-	.footer-note {
+	.dns-note {
 		color: var(--color-text-muted);
 		font-size: 12px;
 		line-height: 1.6;
@@ -449,10 +445,6 @@
 		color: var(--color-pin);
 		font-weight: 600;
 		letter-spacing: 0.04em;
-	}
-	.footer-note {
-		text-align: center;
-		margin-top: 22px;
 	}
 	.spinner {
 		width: 12px;

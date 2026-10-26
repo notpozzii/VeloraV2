@@ -9,7 +9,7 @@ export function getGeForceLauncherUrl(customWisp = '', url = GEFORCE_URL) {
 		type: 'prism',
 		transport: 'libcurlRaw',
 		wisp: customWisp || GEFORCE_WISP,
-		autoSW: 'false'
+		autoSW: 'true'
 	});
 	return `/api?${params.toString()}`;
 }

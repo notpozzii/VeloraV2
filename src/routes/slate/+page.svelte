@@ -4,11 +4,10 @@
 	import Iframe from '$lib/utils/browser/iframe.svelte';
 	import Home from '$lib/utils/browser/home.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
+	import veloraLogo from '$lib/assets/velora.svg';
 	import { toggleElementFullscreen } from '$lib/utils/browser/fullscreen.js';
-	import { youtubeDirectUrl } from '$lib/utils/browser/youtube.js';
 	import { getGeForceLauncherUrl } from '$lib/utils/browser/geforce.js';
 	let fullscreenError = $state('');
-	let youtubeHelpDismissed = $state(false);
 	import Modal from '$lib/utils/browser/modal.svelte';
 	import { loadSetting, saveSetting } from '$lib/utils/localspace.js';
 	import {
@@ -22,14 +21,12 @@
 		draggedOverRight,
 		isTabDragging
 	} from '$lib/stores/index.js';
-	import { onMount, tick } from 'svelte';
-	import { registerProxyWorker } from '$lib/lethe/serviceworker.js';
-	import { loadScript, loadScriptsSequential } from '$lib/lethe/loader';
+	import { onMount, onDestroy, tick } from 'svelte';
+	import { loadScript } from '$lib/lethe/loader';
 	import { search } from '$lib/lethe/search';
-	import { createConnection, setCar } from '$lib/lethe/car';
-	import { createScramjetController } from '$lib/lethe/poly';
-	import { createPrismController, setPrismTransport, getPrismController } from '$lib/lethe/prism';
-	import { enablePopupInterceptor } from '$lib/lethe/reflux';
+	import { createProxyRuntime } from '$lib/lethe/runtime.js';
+	import { createTabFrames } from '$lib/lethe/tab-frames.js';
+	import { createBrowserSearchBridge } from '$lib/utils/browser/desktop-search-bridge.js';
 	import { subscribeSettings } from '$lib/utils/settingsSync.js';
 	let tabs = $state([]);
 	let frames = $state([]);
@@ -41,21 +38,35 @@
 	let hydrated = $state(false);
 	let letheEngine = $state('sj2');
 	let ready = $state(false);
-	let polygon;
-	let prismController;
-	let sjFrame;
+	const runtime = createProxyRuntime({ interceptPopups: true });
+	const tabFrames = createTabFrames(async () => (await prepareBrowserEngine('sj2')).controller);
+	onDestroy(() => tabFrames.clear());
 	let customWisp = $state('');
-	let searchEngine = $state('ddg');
-	let car = $state('epoxy');
+	let searchEngine = $state('google');
+	let car = $state('libcurl');
 	let bookmarks = $state([]);
-	let connection;
+	let releaseSettings;
+	const settingsReady = new Promise((resolve) => { releaseSettings = resolve; });
+	let startupError;
+	let previewMode = false;
+	async function prepareBrowserEngine(engine) {
+		await settingsReady;
+		if (browserDestroyed) throw new DOMException('Browser closed', 'AbortError');
+		if (startupError) throw startupError;
+		if (previewMode) throw new Error('Open the browser from your desktop to browse.');
+		return runtime.prepare(engine ?? letheEngine, car, customWisp || undefined);
+	}
 	let activeFrame = $derived(frames.find((frame) => frame.id === $activeTab));
 	let draggedTab = null;
 	let tabID = null;
 	let LastPopupIntState = $state(true);
+	let desktopSearchBridge;
+	let browserDestroyed = false;
+	onDestroy(() => { browserDestroyed = true; });
 
 	$effect(() => {
 		if ($deleteTab) {
+			tabFrames.release($deleteTab);
 			tabs = tabs.filter((tab) => tab.id !== $deleteTab);
 			frames = frames.filter((frame) => frame.id !== $deleteTab);
 			if ($deleteTab == $activeTab && tabs.length > 0) {
@@ -73,7 +84,7 @@
 
 	function addTab() {
 		// @ts-ignore
-		tabID = Date.now();
+		tabID = Math.max(Date.now(), Number(tabID || 0) + 1);
 		// @ts-ignore
 		$activeTab = tabID;
 		const newTab = {
@@ -100,48 +111,69 @@
 		tabCounter++;
 	}
 	onMount(async () => {
-		LastPopupIntState = popupInterceptor;
-		addTab();
+		try {
+			LastPopupIntState = popupInterceptor;
+			addTab();
 
-		// hydrate saved settings
-		const [lethe, savedCar, wisp, engine, marks, intercept, LastPopupIntStateX] = await Promise.all(
-			[
-				loadSetting('lethe', 'sj2'),
-				loadSetting('car', 'epoxy'),
-				loadSetting('customWisp', ''),
-				loadSetting('searchEngine', 'brave'),
-				loadSetting('bookmarks', [], JSON.parse),
-				loadSetting('popupInterceptor', true, (raw) => raw === 'true'),
-				loadSetting('LastPopupIntState', true)
-			]
-		);
-		letheEngine = lethe;
-		car = savedCar;
-		customWisp = wisp;
-		searchEngine = engine;
-		bookmarks = marks;
-		LastPopupIntState = LastPopupIntStateX;
-		popupInterceptor = LastPopupIntState; //intercept
-		hydrated = true;
+			// hydrate saved settings
+			const [lethe, savedCar, wisp, engine, marks, intercept, LastPopupIntStateX] = await Promise.all(
+				[
+					loadSetting('lethe', 'sj2'),
+					loadSetting('car', 'libcurl'),
+					loadSetting('customWisp', ''),
+					loadSetting('searchEngine', 'google'),
+					loadSetting('bookmarks', [], JSON.parse),
+					loadSetting('popupInterceptor', true, (raw) => raw === 'true'),
+					loadSetting('LastPopupIntState', true)
+				]
+			);
+			if (browserDestroyed) return;
+			letheEngine = lethe;
+			car = savedCar;
+			customWisp = wisp;
+			searchEngine = engine;
+			bookmarks = marks;
+			LastPopupIntState = LastPopupIntStateX;
+			popupInterceptor = LastPopupIntState; //intercept
+			hydrated = true;
 
-		// Rendered inside the settings theme preview: show the chrome, skip the proxy stack
-		// so opening /settings doesn't load the transports or open a wisp connection.
-		if (new URLSearchParams(location.search).has('preview')) {
+			// Rendered inside the settings theme preview: show the chrome, skip the proxy stack
+			// so opening /settings doesn't load the transports or open a wisp connection.
+			if (new URLSearchParams(location.search).has('preview')) {
+				previewMode = true;
+				ready = true;
+				return;
+			}
+
+			// Accept navigation immediately; share engine warmup with the first click.
 			ready = true;
-			return;
+			releaseSettings();
+			void prepareBrowserEngine().catch(() => {});
+			desktopSearchBridge?.setReady();
+		} catch (error) {
+			startupError = error;
+			await reportDesktopSearchError(error, {
+				query: new URLSearchParams(location.search).get('q') || ''
+			});
+		} finally {
+			releaseSettings();
 		}
+	});
 
-		await loadScriptsSequential([
-			'/charon/index.js',
-			'/glass/glass.bundle.js',
-			'/glass/glass.config.js',
-			'/poly/polygon.all.js'
-		]);
-		polygon = createScramjetController();
-		connection = createConnection();
-		await setCar(connection, car, customWisp);
-		await enablePopupInterceptor();
-		ready = true;
+	onMount(() => {
+		desktopSearchBridge = createBrowserSearchBridge({
+			host: window,
+			async onSearch({ query: nextQuery, newTab }, signal) {
+				if (signal.aborted) return;
+				if (newTab || !activeFrame) addTab();
+				await tick();
+				if (!signal.aborted) await navigateTo(nextQuery, { signal });
+			},
+			onError: reportDesktopSearchError
+		});
+		desktopSearchBridge.enqueueInitialQuery(new URLSearchParams(location.search).get('q'));
+		if (ready) desktopSearchBridge.setReady();
+		return () => desktopSearchBridge.destroy();
 	});
 
 	onMount(() =>
@@ -153,13 +185,7 @@
 		})
 	);
 
-	async function ensurePrism() {
-		if (sjFrame) return sjFrame;
-		prismController = await createPrismController(car, customWisp || undefined);
-		sjFrame = prismController.createFrame();
-		return sjFrame;
-	}
-	function prismEncode(fixedUrl) {
+	function prismEncode(fixedUrl, sjFrame) {
 		// @ts-ignore
 		return window.$scramjet.rewriteUrl(fixedUrl, sjFrame.context, {
 			origin: new URL(location.href),
@@ -167,23 +193,26 @@
 		});
 	}
 
-	async function navigateTo(rawQuery) {
-		await registerSW();
-		if (!ready || !activeFrame) {
+	async function navigateTo(rawQuery, { signal } = {}) {
+		inputFocused = false;
+		const target = activeFrame;
+		const session = await prepareBrowserEngine();
+		if (signal?.aborted || !target) {
 			return;
 		}
 		const fixedUrl = search(rawQuery, searchEngine);
 		let encoded;
-		if (letheEngine === 'sj2') {
-			await ensurePrism();
-			encoded = prismEncode(fixedUrl);
-		} else if (letheEngine === 'uv') {
+		if (session.engine === 'sj2') {
+			const sjFrame = await tabFrames.get(target.id);
+			encoded = prismEncode(fixedUrl, sjFrame);
+		} else if (session.engine === 'uv') {
 			// @ts-ignore
 			encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(fixedUrl);
 		} else {
-			encoded = polygon.encodeUrl(fixedUrl);
+			encoded = session.polygon.encodeUrl(fixedUrl);
 		}
-		activeFrame.url = encoded;
+		if (signal?.aborted || !frames.includes(target)) return;
+		target.url = encoded;
 		if (rawQuery.includes('discord')) {
 			LastPopupIntState = popupInterceptor;
 			popupInterceptor = false;
@@ -241,17 +270,21 @@
 		bookmarks.splice(index, 1);
 	}
 	async function bookmarkSearch(url, lethe) {
+		const session = await prepareBrowserEngine(lethe);
+		const target = activeFrame;
+		if (!target) return;
 		let encoded;
 		if (lethe === 'sj2') {
-			await ensurePrism();
-			encoded = prismEncode(url);
+			const sjFrame = await tabFrames.get(target.id);
+			encoded = prismEncode(url, sjFrame);
 		} else if (lethe === 'uv') {
 			// @ts-ignore
 			encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
 		} else {
-			encoded = polygon.encodeUrl(url);
+			encoded = session.polygon.encodeUrl(url);
 		}
-		activeFrame.url = encoded;
+		if (!frames.includes(target)) return;
+		target.url = encoded;
 		inputEl?.blur();
 	}
 
@@ -296,11 +329,8 @@
 		$draggedOverRight = null;
 	}
 	$effect(() => {
-		if (ready && connection) {
-			setCar(connection, car, customWisp);
-		}
-		if (getPrismController()) {
-			setPrismTransport(car, customWisp || undefined);
+		if (ready && !previewMode) {
+			runtime.prepare(letheEngine, car, customWisp || undefined).catch((error) => console.error('Could not prepare browser:', error));
 		}
 	});
 	function goBack() {
@@ -370,38 +400,45 @@
 		saveSetting('popupInterceptor', popupInterceptor);
 		saveSetting('LastPopupIntState', LastPopupIntState);
 	});
-	async function registerSW() {
-		inputFocused = false;
-		polygon.init();
-		await registerProxyWorker();
-	}
 
 	// Presentation state only. Navigation and proxy controllers above remain shared.
-	let collapsed = $state(false);
+	let toolbarInput;
+	let toolbarQuery = $state('');
+	let toolbarFocused = $state(false);
+	let toolbarBusy = $state(false);
+	$effect(() => {
+		if (!toolbarFocused) toolbarQuery = activeFrame?.displayUrl || '';
+	});
+	async function submitToolbar(event) {
+		event.preventDefault();
+		if (!toolbarQuery.trim() || toolbarBusy) return;
+		toolbarBusy = true;
+		try {
+			await openHomeShortcut(toolbarQuery.trim());
+			toolbarInput?.blur();
+		} finally {
+			toolbarBusy = false;
+		}
+	}
 	let paletteOpen = $state(false);
 	let paletteBusy = $state(false);
 	let paletteError = $state('');
 	let bookmarkListOpen = $state(false);
-	let shortcutLabel = $state('Ctrl L');
 	let uiMounted = false;
 
+	async function reportDesktopSearchError(error, request, signal) {
+		if (browserDestroyed || signal?.aborted) return;
+		query = request.query;
+		paletteError = error instanceof Error ? error.message : 'Could not open this page. Check your connection settings and try again.';
+		paletteOpen = true;
+		inputFocused = true;
+		await tick();
+		if (!browserDestroyed && !signal?.aborted) inputEl?.focus();
+	}
+
 	onMount(() => {
-		try {
-			const saved = localStorage.getItem('galaxy-sidebar-collapsed');
-			collapsed = saved === null ? matchMedia('(max-width: 720px)').matches : saved === 'true';
-		} catch {
-			collapsed = matchMedia('(max-width: 720px)').matches;
-		}
-		shortcutLabel = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘ L' : 'Ctrl L';
 		uiMounted = true;
 	});
-
-	function toggleSidebar() {
-		collapsed = !collapsed;
-		try {
-			localStorage.setItem('galaxy-sidebar-collapsed', String(collapsed));
-		} catch {}
-	}
 
 	function closePalette() {
 		paletteOpen = false;
@@ -425,7 +462,7 @@
 
 	async function submitPalette(event) {
 		event.preventDefault();
-		if (!ready || !query.trim() || paletteBusy) return;
+		if (!query.trim() || paletteBusy) return;
 		paletteBusy = true;
 		const target = query.trim();
 		paletteError = '';
@@ -446,7 +483,8 @@
 	}
 
 	async function openHomeShortcut(url, { useAppLoader = false } = {}) {
-		if (!ready) return;
+		await settingsReady;
+		if (browserDestroyed) return;
 		if (!activeFrame) {
 			addTab();
 			await tick();
@@ -471,7 +509,8 @@
 		if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'l') {
 			event.preventDefault();
 			event.stopPropagation();
-			openPalette();
+			toolbarInput?.focus();
+			toolbarInput?.select();
 		}
 	}
 
@@ -517,117 +556,46 @@
 		};
 	}
 
-	let compactUrl = $derived.by(() => {
-		if (!activeFrame?.displayUrl) return 'Search or enter URL';
-		try {
-			return new URL(activeFrame.displayUrl).hostname;
-		} catch {
-			return activeFrame.displayUrl;
-		}
-	});
 </script>
 
 <svelte:head><title>Velora — Browser</title></svelte:head>
 <svelte:window onkeydown={handleShortcut} />
 
-<div class="browser-shell" class:collapsed>
-	<aside class="zen-sidebar" aria-label="Browser sidebar">
-		<div class="sidebar-heading">
-			<button
-				class="icon-button collapse-button"
-				onclick={toggleSidebar}
-				aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-				aria-expanded={!collapsed}
-				aria-controls="browser-tabs"
-				title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}><Icon name="sidebar" /></button
-			>
-			<span class="sidebar-wordmark">Velora</span>
+<div class="browser-shell">
+	<header class="browser-chrome" aria-label="Browser controls">
+		<div class="tab-row">
+			<img class="browser-brand" src={veloraLogo} alt="Velora" />
+			<div class="horizontal-tabs" id="browser-tabs" role="tablist" aria-label="Browser tabs" aria-orientation="horizontal">
+				{#each tabs as tab (tab.id)}
+					{@const frame = frames.find((frame) => frame.id === tab.id)}
+					<Tab id={tab.id} title={frame?.title || 'New Tab'} displayUrl={frame?.displayUrl ?? ''} onDrop={moveTab} />
+				{/each}
+			</div>
+			<button class="icon-button new-tab-button" onclick={addTab} aria-label="New tab" title="New tab"><Icon name="plus" size={18} /></button>
+			<a class="desktop-return" href="/os" target="_top" aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></a>
 		</div>
-		<nav class="navigation-controls" aria-label="Page navigation">
-			<button class="icon-button" onclick={goBack} aria-label="Back" title="Back"
-				><Icon name="back" /></button
-			>
-			<button class="icon-button" onclick={goForward} aria-label="Forward" title="Forward"
-				><Icon name="forward" /></button
-			>
-			<button class="icon-button" onclick={reloadTab} aria-label="Reload" title="Reload"
-				><Icon name="reload" size={17} /></button
-			>
-		</nav>
-		<button
-			class="url-control"
-			onclick={() => openPalette()}
-			aria-label={`Open address bar: ${compactUrl}`}
-			aria-haspopup="dialog"
-			title={activeFrame?.displayUrl || `Search or enter URL (${shortcutLabel})`}
-		>
-			<Icon name={activeFrame?.url ? 'globe' : 'search'} size={16} /><span class="sidebar-label"
-				>{compactUrl}</span
-			><kbd>{shortcutLabel}</kbd>
-		</button>
-		<div class="sidebar-divider"></div>
-		<button class="sidebar-action new-tab" onclick={addTab} aria-label="New tab" title="New tab"
-			><Icon name="plus" /><span class="sidebar-label">New tab</span></button
-		>
-		<div
-			class="vertical-tabs"
-			id="browser-tabs"
-			role="tablist"
-			aria-label="Browser tabs"
-			aria-orientation="vertical"
-		>
-			{#each tabs as tab (tab.id)}
-				{@const frame = frames.find((frame) => frame.id === tab.id)}
-				<Tab
-					id={tab.id}
-					title={frame?.title || 'New Tab'}
-					displayUrl={frame?.displayUrl ?? ''}
-					onDrop={moveTab}
-					{collapsed}
-				/>
-			{/each}
-		</div>
-		<div class="sidebar-footer">
-			<button
-				class="sidebar-action"
-				onclick={() => (bookmarkListOpen = true)}
-				aria-label="Bookmarks"
-				title="Bookmarks"
-				><Icon name="bookmark" size={17} /><span class="sidebar-label">Bookmarks</span
-				>{#if bookmarks.length}<span class="bookmark-count">{bookmarks.length}</span>{/if}</button
-			>
-			<a
-				class="sidebar-action"
-				href="/books"
-				target="_blank"
-				rel="noopener"
-				aria-label="Games"
-				title="Games"><Icon name="games" size={17} /><span class="sidebar-label">Games</span></a
-			>
-			<div class="sidebar-tools">
-				<button
-					class="icon-button"
-					onclick={toggleSettings}
-					aria-label="Settings"
-					aria-haspopup="dialog"
-					title="Settings"><Icon name="settings" size={17} /></button
-				>
-				<button
-					class="icon-button"
-					onclick={toggleExtensions}
-					aria-label="Extensions"
-					aria-haspopup="dialog"
-					title="Extensions"><Icon name="extensions" size={17} /></button
-				>
-				<button
-					class="icon-button"
-					onclick={toggleFullscreen}
-					aria-label="Fullscreen"
-					title="Fullscreen"><Icon name="fullscreen" size={17} /></button
-				>
+		<div class="browser-toolbar">
+			<nav class="navigation-controls" aria-label="Page navigation">
+				<button class="icon-button" onclick={goBack} aria-label="Back" title="Back"><Icon name="back" /></button>
+				<button class="icon-button" onclick={goForward} aria-label="Forward" title="Forward"><Icon name="forward" /></button>
+				<button class="icon-button" onclick={reloadTab} aria-label="Reload" title="Reload"><Icon name="reload" size={17} /></button>
+			</nav>
+			<form class="address-bar" onsubmit={submitToolbar} aria-busy={toolbarBusy}>
+				<Icon name={activeFrame?.url ? 'globe' : 'search'} size={16} />
+				<input bind:this={toolbarInput} bind:value={toolbarQuery} aria-label="Address bar" placeholder="Search or enter a URL" autocomplete="off" spellcheck="false" onfocus={() => (toolbarFocused = true)} onblur={() => (toolbarFocused = false)} onkeydown={(event) => {
+					if (event.key === 'Escape') { toolbarQuery = activeFrame?.displayUrl || ''; toolbarInput?.blur(); }
+				}} />
+				<button class="icon-button" type="button" onclick={startBookmark} disabled={!activeFrame?.displayUrl} aria-label="Bookmark this page" title="Bookmark this page"><Icon name="star" size={17} /></button>
+			</form>
+			<div class="toolbar-tools">
+				<button class="icon-button" onclick={() => (bookmarkListOpen = true)} aria-label="Bookmarks" title="Bookmarks"><Icon name="bookmark" size={17} /></button>
+				<a class="icon-button toolbar-games" href="/books" target="_blank" rel="noopener" aria-label="Games" title="Games"><Icon name="games" size={17} /></a>
+				<button class="icon-button" onclick={toggleExtensions} aria-label="Extensions" aria-haspopup="dialog" title="Extensions"><Icon name="extensions" size={17} /></button>
+				<button class="icon-button" onclick={toggleSettings} aria-label="Settings" aria-haspopup="dialog" title="Settings"><Icon name="settings" size={17} /></button>
+				<button class="icon-button toolbar-fullscreen" onclick={toggleFullscreen} aria-label="Fullscreen" title="Fullscreen"><Icon name="fullscreen" size={17} /></button>
 			</div>
 		</div>
-	</aside>
+	</header>
 
 	<main class="frameContainer" aria-label="Webpage" use:frameShortcuts>
 		{#if fullscreenError}<div class="media-notice" role="alert">
@@ -638,20 +606,6 @@
 					aria-label="Dismiss fullscreen message">×</button
 				>
 			</div>{/if}
-		{#if !youtubeHelpDismissed && youtubeDirectUrl(activeFrame?.displayUrl)}
-			<div class="media-notice youtube-notice">
-				<span>YouTube asking you to verify? Try your regular connection.</span><a
-					href={youtubeDirectUrl(activeFrame?.displayUrl)}
-					target="_blank"
-					rel="noopener noreferrer">Open YouTube directly ↗</a
-				><button
-					onclick={() => {
-						youtubeHelpDismissed = true;
-					}}
-					aria-label="Dismiss YouTube help">×</button
-				>
-			</div>
-		{/if}
 		{#each frames as frame (frame.id)}
 			<div
 				class="webview-panel"
@@ -667,14 +621,14 @@
 				/>
 				{#if frame.id === $activeTab && !frame.url}<Home
 						{ready}
-						onsearch={() => openPalette(true)}
+						onsearch={openHomeShortcut}
 						onopen={openHomeShortcut}
 					/>{/if}
 			</div>
 		{/each}
 		{#if !tabs.length}<Home
 				{ready}
-				onsearch={() => openPalette(true)}
+				onsearch={openHomeShortcut}
 				onopen={openHomeShortcut}
 			/>{/if}
 	</main>
@@ -703,7 +657,7 @@
 					<span>{ready ? 'Search the web or go to a page' : 'Starting browser…'}</span><button
 						class="palette-go"
 						type="submit"
-						disabled={!ready || !query.trim() || paletteBusy}
+						disabled={!query.trim() || paletteBusy}
 						>{paletteBusy ? 'Opening…' : 'Go'}<Icon name="arrow" size={16} /></button
 					>
 				</div>

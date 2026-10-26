@@ -47,7 +47,7 @@
 
 <div class="search">
 	<img src={searchIcon} alt="" class="searchIcon" />
-	<input type="text" placeholder="Search Books or Tags" bind:value={search} autocomplete="off" />
+	<input type="text" placeholder="Search games or tags" bind:value={search} autocomplete="off" />
 </div>
 
 <div class="filters">
@@ -76,7 +76,7 @@
 	{/if}
 
 	<div class="actions">
-		<button class="pill" onclick={onrandom} title="Open a random book">
+		<button class="pill" onclick={onrandom} title="Open a random game">
 			<img src={shuffle} alt="" class="pillIcon" />
 			Random
 		</button>
