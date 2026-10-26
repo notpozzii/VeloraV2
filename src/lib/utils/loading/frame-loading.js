@@ -25,6 +25,11 @@ export function frameLoading(frame, onchange) {
 	};
 	const loaded = () => {
 		if (!hasSource()) return;
+		// This local document only establishes iframe control; the target app is
+		// still loading and must dismiss the rocket with its own load event.
+		try {
+			if (new URL(frame.getAttribute('src'), 'https://velora.invalid').pathname === '/proxy-frame.html') return;
+		} catch {}
 		try {
 			if (frame.contentWindow.location.href === 'about:blank') return;
 		} catch {}

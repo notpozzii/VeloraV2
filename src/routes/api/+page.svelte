@@ -13,8 +13,9 @@ autoSW:    legacy parameter; apps now load automatically
 	// @ts-nocheck
 
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
+	import { prepareProxyFrame } from '$lib/lethe/prepare-frame.js';
 	import Rocket from '$lib/utils/loading/rocket.svelte';
 	import { frameLoading } from '$lib/utils/loading/frame-loading.js';
 	function normalizeUrl(raw) {
@@ -37,6 +38,8 @@ autoSW:    legacy parameter; apps now load automatically
 	let starting = $state(false);
 	let contentLoading = $state(true);
 	let iframeEl;
+	const launchAbort = new AbortController();
+	onDestroy(() => launchAbort.abort());
 	const runtime = createProxyRuntime();
 	let car = $state('libcurl');
 	let prismController;
@@ -70,6 +73,7 @@ autoSW:    legacy parameter; apps now load automatically
 	async function startProxy() {
 		if (['libcurl', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
 		const session = await runtime.prepare(apiType, car, apiWisp);
+		await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 		if (session.engine === 'uv') {
 			iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(apiUrl);
 		} else if (session.engine === 'sj') {

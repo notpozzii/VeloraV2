@@ -89,6 +89,8 @@ test(
 		}
 		for (const asset of [
 			'servy.js',
+			'proxy-frame.html',
+			'proxy-frame.js',
 			'prism/prism.sw.js',
 			'prism/prism.wasm',
 			'poly/polygon.all.js',

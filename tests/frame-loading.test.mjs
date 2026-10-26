@@ -59,6 +59,16 @@ test('a cross-origin page load releases the overlay without needing document acc
 	f.tracker.destroy();
 });
 
+test('iframe readiness document stays covered until the actual app loads', () => {
+	const f = fixture('/proxy-frame.html?request=123');
+	f.load('https://velora.test/proxy-frame.html?request=123');
+	assert.deepEqual(f.states, [true]);
+	f.setSrc('/prism/controller/frame/youtube');
+	f.load('https://velora.test/prism/controller/frame/youtube');
+	assert.deepEqual(f.states, [true, false]);
+	f.tracker.destroy();
+});
+
 test('errors and cancelled launches release loading and cleanup removes navigation listeners', () => {
 	const f = fixture('/proxy/first');
 	f.frame.dispatchEvent(new Event('error'));
