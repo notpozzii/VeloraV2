@@ -55,7 +55,7 @@
 	let offSety = 0;
 	let draggingState = $state(false);
 	let transition = $state(false);
-	const topBarrier = 40;
+	const topBarrier = 84;
 	const desktopGap = 8;
 	const dockGap = 12;
 	const duration = () => (reducedMotion ? 0 : 0.2);
@@ -189,9 +189,9 @@
 	let tempHeight = 0;
 	let tempWidth = 0;
 	let maximizedStat = $state(false);
-	export async function updateTaskbarHeight() {
-		const size = await loadSetting('navbarsize', 24);
-		taskbarHeight = 40 + (Number(size) || 0);
+	export async function updateTaskbarHeight(dockSize) {
+		const size = dockSize ?? await loadSetting('navbarsize', 24);
+		taskbarHeight = 76 + (Number(size) || 0);
 		if (mounted) checkBoundaries();
 	}
 	export function openBrowserSearch(query) {
