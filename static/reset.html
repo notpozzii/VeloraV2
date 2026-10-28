@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Reset Velora</title>
+	<style>
+		*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;background:#152019;color:#edf1e7;font:14px/1.6 system-ui,sans-serif}main{width:min(470px,100%);padding:32px;border:1px solid #e3edda24;border-radius:22px;background:linear-gradient(135deg,#ffffff06,transparent),#1b281f;box-shadow:0 20px 80px #0003}.mark{color:#d3e5b0;font:italic bold 35px Georgia,serif;margin-bottom:22px}h1{font-size:25px;line-height:1.25;letter-spacing:-.7px;font-weight:550;margin:0 0 15px}p{color:#bac8b1;font-size:13px;margin:0 0 18px}strong{color:#e8c0b6}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}button{font:inherit;font-size:12px;border:1px solid #ffffff28;border-radius:9px;padding:10px 14px;background:#ffffff07;color:#eff3e9;cursor:pointer}button:hover{background:#ffffff12}button:focus-visible{outline:2px solid #d3e5b0;outline-offset:3px}.danger{background:#a44f46;border-color:#c8796d;color:white}.danger:hover{background:#b55b50}.primary{background:#d3e5b0;color:#263422;border-color:transparent}.help{padding:13px;border:1px solid #d3e5b02a;border-radius:9px;font-size:12px;color:#d3e5b0}[hidden]{display:none!important}#progress-status{margin-bottom:12px}.small{font-size:11px;color:#99ab90}
+	</style>
+</head>
+<body>
+<main>
+	<div class="mark" aria-hidden="true">v.</div>
+	<section id="confirm-view">
+		<h1>Reset Velora?</h1>
+		<p>This permanently removes settings, bookmarks, favorites, widgets and notes, game saves, and proxy browsing data saved on this Velora link in this browser.</p>
+		<p><strong>This cannot be undone.</strong> Other Velora links, devices, browser history, and browser permissions are unaffected.</p>
+		<div class="actions"><button id="confirm-reset" class="danger">Reset everything</button><button id="cancel-reset">Cancel</button></div>
+	</section>
+	<section id="progress-view" hidden>
+		<h1>Resetting Velora…</h1>
+		<p id="progress-status" role="status">Closing open Velora apps…</p>
+		<p id="blocked-help" class="help" hidden>Close other Velora tabs and app windows. The reset will continue when they release their saved data.</p>
+		<p class="small">Keep this page open until the desktop returns.</p>
+	</section>
+	<section id="wait-view" hidden>
+		<h1>Reset in progress</h1>
+		<p>Another Velora page is resetting this site. This tab will return to the desktop when it finishes.</p>
+		<p class="small">If you closed the reset page, you can continue the reset here.</p>
+		<div class="actions"><button id="resume-reset">Continue reset</button></div>
+	</section>
+	<section id="error-view" hidden>
+		<h1>The reset couldn’t finish</h1>
+		<p id="reset-error" role="alert"></p>
+		<p class="small">Some data may already have been cleared. Close other Velora tabs before retrying.</p>
+		<div class="actions"><button id="retry-reset" class="primary">Retry reset</button><button id="leave-reset">Return to desktop</button></div>
+	</section>
+</main>
+<script type="module" src="/site-reset.js"></script>
+</body>
+</html>

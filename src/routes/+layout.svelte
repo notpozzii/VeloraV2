@@ -6,6 +6,7 @@
 	import { initTheme } from '$lib/utils/theme.js';
 	import { onMount, setContext, tick } from 'svelte';
 	import { STARTUP_CONTEXT } from '$lib/utils/startup.js';
+	import { installResetCoordinator } from '$lib/utils/reset-core.js';
 	let { children } = $props();
 	let opening = $state(true);
 	let contentAllowed = $state(false);
@@ -35,9 +36,11 @@
 	}
 
 	onMount(() => {
-		startContent();
+		const reset = installResetCoordinator(window);
+		if (!reset.holding) startContent();
 
 		return () => {
+			reset.dispose();
 			disposeTheme();
 		};
 	});
