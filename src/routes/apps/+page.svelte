@@ -161,7 +161,7 @@
 				loadSetting('lethe', 'sj2'), loadSetting('car', 'libcurl'), loadSetting('customWisp', '')
 			]);
 		} catch {} finally { resolveSettings(); }
-		if (!isAutoConnection(preferredEngine, car)) void runtime.prepare('sj2', car, customWisp || undefined).catch(() => {});
+		if (!isAutoConnection(preferredEngine, car)) void runtime.prepare(preferredEngine, car, customWisp || undefined).catch(() => {});
 	});
 	onMount(() => subscribeSettings((key, value) => {
 		if (key === 'lethe') preferredEngine = value;
@@ -190,13 +190,13 @@
 		try {
 			await settingsReady;
 			if (request !== launchId) return;
-			const selectedEngine = preferredEngine === 'auto' ? 'auto' : type;
+			const selectedEngine = preferredEngine === 'auto' ? 'auto' : type || preferredEngine;
 			if (isAutoConnection(selectedEngine, car)) {
 				await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 				if (request === launchId) iframeEl.src = autoLauncherUrl(url, selectedEngine, car, customWisp);
 				return;
 			}
-			const session = await runtime.prepare(type, car, customWisp || undefined);
+			const session = await runtime.prepare(selectedEngine, car, customWisp || undefined);
 			if (request !== launchId) return;
 			await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 			if (request !== launchId) return;
