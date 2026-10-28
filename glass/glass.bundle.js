@@ -17942,22 +17942,25 @@
         if (t.startsWith("javascript:"))
           return "javascript:" + this.js.rewrite(t.slice(11));
         try {
-          return (
-            r.origin + this.prefix + this.encodeUrl(new URL(t, r.base).href)
-          );
+          const url = new URL(t, r.base), hash = url.hash;
+          url.hash = "";
+          return r.origin + this.prefix + this.encodeUrl(url.href) + hash;
         } catch {
           return r.origin + this.prefix + this.encodeUrl(t);
         }
       }
       sourceUrl(t, r = this.meta) {
         if (!t || this.urlRegex.test(t)) return t;
+        const payload = t.slice(this.prefix.length + r.origin.length);
+        const hashIndex = payload.indexOf("#");
+        const hash = hashIndex === -1 ? "" : payload.slice(hashIndex);
+        const decoded = this.decodeUrl(hashIndex === -1 ? payload : payload.slice(0, hashIndex));
         try {
-          return new URL(
-            this.decodeUrl(t.slice(this.prefix.length + r.origin.length)),
-            r.base,
-          ).href;
+          const url = new URL(decoded, r.base);
+          if (hashIndex !== -1) url.hash = hash;
+          return url.href;
         } catch {
-          return this.decodeUrl(t.slice(this.prefix.length + r.origin.length));
+          return decoded + hash;
         }
       }
       encodeUrl(t) {
