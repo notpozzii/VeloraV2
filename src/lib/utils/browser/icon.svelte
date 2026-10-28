@@ -1,6 +1,9 @@
 <script>
 	let { name, size = 18 } = $props();
 	const paths = {
+		moon: 'M20.5 13a8.5 8.5 0 1 1-9.5-9.5A6.5 6.5 0 0 0 20.5 13z',
+		play: 'm9 5 11 7-11 7z',
+		pause: 'M8 5v14M16 5v14',
 		sidebar: 'M9 4v16M4 4h16v16H4z',
 		search: 'M16 16l4 4M18 10.5a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0',
 		back: 'm14 6-6 6 6 6',
