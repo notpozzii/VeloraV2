@@ -1,3 +1,4 @@
+import { recordActivity, activityReason } from '../utils/developer/diagnostics.js';
 const engineName = (value) => ['uv', 'glass'].includes(value) ? 'uv' : ['sj', 'polygon'].includes(value) ? 'sj' : 'sj2';
 export const isAutoConnection = (engine, transport) => engine === 'auto' || transport === 'auto';
 
@@ -42,6 +43,9 @@ export function createAutoNavigator({ prepare, storage, now = Date.now } = {}) {
 			const failures = [];
 			for (const [index, candidate] of candidates.entries()) {
 				checkAbort(signal);
+				const started = now();
+				const activity = { engine: candidate.engine, transport: candidate.car, target: url, attempt: index + 1, total: candidates.length };
+				recordActivity('attempt', activity);
 				onattempt?.({ ...candidate, attempt: index + 1, total: candidates.length });
 				try {
 					const session = await prepare(candidate.engine, candidate.car, wisp);
@@ -54,8 +58,10 @@ export function createAutoNavigator({ prepare, storage, now = Date.now } = {}) {
 							(storage ?? globalThis.sessionStorage)?.setItem(key, JSON.stringify({ ...Object.fromEntries(entries), [cacheKey]: { ...candidate, time: now() } }));
 						} catch {}
 					}
+					recordActivity('attempt-ready', { ...activity, duration: now() - started });
 					return { ...session, car: candidate.car };
 				} catch (error) {
+					recordActivity(signal?.aborted || error?.name === 'AbortError' ? 'cancelled' : 'attempt-failed', { ...activity, duration: now() - started, reason: activityReason(error) });
 					if (signal?.aborted || error?.name === 'AbortError') throw error;
 					if (!automatic) throw error;
 					failures.push(error);

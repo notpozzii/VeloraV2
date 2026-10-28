@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Game } from './types';
+	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 
 	let { game, onclose }: { game: Game | null; onclose: () => void } = $props();
 
@@ -11,6 +12,7 @@
 		const url = encodeURIComponent(new URL(game.url, 'https://gtest.5.188.124.68.nip.io/').href);
 		return `/api?url=${url}&type=glass&transport=libcurlRaw&autoSW=true`;
 	});
+	$effect(() => { if (game) recordActivity('app-open', { target: src }); });
 
 	$effect(() => {
 		document.body.style.overflow = game ? 'hidden' : '';
@@ -105,6 +107,8 @@
 				<iframe
 					bind:this={frame}
 					{src}
+					onload={() => recordActivity('app-load', { target: src })}
+					onerror={() => recordActivity('app-error', { target: src })}
 					title={game.name}
 					sandbox={proxied
 						? undefined

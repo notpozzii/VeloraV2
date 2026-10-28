@@ -18,6 +18,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
+	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
 		if (!trimmed) return null;
@@ -112,6 +113,8 @@ autoSW:    legacy parameter; apps now load automatically
 	allow={mediaPermissions}
 	allowfullscreen
 	bind:this={iframeEl}
+	onload={() => recordActivity('app-load', { target: apiUrl })}
+	onerror={() => recordActivity('app-error', { target: apiUrl })}
 	title=""
 	style="opacity: {apiUrl ? '100%' : '0'};"
 ></iframe>

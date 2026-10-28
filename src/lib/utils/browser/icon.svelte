@@ -1,6 +1,7 @@
 <script>
 	let { name, size = 18 } = $props();
 	const paths = {
+		activity: 'M3 12h4l3-8 4 16 3-8h4',
 		clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M12 7v5l3 2',
 		calendar: 'M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1M8 3v4M16 3v4M4 10h16M8 14h1M12 14h1M8 17h1M12 17h1',
 		focus: 'M7 3H3v4M17 3h4v4M3 17v4h4M21 17v4h-4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
