@@ -17158,7 +17158,7 @@
   function es(e) {
     let { js: t } = e;
     t.on("MemberExpression", (r, n, u) => {
-      if (r.object.type === "Super") return !1;
+      if (r.object.type === "Super" || r.property.type === "PrivateIdentifier") return !1;
       if (
         (u === "rewrite" &&
           H0(r) &&
@@ -17244,6 +17244,8 @@
         (a.type === "MemberExpression" && a.property === r && !a.computed) ||
         (r.name === "eval" && a.type === "CallExpression" && a.callee === r) ||
         (a.type === "Property" && a.key === r) ||
+        ((a.type === "PropertyDefinition" || a.type === "AccessorProperty") &&
+          a.key === r && !a.computed) ||
         (a.type === "Property" && a.value === r && a.shorthand) ||
         (a.type === "UpdateExpression" &&
           (a.operator === "++" || a.operator === "--")) ||
