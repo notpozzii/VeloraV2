@@ -12,6 +12,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { loadSetting } from '$lib/utils/localspace.js';
+	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	import {
 		topZ,
 		windowList,
@@ -235,6 +236,7 @@
 		fitWorkspace();
 	}
 	onMount(() => {
+		recordActivity('app-open', { target: url });
 		mounted = true;
 		const removeGameKeyboard =
 			name === 'GeForce NOW' && window.top === window
@@ -330,6 +332,7 @@
 	}
 
 	function closeWindow() {
+		recordActivity('app-close', { target: url });
 		transition = false;
 		activeSignal.set(null);
 		gsap.to(windowElement, {
@@ -665,6 +668,8 @@
 		</p>{/if}
 	<iframe
 		bind:this={appFrame}
+		onload={() => recordActivity('app-load', { target: url })}
+		onerror={() => recordActivity('app-error', { target: url })}
 		allow={mediaPermissions}
 		allowfullscreen
 		class="noSelect"

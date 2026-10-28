@@ -5,6 +5,7 @@
 	import Pro from '$lib/utils/settings/pro.svelte';
 	import Data from '$lib/utils/settings/data.svelte';
 	import About from '$lib/utils/settings/about.svelte';
+	import Developer from '$lib/utils/settings/developer.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	let activeSection = $state('pref');
 	const sections = [
@@ -12,6 +13,7 @@
 		{ name: 'Connection', id: 'pro', icon: 'globe' },
 		{ name: 'Appearance', id: 'themes', icon: 'apps' },
 		{ name: 'Data', id: 'data', icon: 'bookmark' },
+		{ name: 'Developer', id: 'developer', icon: 'activity' },
 		{ name: 'About', id: 'about', icon: 'star' }
 	];
 </script>
@@ -38,6 +40,7 @@
 		<section class="block" id="pro" hidden={activeSection !== 'pro'} aria-label="Connection"><Pro /></section>
 		<section class="block" id="themes" hidden={activeSection !== 'themes'} aria-label="Appearance"><Themes /></section>
 		<section class="block" id="data" hidden={activeSection !== 'data'} aria-label="Data"><Data /></section>
+		<section class="block" id="developer" hidden={activeSection !== 'developer'} aria-label="Developer"><Developer /></section>
 		<section class="block" id="about" hidden={activeSection !== 'about'} aria-label="About"><About /></section>
 	</main>
 </div>

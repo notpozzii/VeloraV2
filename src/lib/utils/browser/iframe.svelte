@@ -4,6 +4,7 @@
 	import { getOriginalUrl } from '$lib/lethe/decode';
 	import { newTabEventName, newTabQueueName } from '$lib/lethe/popup-events.js';
 	import { mediaPermissions } from './media-permissions.js';
+	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true } = $props();
 	let frame;
 	let innerFrame;
@@ -260,6 +261,7 @@
 	}
 
 	function handleLoad() {
+		recordActivity('navigation', { target: src });
 		try {
 			const nextInner = frame.contentWindow.document.querySelector('iframe[data-proxy-content]');
 			if (nextInner !== innerFrame) {

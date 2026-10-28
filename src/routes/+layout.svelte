@@ -7,6 +7,8 @@
 	import { onMount, setContext, tick } from 'svelte';
 	import { STARTUP_CONTEXT } from '$lib/utils/startup.js';
 	import { installResetCoordinator } from '$lib/utils/reset-core.js';
+	import { installActivityCollector } from '$lib/utils/developer/diagnostics.js';
+	import ActivityConsole from '$lib/utils/developer/activity-console.svelte';
 	let { children } = $props();
 	let opening = $state(true);
 	let contentAllowed = $state(false);
@@ -37,10 +39,12 @@
 
 	onMount(() => {
 		const reset = installResetCoordinator(window);
+		const disposeActivity = reset.holding ? () => {} : installActivityCollector(window);
 		if (!reset.holding) startContent();
 
 		return () => {
 			reset.dispose();
+			disposeActivity();
 			disposeTheme();
 		};
 	});
@@ -56,6 +60,7 @@
 		{@render children()}
 	{/if}
 </main>
+<ActivityConsole />
 
 <style>
 	.site-content {

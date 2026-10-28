@@ -1,4 +1,5 @@
 <script>
+	import { recordActivity, activityReason } from '$lib/utils/developer/diagnostics.js';
 	import appCatalog from '$lib/a/a.json';
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
@@ -49,6 +50,7 @@
 	let launchAbort;
 	onDestroy(() => launchAbort?.abort());
 	let loadError = $state('');
+	let activityUrl = '';
 	let iframeEl;
 	const runtime = createProxyRuntime();
 	let car = $state('libcurl');
@@ -170,6 +172,7 @@
 	}));
 
 	function closeFrame() {
+		recordActivity('app-close', { target: activityUrl });
 		launchId++;
 		launchAbort?.abort();
 		openingApp = false;
@@ -181,6 +184,8 @@
 	}
 	async function handleSubmit(url, type) {
 		if (openingApp) return;
+		activityUrl = url;
+		recordActivity('app-open', { target: url });
 		const request = ++launchId;
 		launchAbort = new AbortController();
 		loadError = '';
@@ -210,6 +215,7 @@
 				prismFrame.go(url);
 			}
 		} catch (error) {
+			recordActivity('app-error', { target: url, reason: activityReason(error) });
 			if (request === launchId)
 				loadError = error instanceof Error ? error.message : 'Could not open this app.';
 		} finally {
@@ -318,6 +324,8 @@
 	allow={mediaPermissions}
 	allowfullscreen
 	bind:this={iframeEl}
+	onload={() => { if (overflow) recordActivity('app-load', { target: activityUrl }); }}
+	onerror={() => recordActivity('app-error', { target: activityUrl })}
 	title="App content"
 	style:display={frameDisplay}
 ></iframe>

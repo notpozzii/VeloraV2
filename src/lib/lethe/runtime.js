@@ -3,6 +3,7 @@ import { registerProxyWorker } from './serviceworker.js';
 import { createConnection, setCar } from './car.js';
 import { createScramjetController } from './poly.js';
 import { createPrismController, setPrismTransport } from './prism.js';
+import { recordActivity, activityReason } from '../utils/developer/diagnostics.js';
 
 const defaults = {
 	loadScript, registerProxyWorker, createConnection, setCar,
@@ -28,7 +29,8 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 			const key = JSON.stringify([engine, car, wisp || '']);
 			if (requestedKey === key && pending) return pending;
 			const prepare = async () => {
-				if (key === currentKey) return current;
+				if (key === currentKey) { recordActivity('connection-reused', { engine, transport: car }); return current; }
+				recordActivity('connection-start', { engine, transport: car });
 				let result;
 				if (engine === 'sj2') {
 					const controller = await d.createPrismController(car, wisp);
@@ -63,7 +65,14 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 				current = result;
 				return result;
 			};
-			const job = updates.catch(() => {}).then(prepare);
+			const started = Date.now();
+			const job = updates.catch(() => {}).then(prepare).then(result => {
+				recordActivity('connection-ready', { engine, transport: car, duration: Date.now() - started });
+				return result;
+			}, error => {
+				recordActivity('connection-failed', { engine, transport: car, duration: Date.now() - started, reason: activityReason(error) });
+				throw error;
+			});
 			updates = job;
 			requestedKey = key;
 			pending = job;
