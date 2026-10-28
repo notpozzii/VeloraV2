@@ -17935,7 +17935,7 @@
           }));
       }
       rewriteImport(t, r, n = this.meta) {
-        return this.rewriteUrl(t, { ...n, base: r });
+        return this.rewriteUrl(r, { ...n, base: t });
       }
       rewriteUrl(t, r = this.meta) {
         if (((t = new String(t).trim()), !t || this.urlRegex.test(t))) return t;
