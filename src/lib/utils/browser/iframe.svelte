@@ -1,17 +1,36 @@
 <script>
+	import { onDestroy } from 'svelte';
 	import { activeTab, reloadSignal, goBackSignal, goForwardSignal } from '$lib/stores/index.js';
 	import { getOriginalUrl } from '$lib/lethe/decode';
 	import { newTabEventName, newTabQueueName } from '$lib/lethe/popup-events.js';
 	import { mediaPermissions } from './media-permissions.js';
 	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true } = $props();
 	let frame;
+	let innerFrame;
+	let titleObserver;
+	let removeNavigationListeners = () => {};
+	function contentWindow() {
+		const outer = frame?.contentWindow;
+		try { return outer?.document.querySelector('iframe[data-proxy-content]')?.contentWindow || outer; }
+		catch { return outer; }
+	}
+	function originalUrl(target, path) {
+		return getOriginalUrl(path, target?.parent?.__uv$config);
+	}
+	onDestroy(() => {
+		innerFrame?.removeEventListener('load', handleLoad);
+		titleObserver?.disconnect();
+		removeNavigationListeners();
+	});
 
 	function reportUrl() {
 		try {
-			const loc = frame.contentWindow.location;
+			const target = contentWindow();
+			const loc = target.location;
 			const stripped = loc.pathname + loc.search + loc.hash;
-			const url = getOriginalUrl(stripped);
-			const title = frame.contentWindow.document.title || url;
+			const url = originalUrl(target, stripped);
+			if (!url) return;
+			const title = target.document.title || url;
 			onnavigate?.({ url, title });
 		} catch (e) {}
 	}
@@ -20,7 +39,7 @@
 		try {
 			const frameLocation = targetWindow.location;
 			const strippedPath = frameLocation.pathname + frameLocation.search + frameLocation.hash;
-			const decodedUrl = getOriginalUrl(strippedPath);
+			const decodedUrl = originalUrl(targetWindow, strippedPath);
 			if (decodedUrl) {
 				return decodedUrl;
 			}
@@ -37,7 +56,7 @@
 		try {
 			const absoluteUrl = new URL(rawUrl, targetWindow.location.href);
 			const strippedPath = absoluteUrl.pathname + absoluteUrl.search + absoluteUrl.hash;
-			const decodedUrl = getOriginalUrl(strippedPath);
+			const decodedUrl = originalUrl(targetWindow, strippedPath);
 			let looksLikeHttp = false;
 			if (decodedUrl) {
 				const lowerDecodedUrl = decodedUrl.toLowerCase();
@@ -241,16 +260,30 @@
 	}
 
 	function handleLoad() {
+		try {
+			const nextInner = frame.contentWindow.document.querySelector('iframe[data-proxy-content]');
+			if (nextInner !== innerFrame) {
+				innerFrame?.removeEventListener('load', handleLoad);
+				innerFrame = nextInner;
+				innerFrame?.addEventListener('load', handleLoad);
+			}
+		} catch {}
 		reportUrl();
 		try {
-			const win = frame.contentWindow;
+			titleObserver?.disconnect();
+			removeNavigationListeners();
+			const win = contentWindow();
 			win.__galaxyInterceptEnabled = interceptEnabled;
 			installHostInterception(win);
 			win.addEventListener('popstate', reportUrl);
 			win.addEventListener('hashchange', reportUrl);
+			removeNavigationListeners = () => {
+				win.removeEventListener('popstate', reportUrl);
+				win.removeEventListener('hashchange', reportUrl);
+			};
 			const titleEl = win.document.querySelector('title');
 			if (titleEl) {
-				const titleObserver = new MutationObserver(reportUrl);
+				titleObserver = new MutationObserver(reportUrl);
 				titleObserver.observe(titleEl, { childList: true });
 			}
 			const pendingUrls = win[newTabQueueName];
@@ -281,19 +314,19 @@
 	$effect(() => {
 		if ($goBackSignal === id) {
 			try {
-				frame.contentWindow.history.back();
+				contentWindow().history.back();
 			} catch (e) {}
 			$goBackSignal = null;
 		}
 		if ($goForwardSignal === id) {
 			try {
-				frame.contentWindow.history.forward();
+				contentWindow().history.forward();
 			} catch (e) {}
 			$goForwardSignal = null;
 		}
 		if ($reloadSignal === id) {
 			try {
-				frame.contentWindow.location.reload();
+				contentWindow().location.reload();
 			} catch (e) {}
 			$reloadSignal = null;
 		}
@@ -301,7 +334,7 @@
 	$effect(() => {
 		try {
 			if (frame && frame.contentWindow) {
-				frame.contentWindow.__galaxyInterceptEnabled = interceptEnabled;
+				contentWindow().__galaxyInterceptEnabled = interceptEnabled;
 			}
 		} catch (e) {}
 	});

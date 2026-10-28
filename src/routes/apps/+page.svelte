@@ -4,6 +4,9 @@
 	import { browser } from '$app/environment';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
+	import { isAutoConnection, autoLauncherUrl } from '$lib/lethe/auto.js';
+	import { loadSetting } from '$lib/utils/localspace.js';
+	import { subscribeSettings } from '$lib/utils/settingsSync.js';
 
 	import Shell from '$lib/utils/library/shell.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
@@ -49,6 +52,10 @@
 	let iframeEl;
 	const runtime = createProxyRuntime();
 	let car = $state('libcurl');
+	let preferredEngine = 'sj2';
+	let customWisp = '';
+	let resolveSettings;
+	const settingsReady = new Promise(resolve => { resolveSettings = resolve; });
 	let prismController;
 	let prismFrame;
 
@@ -148,10 +155,19 @@
 		document.body.style.overflow = overflow ? 'hidden' : 'auto';
 	});
 
-	onMount(() => {
-		// Warm the default engine without blocking app selection.
-		void runtime.prepare('sj2', car).catch(() => {});
+	onMount(async () => {
+		try {
+			[preferredEngine, car, customWisp] = await Promise.all([
+				loadSetting('lethe', 'sj2'), loadSetting('car', 'libcurl'), loadSetting('customWisp', '')
+			]);
+		} catch {} finally { resolveSettings(); }
+		if (!isAutoConnection(preferredEngine, car)) void runtime.prepare('sj2', car, customWisp || undefined).catch(() => {});
 	});
+	onMount(() => subscribeSettings((key, value) => {
+		if (key === 'lethe') preferredEngine = value;
+		else if (key === 'car') car = value;
+		else if (key === 'customWisp') customWisp = value;
+	}));
 
 	function closeFrame() {
 		launchId++;
@@ -172,7 +188,15 @@
 		frameDisplay = 'block';
 		overflow = true;
 		try {
-			const session = await runtime.prepare(type, car);
+			await settingsReady;
+			if (request !== launchId) return;
+			const selectedEngine = preferredEngine === 'auto' ? 'auto' : type;
+			if (isAutoConnection(selectedEngine, car)) {
+				await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
+				if (request === launchId) iframeEl.src = autoLauncherUrl(url, selectedEngine, car, customWisp);
+				return;
+			}
+			const session = await runtime.prepare(type, car, customWisp || undefined);
 			if (request !== launchId) return;
 			await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 			if (request !== launchId) return;

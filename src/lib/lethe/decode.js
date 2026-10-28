@@ -1,6 +1,6 @@
 import { codec } from './codec';
 
-export function getOriginalUrl(url) {
+export function getOriginalUrl(url, uvConfig = typeof __uv$config !== 'undefined' ? __uv$config : undefined) {
 	if (!url) return '';
 	let path = url.split('#')[0];
 	path = path.split('?')[0];
@@ -20,8 +20,8 @@ export function getOriginalUrl(url) {
 		return '';
 	}
 
-	if (typeof __uv$config !== 'undefined' && path.includes(__uv$config.prefix)) {
-		return __uv$config.decodeUrl(path.split(__uv$config.prefix)[1]);
+	if (uvConfig && path.includes(uvConfig.prefix)) {
+		return uvConfig.decodeUrl(path.split(uvConfig.prefix)[1]);
 	}
 
 	return '';
