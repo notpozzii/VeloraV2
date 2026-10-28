@@ -88,6 +88,9 @@ test(
 			}
 		}
 		for (const asset of [
+			'reset.html',
+			'reset-core.js',
+			'site-reset.js',
 			'servy.js',
 			'proxy-frame.html',
 			'proxy-frame.js',

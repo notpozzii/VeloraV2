@@ -4,6 +4,9 @@ import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
 import { baremuxPath } from '@mercuryworkshop/bare-mux/node';
 import { refluxPath } from '@nightnetwork/reflux';
 
+// The standalone reset page shares the same protocol and cleanup logic as the app.
+cpSync('src/lib/utils/reset-core.js', 'static/reset-core.js');
+
 for (const [source, folder] of [
   ['glass', 'glass'],
   ['poly', 'poly'],

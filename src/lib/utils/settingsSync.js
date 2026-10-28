@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { saveSetting } from '$lib/utils/localspace.js';
+import { resetInProgress } from './reset-core.js';
 
 const settingsChannel = 'galaxy-settings';
 let channel = null;
@@ -9,7 +10,9 @@ function getChannel() {
 	return channel;
 }
 export async function saveSettingShared(key, value) {
+	if (resetInProgress()) return;
 	await saveSetting(key, value);
+	if (resetInProgress()) return;
 	getChannel()?.postMessage({ key, value });
 }
 export function subscribeSettings(handler) {

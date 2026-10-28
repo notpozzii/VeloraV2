@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import WidgetContent from './widget-content.svelte';
+	import { resetInProgress } from '$lib/utils/reset-core.js';
 	import { widgetCatalog, widgetStorageKey, widgetLimit, widgetDefinition, widgetData, readWidgetBoard, placeWidget, fitWidget, transformWidget } from './widgets.js';
 	let { apps = [], windows = [], ready = true, onlaunch, onfocus } = $props();
 	let board;
@@ -24,7 +25,7 @@
 
 	function flushSave() {
 		clearTimeout(saveTimer);
-		if (!loaded) return;
+		if (!loaded || resetInProgress()) return;
 		try {
 			localStorage.setItem(widgetStorageKey, JSON.stringify({ version: 1, widgets: $state.snapshot(widgets), removed: $state.snapshot(removed) }));
 			storageError = '';

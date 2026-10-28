@@ -3,11 +3,12 @@
 
 import { browser } from '$app/environment';
 import localspace from 'localspace';
+import { resetInProgress } from './reset-core.js';
 
 // One namespaced store for all Galaxy settings (IndexedDB, falling back to
 // localStorage/memory automatically). Null on the server — there is no storage
 // during SSR, so every read returns its fallback.
-const store = browser ? localspace.createInstance({ name: 'galaxy', storeName: 'settings' }) : null;
+const store = browser && !resetInProgress() ? localspace.createInstance({ name: 'galaxy', storeName: 'settings' }) : null;
 
 // IndexedDB fires no change events, and our settings UI lives in an <iframe>
 // separate from the pages that consume those settings (e.g. the OS desktop).
@@ -48,9 +49,10 @@ export function onSettingChange(key, callback) {
  * @returns {Promise<T>}
  */
 export async function loadSetting(key, fallback, migrate = (raw) => raw) {
-	if (!browser || !store) return fallback;
+	if (!browser || !store || resetInProgress()) return fallback;
 
 	let value = await store.getItem(key);
+	if (resetInProgress()) return fallback;
 
 	if (value === null || value === undefined) {
 		const legacy = localStorage.getItem(key);
@@ -80,12 +82,13 @@ export async function loadSetting(key, fallback, migrate = (raw) => raw) {
  * @returns {Promise<void>}
  */
 export async function saveSetting(key, value) {
-	if (!browser || !store) return;
+	if (!browser || !store || resetInProgress()) return;
 	// Callers persist fire-and-forget (e.g. inside a Svelte $effect), so swallow
 	// rejections here (quota exceeded, IndexedDB blocked) instead of leaking an
 	// unhandled promise rejection.
 	try {
 		await store.setItem(key, value);
+		if (resetInProgress()) return;
 		// Notify other contexts (other tabs, the OS desktop behind the settings
 		// iframe) so they can react without a reload. Same structured-clone rules
 		// as IndexedDB, so a value that persisted above is safe to post here.

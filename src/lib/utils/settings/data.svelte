@@ -2,6 +2,7 @@
 	import '$lib/style/settings.css';
 	import uploadImg from '$lib/img/icons/upload.png';
 	import { downloadSnapshot, importOrigin, readManifest } from 'origin-snapshot';
+	import Reset from './reset.svelte';
 
 	let includeSession = $state(false);
 	let busy = $state(false);
@@ -127,6 +128,7 @@
 			</p>
 		{/if}
 	</div>
+	<Reset disabled={busy} />
 </div>
 
 <style>
