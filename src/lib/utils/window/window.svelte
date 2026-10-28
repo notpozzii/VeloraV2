@@ -191,7 +191,7 @@
 	let maximizedStat = $state(false);
 	export async function updateTaskbarHeight(dockSize) {
 		const size = dockSize ?? await loadSetting('navbarsize', 24);
-		taskbarHeight = 76 + (Number(size) || 0);
+		taskbarHeight = 56 + (Number(size) || 0);
 		if (mounted) checkBoundaries();
 	}
 	export function openBrowserSearch(query) {
