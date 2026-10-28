@@ -20,6 +20,8 @@
 .velora-desktop.glass-desktop .previewPanel,
 .velora-desktop.glass-desktop .modalOverlay,
 .velora-desktop.glass-desktop .glass-settings,
+.velora-desktop.glass-desktop .desktop-widget,
+.velora-desktop.glass-desktop .widget-picker,
 .velora-desktop.glass-desktop .window .bar {
 	background:
 		linear-gradient(125deg, rgba(240, 255, 235, var(--glass-shine, 0.09)), transparent 65%),

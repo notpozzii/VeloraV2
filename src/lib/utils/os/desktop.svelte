@@ -15,6 +15,7 @@
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import Wallpaper from '$lib/utils/os/wallpaper.svelte';
+	import WidgetBoard from '$lib/utils/os/widget-board.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import { getGeForceLauncherUrl } from '$lib/utils/browser/geforce.js';
 	import browser from '$lib/img/icons/earthWhite.png';
@@ -75,6 +76,7 @@
 	let accumY = 0;
 	let dragging = $state(false);
 	let windowComps = [];
+	let widgetBoard;
 	function startNavResize(e) {
 		dragging = true;
 		temp = navSizeMulti;
@@ -699,6 +701,7 @@
 				><Icon name="globe" size={14} /><span>Browser mode</span></a
 			>
 			<button class="menubar-icon" onclick={openGlass} aria-label="Adjust liquid glass" aria-haspopup="dialog" title="Liquid glass"><Icon name="settings" size={16} /></button>
+			<button class="menubar-icon" data-widget-picker-toggle onclick={(event) => { event.stopPropagation(); closeMenu(); launcherOpen = false; widgetBoard?.togglePicker(event); }} aria-label="Add desktop widgets" aria-haspopup="dialog" title="Add widgets"><Icon name="widgets" size={16} /></button>
 			<button
 				class="menubar-icon"
 				onclick={toggleFullscreen}
@@ -726,6 +729,7 @@
 			</button>
 		</section>
 	</main>
+	<WidgetBoard bind:this={widgetBoard} {apps} windows={$windowList} ready={hydrated} onlaunch={launchApp} onfocus={focusWindow} />
 
 	{#if glassOpen}
 		<dialog class="glass-settings" aria-label="Liquid glass" onclose={() => (glassOpen = false)}
@@ -889,6 +893,7 @@
 				{/if}
 			{:else if menuType == 'nav'}
 				<button class="menuOption" onclick={openAddApp}>Add app</button>
+				<button class="menuOption" onclick={() => { closeMenu(); widgetBoard?.showPicker(); }}>Add widgets</button>
 				<button class="menuOption" onclick={personalize}>Change wallpaper</button>
 			{/if}
 		</div>
