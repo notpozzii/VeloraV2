@@ -1,6 +1,15 @@
 <script>
 	let { name, size = 18 } = $props();
 	const paths = {
+		clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M12 7v5l3 2',
+		calendar: 'M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1M8 3v4M16 3v4M4 10h16M8 14h1M12 14h1M8 17h1M12 17h1',
+		focus: 'M7 3H3v4M17 3h4v4M3 17v4h4M21 17v4h-4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0',
+		timer: 'M9 3h6M12 3v3M17 7l2-2M20 14a8 8 0 1 1-16 0 8 8 0 0 1 16 0M12 10v4l3 2',
+		note: 'M5 3h14v13l-5 5H5zM14 21v-5h5M8 7h8M8 11h6',
+		check: 'M4 6l2 2 4-4M13 6h7M4 15l2 2 4-4M13 15h7',
+		calculator: 'M5 3h14v18H5zM8 6h8v4H8zM8 14h1M12 14h1M16 14h.01M8 18h1M12 18h1M16 18h.01',
+		widgets: 'M3 3h7v7H3zM14 3h7v11h-7zM3 14h7v7H3zM14 18h7v3h-7z',
+		resize: 'M9 20 20 9M14 20l6-6M19 20l1-1',
 		sidebar: 'M9 4v16M4 4h16v16H4z',
 		search: 'M16 16l4 4M18 10.5a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0',
 		back: 'm14 6-6 6 6 6',
