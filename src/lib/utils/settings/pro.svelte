@@ -25,6 +25,7 @@
 	function selectProxy(value) {
 		lethe = value;
 		saveSettingShared('lethe', value);
+		if (value === 'auto') selectTransport('auto');
 	}
 	function selectSearch(value) {
 		searchEngine = value;
@@ -40,9 +41,10 @@
 	}
 
 	const proxies = [
+		{ value: 'auto', label: 'Auto' },
 		{ value: 'sj2', label: 'SJ2' },
 		{ value: 'sj', label: 'SJ' },
-		{ value: 'uv', label: 'UV' }
+		{ value: 'uv', label: 'Ultraviolet' }
 	];
 	const searchEngines = [
 		{ value: 'google', label: 'Google' },
@@ -50,6 +52,7 @@
 		{ value: 'brave', label: 'Brave' }
 	];
 	const transports = [
+		{ value: 'auto', label: 'Auto' },
 		{ value: 'libcurl', label: 'Libcurl' },
 		{ value: 'epoxy', label: 'Epoxy' }
 	];
@@ -63,7 +66,7 @@
 		</select>
 	</div>
 	<div class="setting-row">
-		<div class="setting-copy"><label for="settings-proxy">Browser engine</label><p>SJ2 is recommended for most sites.</p></div>
+		<div class="setting-copy"><label for="settings-proxy">Browser engine</label><p>Auto chooses an engine and tries alternatives if the page cannot start.</p></div>
 		<select id="settings-proxy" value={lethe} onchange={(e) => selectProxy(e.currentTarget.value)}>
 			{#each proxies as proxy}<option value={proxy.value}>{proxy.label}</option>{/each}
 		</select>

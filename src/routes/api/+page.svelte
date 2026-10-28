@@ -2,8 +2,8 @@
 /api?url={}&type={}&transport={}&wisp={}&notif={}&autoSW={}
 
 url:       required, https:// is added when missing, must contain a dot
-type:      prism (SJv2, default), polygon (SJ), glass (UV)
-transport: libcurl (default), libcurlRaw, epoxy
+type:      auto, prism (SJv2, default), polygon (SJ), glass (UV)
+transport: auto, libcurl (default), libcurlRaw, epoxy
 wisp:      wss://..., defaults to the server's own wisp
 notif:     read by /os when it opens this page in a window, not by /api itself
 autoSW:    legacy parameter; apps now load automatically
@@ -15,7 +15,8 @@ autoSW:    legacy parameter; apps now load automatically
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
-	import { prepareProxyFrame } from '$lib/lethe/prepare-frame.js';
+	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
+	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
@@ -39,6 +40,8 @@ autoSW:    legacy parameter; apps now load automatically
 	const launchAbort = new AbortController();
 	onDestroy(() => launchAbort.abort());
 	const runtime = createProxyRuntime();
+	const auto = createAutoNavigator({ prepare: (...args) => runtime.prepare(...args) });
+	let autoStatus = $state('');
 	let car = $state('libcurl');
 	let prismController;
 	let prismFrame;
@@ -68,18 +71,30 @@ autoSW:    legacy parameter; apps now load automatically
 		}
 	}
 	async function startProxy() {
-		if (['libcurl', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
-		const session = await runtime.prepare(apiType, car, apiWisp);
-		await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
-		if (session.engine === 'uv') {
-			iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(apiUrl);
-		} else if (session.engine === 'sj') {
-			iframeEl.src = session.polygon.encodeUrl(apiUrl);
-		} else {
-			prismController = session.controller;
-			if (!prismFrame) prismFrame = prismController.createFrame(iframeEl);
-			prismFrame.go(apiUrl);
-		}
+		if (['auto', 'libcurl', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
+		const automatic = isAutoConnection(apiType, car);
+		await auto.open({
+			url: apiUrl, engine: apiType || 'sj2', car, wisp: apiWisp, signal: launchAbort.signal,
+			onattempt: ({ engine, car: selectedCar, attempt }) => {
+				if (automatic) autoStatus = `${attempt > 1 ? 'Trying' : 'Connecting'} · ${engine === 'uv' ? 'Ultraviolet' : engine.toUpperCase()} / ${selectedCar === 'epoxy' ? 'Epoxy' : 'Libcurl'}`;
+			},
+			async load(session) {
+				if (automatic) { resetProxyFrame(iframeEl); iframeEl.src = 'about:blank'; }
+				await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
+				const navigate = () => {
+					if (session.engine === 'uv') iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(apiUrl);
+					else if (session.engine === 'sj') iframeEl.src = session.polygon.encodeUrl(apiUrl);
+					else {
+						prismController = session.controller;
+						if (!prismFrame) prismFrame = prismController.createFrame(iframeEl);
+						prismFrame.go(apiUrl);
+					}
+				};
+				if (automatic) await waitForProxyDocument(iframeEl, navigate, { signal: launchAbort.signal });
+				else navigate();
+			}
+		});
+		autoStatus = '';
 		ready = true;
 	}
 
@@ -93,12 +108,15 @@ autoSW:    legacy parameter; apps now load automatically
 
 
 <iframe
+	data-proxy-content
 	allow={mediaPermissions}
 	allowfullscreen
 	bind:this={iframeEl}
 	title=""
 	style="opacity: {apiUrl ? '100%' : '0'};"
 ></iframe>
+
+{#if autoStatus && !loadError}<div class="auto-status" role="status">Auto · {autoStatus}</div>{/if}
 
 {#if loadError}
 	<div class="start">
@@ -118,6 +136,7 @@ autoSW:    legacy parameter; apps now load automatically
 </div>
 
 <style>
+	.auto-status { position: fixed; bottom: 14px; left: 14px; z-index: 100; padding: 8px 12px; border-radius: 9px; border: 1px solid #d3e5b02a; background: #18231ef2; color: #d3e5b0; font: 11px system-ui, sans-serif; pointer-events: none; }
 	:global(body) {
 		height: 100vh;
 		width: 100vw;

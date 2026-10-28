@@ -25,6 +25,7 @@
 	import { loadScript } from '$lib/lethe/loader';
 	import { search } from '$lib/lethe/search';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
+	import { isAutoConnection, autoLauncherUrl } from '$lib/lethe/auto.js';
 	import { createTabFrames } from '$lib/lethe/tab-frames.js';
 	import { createBrowserSearchBridge } from '$lib/utils/browser/desktop-search-bridge.js';
 	import { subscribeSettings } from '$lib/utils/settingsSync.js';
@@ -148,7 +149,7 @@
 			// Accept navigation immediately; share engine warmup with the first click.
 			ready = true;
 			releaseSettings();
-			void prepareBrowserEngine().catch(() => {});
+			if (!isAutoConnection(letheEngine, car)) void prepareBrowserEngine().catch(() => {});
 			desktopSearchBridge?.setReady();
 		} catch (error) {
 			startupError = error;
@@ -201,11 +202,22 @@
 		target.navigation = navigation;
 		target.preparing = true;
 		try {
+			await settingsReady;
+			if (browserDestroyed || signal?.aborted) return;
+			if (startupError) throw startupError;
+			if (previewMode) throw new Error('Open the browser from your desktop to browse.');
+			const fixedUrl = search(rawQuery, searchEngine);
+			if (isAutoConnection(letheEngine, car)) {
+				if (signal?.aborted || !frames.includes(target) || target.navigation !== navigation) return;
+				tabFrames.release(target.id);
+				target.url = autoLauncherUrl(fixedUrl, letheEngine, car, customWisp);
+				target.displayUrl = fixedUrl;
+				return;
+			}
 			const session = await prepareBrowserEngine();
 			if (signal?.aborted || !target) {
 				return;
 			}
-			const fixedUrl = search(rawQuery, searchEngine);
 			let encoded;
 			if (session.engine === 'sj2') {
 				const sjFrame = await tabFrames.get(target.id);
@@ -278,14 +290,22 @@
 		bookmarks.splice(index, 1);
 	}
 	async function bookmarkSearch(url, lethe) {
-		const session = await prepareBrowserEngine(lethe);
 		const target = activeFrame;
 		if (!target) return;
+		await settingsReady;
+		if (isAutoConnection(lethe, car)) {
+			tabFrames.release(target.id);
+			target.url = autoLauncherUrl(url, lethe, car, customWisp);
+			target.displayUrl = url;
+			inputEl?.blur();
+			return;
+		}
+		const session = await prepareBrowserEngine(lethe);
 		let encoded;
-		if (lethe === 'sj2') {
+		if (session.engine === 'sj2') {
 			const sjFrame = await tabFrames.get(target.id);
 			encoded = prismEncode(url, sjFrame);
-		} else if (lethe === 'uv') {
+		} else if (session.engine === 'uv') {
 			// @ts-ignore
 			encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
 		} else {
@@ -337,7 +357,7 @@
 		$draggedOverRight = null;
 	}
 	$effect(() => {
-		if (ready && !previewMode) {
+		if (ready && !previewMode && !isAutoConnection(letheEngine, car)) {
 			runtime.prepare(letheEngine, car, customWisp || undefined).catch((error) => console.error('Could not prepare browser:', error));
 		}
 	});
@@ -683,15 +703,15 @@
 			</div>
 			<div class="settings-fields">
 				<label
-					>Proxy<select bind:value={letheEngine} disabled={!ready}
-						><option value="sj2">SJ2</option><option value="sj">SJ</option><option value="uv"
-							>UV</option
+					>Proxy<select bind:value={letheEngine} disabled={!ready} onchange={(event) => { if (event.currentTarget.value === 'auto') car = 'auto'; }}
+						><option value="auto">Auto</option><option value="sj2">SJ2</option><option value="sj">SJ</option><option value="uv"
+							>Ultraviolet</option
 						></select
 					></label
 				>
 				<label
 					>Transport<select bind:value={car} disabled={!ready}
-						><option value="libcurl">Lib</option><option value="epoxy">Epox</option></select
+						><option value="auto">Auto</option><option value="libcurl">Libcurl</option><option value="epoxy">Epoxy</option></select
 					></label
 				>
 				<label
@@ -706,6 +726,7 @@
 				>
 			</div>
 			<div class="modal-actions">
+				<button onclick={() => { letheEngine = 'auto'; car = 'auto'; }} disabled={letheEngine === 'auto' && car === 'auto'}><Icon name="reload" size={16} />Use Auto connection</button>
 				<button
 					onclick={() => {
 						addTab();

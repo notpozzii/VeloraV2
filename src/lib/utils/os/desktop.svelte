@@ -390,11 +390,13 @@
 	}
 
 	const proxies = [
+		{ value: 'auto', label: 'Auto' },
 		{ value: 'prism', label: 'SJ2' },
 		{ value: 'polygon', label: 'SJ' },
 		{ value: 'glass', label: 'UV' }
 	];
 	const transports = [
+		{ value: 'auto', label: 'Auto' },
 		{ value: 'libcurl', label: 'Libcurl' },
 		{ value: 'epoxy', label: 'Epoxy' }
 	];
@@ -981,7 +983,7 @@
 								<button
 									class="modalOption"
 									class:active={newProxy === proxy.value}
-									onclick={() => (newProxy = proxy.value)}>{proxy.label}</button
+									onclick={() => { newProxy = proxy.value; if (proxy.value === 'auto') newTransport = 'auto'; }}>{proxy.label}</button
 								>
 							{/each}
 						</div>
