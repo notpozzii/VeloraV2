@@ -120,8 +120,8 @@
 
 			const nativeOpen = targetWindow.open;
 			try {
-				targetWindow.open = function (url) {
-					if (!interceptEnabled) {
+				targetWindow.open = function (url, name) {
+					if (!interceptEnabled || (typeof name === 'string' && name.toLowerCase() === '_self')) {
 						return nativeOpen.apply(targetWindow, arguments);
 					}
 					openTabForUrl(url);

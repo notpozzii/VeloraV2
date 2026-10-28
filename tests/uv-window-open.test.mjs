@@ -59,3 +59,26 @@ test('opening an empty window does not invent a URL or lose its native return va
 test('the generated browser asset includes the same fix as its canonical source', () => {
 	assert.equal(readFileSync(new URL('../static/glass/glass.handler.js', import.meta.url), 'utf8'), canonical);
 });
+
+for (const file of ['../src/lib/utils/browser/iframe.svelte', '../src/lib/lethe/reflux.js']) {
+	test(`${file.split('/').at(-1)} respects same-tab redirects before popup interception`, () => {
+		const source = readFileSync(new URL(file, import.meta.url), 'utf8');
+		const assignment = source.match(/targetWindow\.open = function \(url, name[^)]*\) \{[\s\S]*?\n[ \t]*\};/);
+		assert.ok(assignment, 'Locate the actual popup-interception hook');
+		const nativeCalls = [], popupCalls = [];
+		const nativeWindow = { location:{} }, fakePopup = {};
+		const targetWindow = {};
+		const nativeOpen = function (...args) { nativeCalls.push({ receiver:this, args }); return nativeWindow; };
+		vm.runInNewContext(assignment[0], {
+			targetWindow, nativeOpen, interceptEnabled:true, isEnabled:() => true,
+			openTabForUrl:url => popupCalls.push(url), emitNewTab:url => popupCalls.push(url), dudWindow:() => fakePopup
+		});
+		assert.equal(targetWindow.open('https://login.nvidia.com/authorize', '_self', 'noopener'), nativeWindow);
+		assert.equal(targetWindow.open('https://login.nvidia.com/authorize', '_SELF'), nativeWindow);
+		assert.deepEqual(nativeCalls[0].args, ['https://login.nvidia.com/authorize', '_self', 'noopener']);
+		assert.equal(nativeCalls[0].receiver, targetWindow);
+		assert.deepEqual(popupCalls, []);
+		assert.equal(targetWindow.open('https://example.com/', '_blank'), fakePopup);
+		assert.deepEqual(popupCalls, ['https://example.com/']);
+	});
+}
