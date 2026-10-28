@@ -1,0 +1,151 @@
+.velora-desktop.glass-desktop .desktop-menubar {
+	position: absolute;
+	top: 16px;
+	left: 20px;
+	right: 20px;
+	height: 52px;
+	padding: 0 18px;
+	border-radius: 17px;
+}
+
+.velora-desktop.glass-desktop .desktop-workspace {
+	inset: 84px 0 calc(var(--dock-height) + 36px);
+}
+
+.velora-desktop.glass-desktop .desktop-menubar,
+.velora-desktop.glass-desktop .desktop-dock,
+.velora-desktop.glass-desktop .desktop-command,
+.velora-desktop.glass-desktop .app-launcher,
+.velora-desktop.glass-desktop .contextMenu,
+.velora-desktop.glass-desktop .previewPanel,
+.velora-desktop.glass-desktop .modalOverlay,
+.velora-desktop.glass-desktop .glass-settings,
+.velora-desktop.glass-desktop .window .bar {
+	background:
+		linear-gradient(125deg, rgba(240, 255, 235, var(--glass-shine, 0.09)), transparent 65%),
+		rgba(20, 31, 25, var(--glass-opacity, 0.696));
+	border: 1px solid rgba(240, 250, 232, var(--glass-border, 0.228));
+	backdrop-filter: blur(var(--glass-blur, 24px)) saturate(var(--glass-saturation, 130%));
+	-webkit-backdrop-filter: blur(var(--glass-blur, 24px)) saturate(var(--glass-saturation, 130%));
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, var(--glass-shine, 0.09)),
+		0 10px 32px #07110a26;
+}
+
+.velora-desktop.glass-desktop .desktop-command:hover {
+	border-color: #d3e5b070;
+}
+
+.velora-desktop.glass-desktop .window {
+	background: transparent;
+}
+
+.velora-desktop.glass-desktop .window .bar {
+	border-width: 0 0 1px;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--glass-shine, 0.09));
+}
+
+.velora-desktop.glass-desktop .dock-apps:not(.many-apps) {
+	overflow: visible;
+}
+
+.velora-desktop .glass-settings {
+	position: fixed;
+	inset: 82px 22px auto auto;
+	margin: 0;
+	width: min(330px, calc(100vw - 30px));
+	max-height: calc(100dvh - 110px);
+	overflow: auto;
+	padding: 22px;
+	border-radius: 19px;
+	color: var(--os-text);
+}
+
+.velora-desktop .glass-settings::backdrop {
+	background: #07140d1a;
+}
+
+.velora-desktop .glass-settings-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 23px;
+}
+
+.velora-desktop .glass-settings-heading h2 {
+	margin: 0;
+	font-size: 17px;
+	font-weight: 550;
+	letter-spacing: -0.4px;
+}
+
+.velora-desktop .glass-strength-label {
+	display: flex;
+	justify-content: space-between;
+	font-size: 12px;
+	margin-bottom: 15px;
+}
+
+.velora-desktop .glass-strength-label output {
+	font-variant-numeric: tabular-nums;
+	color: var(--os-accent);
+}
+
+.velora-desktop .glass-strength-slider {
+	width: 100%;
+	margin: 0;
+	accent-color: var(--os-accent);
+	cursor: pointer;
+}
+
+.velora-desktop .glass-scale {
+	display: flex;
+	justify-content: space-between;
+	font-size: 10px;
+	color: #c5d1bd;
+	margin-top: 8px;
+}
+
+.velora-desktop .glass-settings-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	margin-top: 22px;
+	border-top: 1px solid var(--os-border);
+	padding-top: 14px;
+	font-size: 10px;
+	color: #c5d1bd;
+}
+
+.velora-desktop .glass-settings-footer button {
+	background: #ffffff09;
+	border: 1px solid var(--os-border);
+	border-radius: 7px;
+	padding: 6px 9px;
+	font-size: 10px;
+}
+
+.velora-desktop .glass-settings-footer button:hover {
+	background: #ffffff18;
+}
+
+@media (max-width: 480px) {
+	.velora-desktop.glass-desktop .desktop-menubar {
+		top: 10px;
+		left: 10px;
+		right: 10px;
+		height: 49px;
+		padding: 0 12px;
+		border-radius: 15px;
+	}
+	.velora-desktop.glass-desktop .desktop-label,
+	.velora-desktop.glass-desktop .header-divider,
+	.velora-desktop.glass-desktop .desktop-status time {
+		display: none;
+	}
+	.velora-desktop .glass-settings {
+		top: 72px;
+		right: 15px;
+	}
+}

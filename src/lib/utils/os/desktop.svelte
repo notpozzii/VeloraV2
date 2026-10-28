@@ -10,11 +10,11 @@
 		notif
 	} from '$lib/stores/index.js';
 	import '$lib/style/os.css';
+	import '$lib/style/desktop-glass.css';
 	import { onMount } from 'svelte';
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import Wallpaper from '$lib/utils/os/wallpaper.svelte';
-	import DesktopWidgets from '$lib/utils/os/desktop-widgets.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import { getGeForceLauncherUrl } from '$lib/utils/browser/geforce.js';
 	import browser from '$lib/img/icons/earthWhite.png';
@@ -56,15 +56,8 @@
 	let bgURL = $state(mainBG);
 	let bgFit = $state('cover');
 	let wallpaperOpen = $state(false);
-	let controlsOpen = $state(false);
-	let widgetsVisible = $state(true);
-	let wallpaperDim = $state(false);
-	let desktopAccent = $state('sage');
-	const accentOptions = [
-		{ id: 'sage', label: 'Sage', color: '#d3e5b0' },
-		{ id: 'ice', label: 'Ice', color: '#b1ddea' },
-		{ id: 'iris', label: 'Iris', color: '#d0bdf3' }
-	];
+	let glassOpen = $state(false);
+	let glassStrength = $state(60);
 	let launcherOpen = $state(false);
 	let launcherSearch = $state('');
 	let launcherBusy = $state(false);
@@ -526,19 +519,15 @@
 			loadSetting('navbarsize', 24),
 			loadSetting('customApps', []),
 			loadSetting('customWisp', ''),
-			loadSetting('desktopWidgets', true),
-			loadSetting('desktopDim', false),
-			loadSetting('desktopAccent', 'sage')
-		]).then(([background, fit, size, savedApps, wisp, widgets, dim, accent]) => {
+			loadSetting('desktopGlassStrength', 60)
+		]).then(([background, fit, size, savedApps, wisp, strength]) => {
 			if (disposed) return;
 			bgURL = background || mainBG;
 			bgFit = fit === 'contain' ? 'contain' : 'cover';
 			navSizeMulti = Math.max(8, Math.min(Number(size) || 24, 39));
 			customApps = Array.isArray(savedApps) ? savedApps : [];
 			customWisp = wisp || '';
-			widgetsVisible = widgets !== false;
-			wallpaperDim = dim === true;
-			desktopAccent = accentOptions.some((option) => option.id === accent) ? accent : 'sage';
+			glassStrength = normalizeGlassStrength(strength);
 			hydrated = true;
 		});
 		updateTime();
@@ -555,6 +544,9 @@
 			}),
 			onSettingChange('customWisp', (value) => {
 				customWisp = value || '';
+			}),
+			onSettingChange('desktopGlassStrength', (value) => {
+				glassStrength = normalizeGlassStrength(value);
 			})
 		];
 		return () => {
@@ -566,7 +558,6 @@
 
 	function launchApp(app) {
 		launcherOpen = false;
-		controlsOpen = false;
 		openWindow(app.url, app.name, app.height, app.width, app.top, app.left, app.id);
 	}
 	function toggleLauncher(event) {
@@ -630,20 +621,23 @@
 	}
 	function personalize() {
 		launcherOpen = false;
-		controlsOpen = false;
 		closeMenu();
 		wallpaperOpen = true;
 	}
-	function toggleControls(event) {
-		event.stopPropagation();
-		controlsOpen = !controlsOpen;
-		launcherOpen = false;
-	}
-	function chooseAccent(value) {
-		desktopAccent = value;
-		saveSetting('desktopAccent', value);
-	}
 
+	function normalizeGlassStrength(value) {
+		return typeof value === 'number' && Number.isFinite(value) ? Math.max(0, Math.min(100, Math.round(value))) : 60;
+	}
+	function updateGlassStrength(value) {
+		glassStrength = normalizeGlassStrength(value);
+		saveSetting('desktopGlassStrength', glassStrength);
+	}
+	function openGlass(event) {
+		event.stopPropagation();
+		launcherOpen = false;
+		closeMenu();
+		glassOpen = true;
+	}
 	function callTaskbarHeight() {
 		for (const comp of windowComps) {
 			comp?.updateTaskbarHeight(navSizeMulti);
@@ -671,7 +665,7 @@
 			toggleLauncher(e);
 		}
 		if (e.key === 'Escape') {
-			controlsOpen = false;
+			glassOpen = false;
 			closeAddApp();
 			closeMenu();
 			launcherOpen = false;
@@ -679,9 +673,12 @@
 	}}
 />
 
-<div class="velora-desktop" class:fullscreen class:wallpaper-dim={wallpaperDim}
-	style:--dock-height={`${56 + navSizeMulti}px`}
-	style:--os-accent={accentOptions.find((option) => option.id === desktopAccent)?.color}>
+<div class="velora-desktop glass-desktop" class:fullscreen style:--dock-height={`${40 + navSizeMulti}px`}
+	style:--glass-blur={`${Math.round(glassStrength * 0.4)}px`}
+	style:--glass-opacity={0.96 - glassStrength * 0.0044}
+	style:--glass-border={0.12 + glassStrength * 0.0018}
+	style:--glass-shine={glassStrength * 0.0015}
+	style:--glass-saturation={`${100 + glassStrength * 0.5}%`}>
 	<div
 		class="desktop-wallpaper"
 		style:background-image={`url(${JSON.stringify(bgURL)})`}
@@ -694,16 +691,14 @@
 				><span class="velora-mark">v.</span><span>velora</span></button
 			>
 			<span class="header-divider"></span>
-			<span class="desktop-label"><span class="workspace-light"></span>Desktop <span class="workspace-number">01</span></span>
+			<span class="desktop-label">Workspace</span>
 			<a href="/download" class="desktop-download">Download <Icon name="arrow" size={12} /></a>
 		</div>
 		<div class="desktop-status">
 			<a href="/slate" class="browser-mode" title="Open browser without desktop windows"
 				><Icon name="globe" size={14} /><span>Browser mode</span></a
 			>
-			<button class="control-center-toggle" onclick={toggleControls}
-				aria-label="Open control center" aria-expanded={controlsOpen} aria-controls="desktop-controls"
-				title="Control center"><Icon name="settings" size={17} /></button>
+			<button class="menubar-icon" onclick={openGlass} aria-label="Adjust liquid glass" aria-haspopup="dialog" title="Liquid glass"><Icon name="settings" size={16} /></button>
 			<button
 				class="menubar-icon"
 				onclick={toggleFullscreen}
@@ -719,49 +714,40 @@
 		aria-label="Velora desktop"
 		oncontextmenu={(e) => openMenu(e, 'navBar')}
 	>
-		<div class="desktop-home">
-			<section class="desktop-clock" aria-label="Clock">
-				<p class="desktop-date"><span></span>{dateString}</p>
-				<div class="clock-digits">{clockFace}<span>{clockPeriod}</span></div>
-			</section>
-			<section class="desktop-search" aria-label="App and web search">
-				<button class="desktop-command" onclick={toggleLauncher} aria-label="Search apps or the web">
-					<span class="command-symbol"><Icon name="search" size={21} /></span><span>Search apps or the web</span><kbd>{shortcutModifier} K</kbd>
-				</button>
-			</section>
-			<div class="desktop-quick-access" aria-label="Quick access">
-				{#each [baseApps[0], baseApps[2], baseApps[3]] as app (app.id)}
-					<button onclick={() => launchApp(app)} disabled={!hydrated}>
-						<AppIcon {app} size={38} /><span>{app.name}</span><Icon name="arrow" size={14} />
-					</button>
-				{/each}
-			</div>
-		</div>
-		<aside class="desktop-widgets" class:widgets-hidden={!widgetsVisible} aria-label="Desktop widgets" inert={!widgetsVisible}>
-			<DesktopWidgets {apps} windows={$windowList} {hydrated} onlaunch={launchApp} onfocus={focusWindow} />
-		</aside>
+		<section class="desktop-clock" aria-label="Clock">
+			<div class="clock-digits">{clockFace}<span>{clockPeriod}</span></div>
+			<p>{dateString}</p>
+		</section>
+		<section class="desktop-search" aria-label="App and web search">
+			<button class="desktop-command" onclick={toggleLauncher} aria-label="Search apps or the web">
+				<Icon name="search" size={18} /><span>Search apps or the web</span><kbd
+					>{shortcutModifier} K</kbd
+				><Icon name="arrow" size={16} />
+			</button>
+		</section>
 	</main>
-	<div class="desktop-footnote"><span class="workspace-light"></span>Workspace 01 <span class="footnote-divider">/</span><button onclick={openChangelogs}>Velora 1.3</button></div>
-	{#if controlsOpen}
-		<dialog id="desktop-controls" class="control-center" aria-label="Control center" onclose={() => (controlsOpen = false)}
+
+	{#if glassOpen}
+		<dialog class="glass-settings" aria-label="Liquid glass" onclose={() => (glassOpen = false)}
 			{@attach (node) => {
 				const previous = document.activeElement;
 				node.showModal();
-				return () => { node.close(); previous?.focus?.(); };
+				node.querySelector('input')?.focus();
+				return () => {
+					node.close();
+					if (previous instanceof HTMLElement && previous.isConnected) previous.focus();
+				};
 			}}
 			onclick={(event) => {
 				if (event.target !== event.currentTarget) return;
-				const rect = event.currentTarget.getBoundingClientRect();
-				if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) controlsOpen = false;
+				const bounds = event.currentTarget.getBoundingClientRect();
+				if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) glassOpen = false;
 			}}>
-			<div class="control-heading"><h2>Control center</h2><button class="menubar-icon" aria-label="Close control center" onclick={() => (controlsOpen = false)}><Icon name="close" size={18} /></button></div>
-			<div class="control-tiles">
-				<button class:enabled={widgetsVisible} aria-pressed={widgetsVisible} onclick={() => { widgetsVisible = !widgetsVisible; saveSetting('desktopWidgets', widgetsVisible); }}><Icon name="apps" size={22} /><strong>Widgets</strong><small>{widgetsVisible ? 'Visible' : 'Hidden'}</small></button>
-				<button class:enabled={wallpaperDim} aria-pressed={wallpaperDim} onclick={() => { wallpaperDim = !wallpaperDim; saveSetting('desktopDim', wallpaperDim); }}><Icon name="moon" size={22} /><strong>Dim wallpaper</strong><small>{wallpaperDim ? 'On' : 'Off'}</small></button>
-			</div>
-			<div class="accent-control"><span>Accent</span><div>{#each accentOptions as option}<button aria-label={`${option.label} accent`} aria-pressed={desktopAccent === option.id} class:selected={desktopAccent === option.id} style:--swatch={option.color} onclick={() => chooseAccent(option.id)}></button>{/each}</div></div>
-			<label class="dock-size-control">Dock size <input type="range" min="8" max="39" bind:value={navSizeMulti} oninput={(event) => { navSizeMulti = Number(event.currentTarget.value); callTaskbarHeight(); }} /></label>
-			<button class="control-wallpaper" onclick={personalize}><Icon name="desktop" size={19} />Change wallpaper<Icon name="arrow" size={16} /></button>
+			<div class="glass-settings-heading"><h2>Liquid glass</h2><button class="menubar-icon" aria-label="Close glass settings" onclick={() => (glassOpen = false)}><Icon name="close" size={17} /></button></div>
+			<div class="glass-strength-label"><label for="desktop-glass-strength">Strength</label><output for="desktop-glass-strength">{glassStrength}%</output></div>
+			<input id="desktop-glass-strength" class="glass-strength-slider" type="range" min="0" max="100" step="1" value={glassStrength} oninput={(event) => updateGlassStrength(Number(event.currentTarget.value))} />
+			<div class="glass-scale"><span>Solid</span><span>Strong</span></div>
+			<div class="glass-settings-footer"><span>Transparency, blur and reflections</span><button onclick={() => updateGlassStrength(60)}>Reset</button></div>
 		</dialog>
 	{/if}
 
