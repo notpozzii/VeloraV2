@@ -107,7 +107,7 @@ export async function enablePopupInterceptor() {
           targetWindow.__galaxyOpenHooked = true;
           let nativeOpen = targetWindow.open;
           targetWindow.open = function (url, name, features) {
-            if (!isEnabled()) {
+            if (!isEnabled() || (typeof name === 'string' && name.toLowerCase() === '_self')) {
               return nativeOpen.apply(targetWindow, arguments);
             }
             emitNewTab(url);
