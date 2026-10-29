@@ -15,10 +15,8 @@
   onMount(() => {
     let disposed = false;
     const syncFullscreen = () => { fullscreen = Boolean(document.fullscreenElement); };
-    const stopAppKeys = window.top === window
-      ? installGameKeyboard({ document, navigator, desktop: app }) : () => {};
-    const stopFrameKeys = window.top === window
-      ? installGameKeyboard({ document, navigator, desktop: frame }) : () => {};
+    const stopGameKeys = window.top === window
+      ? installGameKeyboard({ document, navigator, targets: [app, frame] }) : () => {};
     document.addEventListener('fullscreenchange', syncFullscreen);
     async function launch() {
       try {
@@ -35,8 +33,7 @@
     launch();
     return () => {
       disposed = true;
-      stopAppKeys();
-      stopFrameKeys();
+      stopGameKeys();
       document.removeEventListener('fullscreenchange', syncFullscreen);
     };
   });

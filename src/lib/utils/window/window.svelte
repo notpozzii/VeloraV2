@@ -240,7 +240,7 @@
 		mounted = true;
 		const removeGameKeyboard =
 			name === 'GeForce NOW' && window.top === window
-				? installGameKeyboard({ document, navigator, desktop: appFrame })
+				? installGameKeyboard({ document, navigator, targets: [appFrame, windowElement] })
 				: () => {};
 		const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 		const syncMotion = () => {
