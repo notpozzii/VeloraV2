@@ -92,7 +92,8 @@ async function readinessFixture({ validProbe = true, updating = false, recover =
 	const registration = updating ? { active: old, installing: next } : { active: next };
 	registration.update = async () => { updates++; };
 	workers.register = async () => registration;
-	const messages = [], probes = [];
+	const messages = [], probes = [], activations = [];
+	next.postMessage = message => activations.push(message);
 	const context = { URL, navigator: { serviceWorker: workers }, parent: { postMessage: data => messages.push(data) }, self: {},
 		location: { href: 'https://velora.test/proxy-frame.html?request=123', origin: 'https://velora.test' },
 		fetch: async (url, options) => { probes.push({ url, options }); return validProbe || (recover && updates > 0)
@@ -100,7 +101,7 @@ async function readinessFixture({ validProbe = true, updating = false, recover =
 			: new Response('AccessDenied', { status: 403 }); }, setTimeout, clearTimeout };
 	const pending = vm.runInNewContext(readFileSync(new URL('../static/proxy-frame.js', import.meta.url), 'utf8'), context);
 	await new Promise(resolve => setImmediate(resolve));
-	return { workers, next, messages, probes, pending };
+	return { workers, next, messages, probes, activations, pending };
 }
 
 test('readiness does not mistake the previous worker at the same URL for an activated update', async () => {
@@ -136,5 +137,22 @@ test('an old active worker gets one update and a safe routing probe before app n
 	await f.pending;
 	assert.equal(f.probes.length, 2);
 	assert.equal(f.messages.length, 1);
+	assert.equal(f.messages[0].error, undefined);
+});
+
+test('the readiness frame wakes a Safari replacement that reaches installed but stays waiting', async () => {
+	const f = await readinessFixture({ updating: true });
+	f.next.state = 'installed';
+	f.next.dispatchEvent(new Event('statechange'));
+	f.next.dispatchEvent(new Event('statechange'));
+	assert.equal(f.activations.length, 1);
+	assert.equal(f.activations[0].type, 'velora:activate-worker');
+	assert.equal(f.messages.length, 0);
+	f.next.state = 'activated';
+	f.next.dispatchEvent(new Event('statechange'));
+	await new Promise(resolve => setImmediate(resolve));
+	f.workers.controller = f.next;
+	f.workers.dispatchEvent(new Event('controllerchange'));
+	await f.pending;
 	assert.equal(f.messages[0].error, undefined);
 });

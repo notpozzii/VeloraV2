@@ -2,6 +2,9 @@
 // engine bundles. Safari must discover them during the worker's first evaluation.
 self.addEventListener('install', (event) => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'velora:activate-worker') event.waitUntil(self.skipWaiting());
+});
 self.addEventListener('fetch', (event) => {
   // respondWith must run synchronously, even when controller recovery is async.
   event.respondWith(routeRequest(event));
