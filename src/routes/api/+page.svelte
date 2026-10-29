@@ -19,6 +19,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
+	import { installGameFullscreen } from '$lib/utils/browser/game-fullscreen.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
@@ -60,8 +61,10 @@ autoSW:    legacy parameter; apps now load automatically
 		// window owns this when embedded; standalone GeForce needs its own owner.
 		const stopGameKeys = window.top === window && apiHost === 'play.geforcenow.com'
 			? installGameKeyboard({ document, navigator, desktop: iframeEl }) : () => {};
+		const stopGameFullscreen = apiHost === 'play.geforcenow.com'
+			? installGameFullscreen(iframeEl) : () => {};
 		void start();
-		return stopGameKeys;
+		return () => { stopGameKeys(); stopGameFullscreen(); };
 	});
 
 	async function start() {

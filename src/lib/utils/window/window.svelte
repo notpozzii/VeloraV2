@@ -203,7 +203,7 @@
 		fullscreenError = '';
 		keepGeForceMaximized();
 		try {
-			await toggleElementFullscreen(appFrame);
+			await toggleElementFullscreen(appFrame, document, { game: name === 'GeForce NOW' });
 		} catch (error) {
 			fullscreenError = error?.message || 'Could not enter full screen.';
 		}

@@ -3,6 +3,8 @@
   import { startGeForce } from '$lib/lethe/geforce.js';
   import { loadSetting } from '$lib/utils/localspace.js';
   import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
+  import { installGameFullscreen } from '$lib/utils/browser/game-fullscreen.js';
+  import { fullscreenElement, requestElementFullscreen } from '$lib/utils/browser/fullscreen.js';
   import Icon from '$lib/utils/browser/icon.svelte';
   import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 
@@ -14,10 +16,12 @@
 
   onMount(() => {
     let disposed = false;
-    const syncFullscreen = () => { fullscreen = Boolean(document.fullscreenElement); };
+    const syncFullscreen = () => { fullscreen = Boolean(fullscreenElement(document)); };
     const stopGameKeys = window.top === window
       ? installGameKeyboard({ document, navigator, targets: [app, frame] }) : () => {};
     document.addEventListener('fullscreenchange', syncFullscreen);
+    document.addEventListener('webkitfullscreenchange', syncFullscreen);
+    const stopGameFullscreen = installGameFullscreen(frame);
     async function launch() {
       try {
         const wisp = await loadSetting('customWisp', '');
@@ -34,13 +38,15 @@
     return () => {
       disposed = true;
       stopGameKeys();
+      stopGameFullscreen();
       document.removeEventListener('fullscreenchange', syncFullscreen);
+      document.removeEventListener('webkitfullscreenchange', syncFullscreen);
     };
   });
 
   async function enterFullscreen() {
     try {
-      await app.requestFullscreen({ navigationUI: 'hide' });
+      await requestElementFullscreen(app, { game: true });
       frame.focus();
     } catch {
       error = 'Fullscreen is unavailable here. Use your browser’s fullscreen control.';

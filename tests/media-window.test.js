@@ -46,3 +46,27 @@ test('fullscreen exits when already active and reports blocked or denied request
 		/denied/
 	);
 });
+
+test('GeForce requests Safari fullscreen keyboard lock and falls back only for unsupported options', async () => {
+	const calls = [];
+	await toggleElementFullscreen({ async requestFullscreen(options) {
+		calls.push(options);
+		if (options.keyboardLock) throw Object.assign(new Error('unsupported'), { name: 'NotSupportedError' });
+	} }, {}, { game: true });
+	assert.deepEqual(calls, [
+		{ navigationUI: 'hide', keyboardLock: 'browser' }, { navigationUI: 'hide' }
+	]);
+	let attempts = 0;
+	await assert.rejects(toggleElementFullscreen({ async requestFullscreen() {
+		attempts++;
+		throw Object.assign(new Error('denied'), { name: 'NotAllowedError' });
+	} }, {}, { game: true }), /denied/);
+	assert.equal(attempts, 1);
+});
+
+test('older Safari prefixed fullscreen enters and exits with the correct receiver', async () => {
+	const element = { webkitRequestFullscreen() { assert.equal(this, element); } };
+	await toggleElementFullscreen(element, { webkitFullscreenEnabled: true });
+	const doc = { webkitFullscreenElement: element, webkitExitFullscreen() { assert.equal(this, doc); } };
+	await toggleElementFullscreen(element, doc);
+});
