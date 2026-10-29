@@ -68,3 +68,59 @@ test('no keyboard event is canceled or replaced', () => {
   assert.equal(event.defaultPrevented, false);
   f.remove();
 });
+
+test('one owner handles the app container and a nested frame without duplicate requests', () => {
+  const doc = new EventTarget(), app = {}, frame = {}, calls = [];
+  const remove = installGameKeyboard({ document: doc, navigator: { keyboard: {
+    lock(keys) { calls.push(['lock', keys]); }, unlock() { calls.push(['unlock']); }
+  } }, targets: [app, frame] });
+  for (const target of [app, frame]) {
+    doc.fullscreenElement = target;
+    doc.dispatchEvent(new Event('fullscreenchange'));
+  }
+  assert.deepEqual(calls, [['lock', ['Escape']]]);
+  doc.fullscreenElement = {};
+  doc.dispatchEvent(new Event('fullscreenchange'));
+  assert.deepEqual(calls.at(-1), ['unlock']);
+  remove();
+});
+
+test('a fullscreen desktop captures Escape only while the GeForce frame has focus', () => {
+  const f = fixture();
+  f.doc.documentElement = {};
+  f.doc.activeElement = {};
+  f.fullscreen(f.doc.documentElement);
+  assert.deepEqual(f.calls, []);
+  f.doc.activeElement = f.desktop;
+  f.doc.dispatchEvent(new Event('focusin'));
+  assert.deepEqual(f.calls, [['lock', ['Escape']]]);
+  f.doc.activeElement = {};
+  f.doc.dispatchEvent(new Event('focusin'));
+  assert.deepEqual(f.calls.at(-1), ['unlock']);
+  f.remove();
+});
+
+test('mounting during an existing fullscreen session requests capture immediately', () => {
+  const doc = new EventTarget(), frame = {}, calls = [];
+  doc.fullscreenElement = frame;
+  const remove = installGameKeyboard({ document: doc, navigator: { keyboard: {
+    lock(keys) { calls.push(keys); }, unlock() {}
+  } }, desktop: frame });
+  assert.deepEqual(calls, [['Escape']]);
+  remove();
+});
+
+test('an old permission rejection cannot clear a newer fullscreen request', async () => {
+  const rejects = [];
+  const f = fixture(() => new Promise((resolve, reject) => rejects.push(reject)));
+  f.fullscreen(f.desktop);
+  f.fullscreen(null);
+  f.fullscreen(f.desktop);
+  rejects[0](new Error('Old request aborted'));
+  await new Promise(resolve => setImmediate(resolve));
+  f.fullscreen(f.desktop);
+  assert.equal(f.calls.filter(c => c[0] === 'lock').length, 2);
+  f.remove();
+  rejects[1](new Error('Cleanup'));
+  await new Promise(resolve => setImmediate(resolve));
+});
