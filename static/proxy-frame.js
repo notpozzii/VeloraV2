@@ -19,8 +19,13 @@
         worker = registration.installing || registration.waiting || registration.active;
         if (!worker) throw new Error('No app worker');
         if (worker.state !== 'activated') {
+          let activationRequested = false;
           await new Promise((resolve, reject) => {
             onState = () => {
+              if (worker.state === 'installed' && !activationRequested) {
+                activationRequested = true;
+                worker.postMessage({ type: 'velora:activate-worker' });
+              }
               if (!['activated', 'redundant'].includes(worker.state)) return;
               worker.removeEventListener('statechange', onState);
               onState = undefined;

@@ -65,6 +65,33 @@ test('timed-out worker updates remove state listeners', async () => {
  assert.equal(states.size, 0);
 });
 
+test('an installed Safari worker receives one activation request before navigation can continue', async () => {
+ const sw = worker({ controlled: true });
+ const states = new Set(), messages = [];
+ const next = {
+  scriptURL: sw.controller.scriptURL, state: 'installed',
+  addEventListener(type, callback) { states.add(callback); },
+  removeEventListener(type, callback) { states.delete(callback); },
+  postMessage(message) { messages.push(message); }
+ };
+ sw.register = async () => ({ scope: 'https://velora.example/', waiting: next });
+ let settled = false;
+ const pending = registerProxyWorker(sw, 1000).then(value => { settled = true; return value; });
+ await new Promise(resolve => setImmediate(resolve));
+ for (const callback of states) callback();
+ assert.deepEqual(messages, [{ type: 'velora:activate-worker' }]);
+ assert.equal(settled, false);
+ next.state = 'activated';
+ for (const callback of states) callback();
+ await new Promise(resolve => setImmediate(resolve));
+ assert.equal(settled, false);
+ sw.controller = next;
+ for (const callback of sw.listeners) callback();
+ assert.equal(await pending, next);
+ assert.equal(states.size, 0);
+ assert.equal(sw.listeners.size, 0);
+});
+
 test('concurrent startup and later tabs share one worker registration', async () => {
  const sw = worker();
  let registrations = 0;

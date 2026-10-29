@@ -46,8 +46,15 @@ async function startProxyWorker(serviceWorker, timeoutMs, { scriptURL = '/servy.
 			// controller ports or navigating a proxy frame.
 			workerState = registration.installing || registration.waiting || registration.active;
 			if (workerState && workerState.state !== 'activated') {
+				let activationRequested = false;
 				await new Promise((resolve, reject) => {
 					onWorkerState = () => {
+						// Safari can leave an installed replacement waiting even after
+						// its install-time skipWaiting(). Ask that worker explicitly.
+						if (workerState.state === 'installed' && !activationRequested) {
+							activationRequested = true;
+							workerState.postMessage({ type: 'velora:activate-worker' });
+						}
 						if (workerState.state === 'activated') resolve();
 						else if (workerState.state === 'redundant') reject(new Error(blockedMessage));
 					};

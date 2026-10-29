@@ -67,6 +67,18 @@ test('the readiness probe proves interception without contacting S3 or the relay
   assert.deepEqual(w.calls, []);
 });
 
+test('both workers explicitly activate waiting replacements when a client asks', async () => {
+  for (const path of ['../static/servy.js', '../static/geforce/servy.js']) {
+    const w = await worker(path);
+    const waits = [];
+    w.listeners.get('message')({ data: { type: 'unrelated' }, waitUntil() { assert.fail('unrelated message'); } });
+    w.listeners.get('message')({ data: { type: 'velora:activate-worker' }, waitUntil(promise) { waits.push(promise); } });
+    await Promise.all(waits);
+    assert.deepEqual(w.calls, ['skip']);
+    assert.equal(waits.length, 1);
+  }
+});
+
 test('browser proxy request is handled without reaching the site host', async () => {
   const w = await worker('../static/servy.js');
   const { request, response } = await w.request('/prism/controller/frame/url');
