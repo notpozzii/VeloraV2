@@ -8,6 +8,7 @@ async function worker(path, { connected = true } = {}) {
   const calls = [];
   const context = {
     URL, Response,
+    location: { origin: 'https://velora.example' },
     addEventListener(type, listener) { listeners.set(type, listener); },
     skipWaiting() { calls.push('skip'); return Promise.resolve(); },
     clients: { claim() { calls.push('claim'); return Promise.resolve(); } },
@@ -54,6 +55,16 @@ test('entry handlers activate and claim before importing any engine', async () =
     await Promise.all(waits);
     assert.deepEqual(w.calls, ['skip', 'claim']);
   }
+});
+
+test('the readiness probe proves interception without contacting S3 or the relay', async () => {
+  const w = await worker('../static/servy.js');
+  const { response } = await w.request('/__velora_proxy_ready?request=unique-test');
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('X-Velora-Proxy-Ready'), '1');
+  assert.equal(response.headers.get('Cache-Control'), 'no-store');
+  assert.equal(await response.text(), 'unique-test');
+  assert.deepEqual(w.calls, []);
 });
 
 test('browser proxy request is handled without reaching the site host', async () => {

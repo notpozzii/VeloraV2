@@ -18,6 +18,12 @@ const { ScramjetServiceWorker } = $scramjetLoadWorker();
 const scramjet = new ScramjetServiceWorker();
 
 async function routeRequest(event) {
+  const url = new URL(event.request.url);
+  if (url.origin === self.location.origin && url.pathname === '/__velora_proxy_ready' && event.request.method === 'GET') {
+    return new Response(url.searchParams.get('request') || '', {
+      headers: { 'X-Velora-Proxy-Ready': '1', 'Content-Type': 'text/plain', 'Cache-Control': 'no-store' }
+    });
+  }
   if ($scramjetController.shouldRoute(event)) {
     return $scramjetController.route(event);
   }
