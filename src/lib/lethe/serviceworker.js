@@ -13,7 +13,12 @@ export function registerProxyWorker(serviceWorker = navigator.serviceWorker, tim
 	}
 	const entry = {};
 	entries.set(key, entry);
-	entry.promise = startProxyWorker(serviceWorker, timeoutMs, options).then((controller) => {
+	entry.promise = startProxyWorker(serviceWorker, timeoutMs, options).catch(async error => {
+		// Repair only the observed legacy state: an installed replacement plus
+		// a controller that cannot intercept even our local readiness request.
+		if (!await repairStalledProxyWorker(serviceWorker, options)) throw error;
+		return startProxyWorker(serviceWorker, timeoutMs, options);
+	}).then((controller) => {
 		entry.controller = controller;
 		return controller;
 	}, (error) => {
@@ -21,6 +26,38 @@ export function registerProxyWorker(serviceWorker = navigator.serviceWorker, tim
 		throw error;
 	});
 	return entry.promise;
+}
+
+async function repairStalledProxyWorker(serviceWorker, { scriptURL = '/servy.js', fetcher = globalThis.fetch } = {}) {
+	if (scriptURL !== '/servy.js' || typeof serviceWorker.getRegistration !== 'function' || typeof fetcher !== 'function') return false;
+	const abort = new AbortController();
+	let cancelled = false;
+	let timer;
+	const deadline = new Promise(resolve => {
+		timer = setTimeout(() => { cancelled = true; abort.abort(); resolve(false); }, 4000);
+	});
+	try {
+		return await Promise.race([(async () => {
+			const registration = await serviceWorker.getRegistration(scriptURL);
+			if (cancelled || !registration || registration.waiting?.state !== 'installed') return false;
+			const expected = new URL(scriptURL, registration.scope);
+			if (registration.scope !== expected.origin + '/' ||
+				registration.active?.scriptURL !== expected.href ||
+				serviceWorker.controller?.scriptURL !== expected.href) return false;
+			const probe = new URL('/__velora_proxy_ready?request=repair-check', expected);
+			const response = await fetcher(probe.href, { cache: 'no-store', signal: abort.signal });
+			if (cancelled || response.headers.get('X-Velora-Proxy-Ready') === '1') return false;
+			// Remove only this connection registration. Cookies, localStorage,
+			// IndexedDB, caches, preferences and app sign-ins stay untouched.
+			return await registration.unregister();
+		})(), deadline]);
+	} catch {
+		return false;
+	} finally {
+		cancelled = true;
+		clearTimeout(timer);
+		abort.abort();
+	}
 }
 
 /** Wait for this document to be controlled, not just for registration to finish. */
@@ -39,6 +76,9 @@ async function startProxyWorker(serviceWorker, timeoutMs, { scriptURL = '/servy.
 			const registration = await serviceWorker.register(scriptURL, {
 				type: 'classic', updateViaCache: 'none', ...(scope ? { scope } : {})
 			});
+			// A legacy waiting worker may predate the activation message handler.
+			// Fetch the deployed replacement before choosing which worker to wake.
+			if (registration.waiting) await registration.update();
 			await serviceWorker.ready;
 			if (cancelled) throw new Error(blockedMessage);
 			// A matching URL can still be the previous worker while an update is

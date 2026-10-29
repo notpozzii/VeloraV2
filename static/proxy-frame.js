@@ -14,6 +14,7 @@
     });
     await Promise.race([(async () => {
       const registration = await workers.register('/servy.js', { type: 'classic', updateViaCache: 'none' });
+      if (registration.waiting) await registration.update();
       async function waitForControl() {
         if (cancelled) return;
         worker = registration.installing || registration.waiting || registration.active;
