@@ -1,6 +1,6 @@
 export const connectionDefaults = Object.freeze({ lethe: 'sj2', car: 'libcurl', customWisp: '' });
 export const connectionResetKey = 'velora:connection-defaults';
-export const connectionResetVersion = '2026-10-29.1';
+export const connectionResetVersion = '2026-10-30.1';
 const sessionResetKey = `${connectionResetKey}:session`;
 const autoChoicesKey = 'velora:auto-connections:v1';
 export const isConnectionSetting = key => Object.hasOwn(connectionDefaults, key);
