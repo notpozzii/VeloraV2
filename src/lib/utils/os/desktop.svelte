@@ -645,14 +645,6 @@
 			comp?.updateTaskbarHeight(navSizeMulti);
 		}
 	}
-	function openChangelogs() {
-		const existing = getAppWindows('about-velora')[0];
-		if (existing) {
-			focusWindow(existing.sender);
-			return;
-		}
-		openWindow('/changelog', 'About Velora', '65%', '600px', 70, 80, 'about-velora');
-	}
 </script>
 
 <svelte:head><title>Velora — Desktop</title></svelte:head>
@@ -689,9 +681,7 @@
 	<div class="desktop-shade"></div>
 	<header class="desktop-menubar">
 		<div class="desktop-identity">
-			<button class="brand-button" onclick={openChangelogs} aria-label="About Velora"
-				><span class="velora-mark">v.</span><span>velora</span></button
-			>
+			<div class="desktop-brand"><span class="velora-mark">v.</span><span>velora</span></div>
 			<span class="header-divider"></span>
 			<span class="desktop-label">Workspace</span>
 			<a href="/download" class="desktop-download">Download <Icon name="arrow" size={12} /></a>
