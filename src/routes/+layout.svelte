@@ -9,6 +9,7 @@
 	import { installResetCoordinator } from '$lib/utils/reset-core.js';
 	import { installActivityCollector } from '$lib/utils/developer/diagnostics.js';
 	import ActivityConsole from '$lib/utils/developer/activity-console.svelte';
+	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
 	let { children } = $props();
 	let opening = $state(true);
 	let contentAllowed = $state(false);
@@ -39,11 +40,16 @@
 
 	onMount(() => {
 		const reset = installResetCoordinator(window);
+		// Keyboard Lock is top-level only. One owner covers every app, including
+		// fullscreen requests made inside nested app and browser frames.
+		const disposeFullscreenKeys = !reset.holding && window.top === window
+			? installGameKeyboard({ document, navigator, allApps: true }) : () => {};
 		const disposeActivity = reset.holding ? () => {} : installActivityCollector(window);
 		if (!reset.holding) startContent();
 
 		return () => {
 			reset.dispose();
+			disposeFullscreenKeys();
 			disposeActivity();
 			disposeTheme();
 		};

@@ -2,7 +2,6 @@
   import { onMount } from 'svelte';
   import { startGeForce } from '$lib/lethe/geforce.js';
   import { loadSetting } from '$lib/utils/localspace.js';
-  import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
   import Icon from '$lib/utils/browser/icon.svelte';
   import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 
@@ -15,8 +14,6 @@
   onMount(() => {
     let disposed = false;
     const syncFullscreen = () => { fullscreen = Boolean(document.fullscreenElement); };
-    const stopGameKeys = window.top === window
-      ? installGameKeyboard({ document, navigator, targets: [app, frame] }) : () => {};
     document.addEventListener('fullscreenchange', syncFullscreen);
     async function launch() {
       try {
@@ -33,7 +30,6 @@
     launch();
     return () => {
       disposed = true;
-      stopGameKeys();
       document.removeEventListener('fullscreenchange', syncFullscreen);
     };
   });

@@ -1,6 +1,6 @@
 // Progressive enhancement for Chromium. The browser retains its long-Esc exit.
 // Never cancel key events or synthesize input: the focused game receives real keys.
-export function installGameKeyboard({ document: doc, navigator: nav, desktop, targets = [desktop] }) {
+export function installGameKeyboard({ document: doc, navigator: nav, desktop, targets = [desktop], allApps = false }) {
   const keyboard = nav.keyboard;
   if (typeof keyboard?.lock !== 'function' || typeof keyboard?.unlock !== 'function') {
     return () => {};
@@ -11,6 +11,8 @@ export function installGameKeyboard({ document: doc, navigator: nav, desktop, ta
   let generation = 0;
   function active() {
     const fullscreen = doc.fullscreenElement;
+    // The top-level layout owns one lock across all app windows and routes.
+    if (allApps) return Boolean(fullscreen);
     return Boolean(fullscreen && targets.some(target => target && (
       fullscreen === target ||
       (fullscreen === doc.documentElement && doc.activeElement === target)
@@ -45,7 +47,7 @@ export function installGameKeyboard({ document: doc, navigator: nav, desktop, ta
   }
 
   doc.addEventListener('fullscreenchange', sync);
-  // The desktop may already be fullscreen when GeForce mounts or gains focus.
+  // The desktop may already be fullscreen when the layout mounts or gains focus.
   doc.addEventListener('focusin', sync);
   sync();
   return () => {

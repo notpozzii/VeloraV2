@@ -7,7 +7,6 @@
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { snapTarget } from './snap.js';
 	import { toggleElementFullscreen } from '$lib/utils/browser/fullscreen.js';
-	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
 	import { requestBrowserSearch } from '$lib/utils/browser/desktop-search-request.js';
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
@@ -238,10 +237,6 @@
 	onMount(() => {
 		recordActivity('app-open', { target: url });
 		mounted = true;
-		const removeGameKeyboard =
-			name === 'GeForce NOW' && window.top === window
-				? installGameKeyboard({ document, navigator, targets: [appFrame, windowElement] })
-				: () => {};
 		const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
 		const syncMotion = () => {
 			reducedMotion = motion.matches;
@@ -282,7 +277,6 @@
 		);
 		return () => {
 			mounted = false;
-			removeGameKeyboard();
 			clearTimeout(transitionTimer);
 			gsap.killTweensOf(windowElement);
 			document.removeEventListener('fullscreenchange', syncGeForceFullscreen);
