@@ -47,13 +47,14 @@ export function installGameKeyboard({ document: doc, navigator: nav, desktop, ta
   }
 
   doc.addEventListener('fullscreenchange', sync);
-  // The desktop may already be fullscreen when the layout mounts or gains focus.
-  doc.addEventListener('focusin', sync);
+  // Scoped owners follow focus. The shared layout stays active for the whole
+  // fullscreen session and must not repeat a denied request on every focus.
+  if (!allApps) doc.addEventListener('focusin', sync);
   sync();
   return () => {
     disposed = true;
     doc.removeEventListener('fullscreenchange', sync);
-    doc.removeEventListener('focusin', sync);
+    if (!allApps) doc.removeEventListener('focusin', sync);
     release();
   };
 }

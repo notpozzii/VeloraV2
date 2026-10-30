@@ -153,3 +153,18 @@ test('all-app fullscreen capture leaves key events intact and cleans up on layou
   f.fullscreen({});
   assert.deepEqual(f.calls, [['lock', ['Escape']], ['unlock']]);
 });
+
+
+test('all-app mode retries a denied lock only in the next fullscreen session, not on focus changes', async () => {
+  const f = fixture(() => Promise.reject(new Error('Permission denied')), true);
+  f.fullscreen({});
+  await new Promise(resolve => setImmediate(resolve));
+  f.doc.dispatchEvent(new Event('focusin'));
+  f.doc.dispatchEvent(new Event('focusin'));
+  assert.equal(f.calls.length, 1);
+  f.fullscreen(null);
+  f.fullscreen({});
+  assert.equal(f.calls.length, 2);
+  await new Promise(resolve => setImmediate(resolve));
+  f.remove();
+});
