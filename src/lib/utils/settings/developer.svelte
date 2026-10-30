@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import SpeedPanel from '$lib/utils/developer/speed-panel.svelte';
 	import { getActivityHub, setDeveloperMode } from '$lib/utils/developer/diagnostics.js';
 	let enabled = $state(false);
 	let hydrated = $state(false);
@@ -21,10 +22,15 @@
 
 <div class="group">
 	<div class="subGroup">
-		<div class="developer-toggle"><div><p class="subHeading">Developer mode</p><p class="desc">Show a live activity console while you use Velora.</p></div><button role="switch" aria-checked={enabled} aria-label="Developer mode" disabled={!hydrated} onclick={toggle}><span></span></button></div>
+		<div class="developer-toggle"><div><p class="subHeading">Developer mode</p><p class="desc">Measure page speed and inspect live activity while you use Velora.</p></div><button role="switch" aria-checked={enabled} aria-label="Developer mode" disabled={!hydrated} onclick={toggle}><span></span></button></div>
 		{#if error}<p class="desc" role="status">{error}</p>{/if}
-		{#if enabled}<button class="open-console" onclick={() => getActivityHub().setOpen(true)}>Open activity console</button>{/if}
+		{#if enabled}<button class="open-console" onclick={() => getActivityHub().setOpen(true)}>Open developer console</button>{/if}
 	</div>
+	{#if enabled}
+		<div class="speed-feature"><SpeedPanel /></div>
+	{:else}
+		<div class="speed-intro"><span>LOAD SPEED</span><h2>Find out where the wait is.</h2><p>Five-request server tests, median response times, and real browser load milestones. Enable Developer mode to start measuring.</p></div>
+	{/if}
 	<div class="subGroup">
 		<p class="subHeading">What you can see</p>
 		<p class="desc">App windows, page loads, engine and transport attempts, resource timings, connection failures, JavaScript errors, and console call counts.</p>
@@ -38,6 +44,7 @@
 </div>
 
 <style>
+	.speed-feature { border:1px solid #c7dfa42c; background:#111a15; border-radius:14px; overflow:hidden; margin:22px 0; }.speed-intro { border:1px solid #d3e5b028; background:linear-gradient(135deg,#d3e5b00b,transparent); border-radius:14px; padding:25px; margin:22px 0; }.speed-intro span { color:#b4c998; font:10px ui-monospace,monospace; letter-spacing:1.2px; }.speed-intro h2 { color:#e0e9d9; font-size:24px; font-weight:500; margin:9px 0; letter-spacing:-.5px; }.speed-intro p { font-size:12px; color:#94a488; line-height:1.7; max-width:480px; margin:0; }
 	.developer-toggle { display:flex; align-items:center; justify-content:space-between; gap:24px; }
 	.developer-toggle .desc { margin-bottom:0; }
 	[role=switch] { width:44px; height:26px; flex-shrink:0; border:1px solid #ffffff30; background:#ffffff12; border-radius:20px; padding:3px; cursor:pointer; }
