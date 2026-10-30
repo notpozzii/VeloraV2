@@ -33,6 +33,16 @@ export function createAutoNavigator({ prepare, storage, now = Date.now } = {}) {
 			return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
 		} catch { return {}; }
 	}
+	function forget(cacheKey, failed) {
+		try {
+			const entries = read();
+			const current = entries[cacheKey];
+			// A second navigation may already have saved a newer working choice.
+			if (!current || current.engine !== failed.engine || current.car !== failed.car || current.time !== failed.time) return;
+			delete entries[cacheKey];
+			(storage ?? globalThis.sessionStorage)?.setItem(key, JSON.stringify(entries));
+		} catch {}
+	}
 	return {
 		async open({ url, engine, car, wisp, signal, load, onattempt }) {
 			const automatic = isAutoConnection(engine, car);
@@ -62,14 +72,34 @@ export function createAutoNavigator({ prepare, storage, now = Date.now } = {}) {
 					return { ...session, car: candidate.car };
 				} catch (error) {
 					recordActivity(signal?.aborted || error?.name === 'AbortError' ? 'cancelled' : 'attempt-failed', { ...activity, duration: now() - started, reason: activityReason(error) });
-					if (signal?.aborted || error?.name === 'AbortError') throw error;
+					checkAbort(signal);
+					if (error?.name === 'AbortError') throw error;
 					if (!automatic) throw error;
+					if (remembered && remembered.engine === candidate.engine && remembered.car === candidate.car) forget(cacheKey, remembered);
 					failures.push(error);
 				}
 			}
 			throw new AggregateError(failures, 'Auto could not open this page with any available connection. Check your relay or choose a connection manually.');
 		}
 	};
+}
+
+function proxyDocumentFailure(doc, text) {
+	// SJ2 returns a plain-text 500 on transport errors, including Epoxy's TLS
+	// handshake EOF. It has no error-page title, so title checks alone miss it.
+	if (/^Internal Service Worker Error:\s*\S/i.test(text)) return 'The proxy connection failed.';
+	if (/^The browser connection expired\.|^The browser connection could not be restored\./.test(text)) return 'Proxy connection expired.';
+	const title = (doc.title || '').trim();
+	if (/^(Ultraviolet|Scramjet) Error$/i.test(title)) return 'The proxy could not load this page.';
+	// Recognize the error templates actually shipped by UV and legacy SJ. A
+	// normal website titled "Error" or returning 403/404/500 is not a failed
+	// connection. Check their distinctive diagnostic elements together.
+	const has = selector => !!doc.querySelector?.(selector);
+	if (has('textarea#errorTrace') && has('#fetchedURL') && (
+		(/^Error$/i.test(title) && has('#uvVersion')) ||
+		(/^Scramjet$/i.test(title) && has('#version-wrapper'))
+	)) return 'The proxy could not load this page.';
+	return null;
 }
 
 // Watch only the initial GET navigation. Stop as soon as its document loads;
@@ -94,8 +124,8 @@ export function waitForProxyDocument(frame, navigate, { signal, timeoutMs = 1200
 				if (!doc || doc === previous || doc.URL === 'about:blank' || /\/proxy-frame(?:\.html)?[?]/.test(doc.URL)) return;
 				if (doc.readyState === 'loading' || !doc.body?.childNodes.length) return;
 				const text = doc.body.textContent.trim();
-				if (/^The browser connection expired\.|^The browser connection could not be restored\./.test(text)) return finish(new Error('Proxy connection expired.'));
-				if (/^(Ultraviolet|Scramjet) Error$/i.test(doc.title)) return finish(new Error('The proxy could not load this page.'));
+				const failure = proxyDocumentFailure(doc, text);
+				if (failure) return finish(new Error(failure));
 				if (!(doc.body.innerText ?? text).trim() && !doc.body.querySelector?.('img, video, canvas, svg, input, button, iframe, [role="application"]')) return;
 				finish();
 			} catch { /* Keep waiting; an unreadable frame is not proof of failure. */ }

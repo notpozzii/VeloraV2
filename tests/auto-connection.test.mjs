@@ -123,3 +123,81 @@ test('an empty application shell is not mistaken for a usable document', async (
 	const {frame,doc}=frameFixture();
 	await assert.rejects(waitForProxyDocument(frame,()=>{frame.contentDocument=doc('Loading','script code');frame.contentDocument.body.innerText='';frame.dispatchEvent(new Event('load'));},{timeoutMs:5}), /did not start/);
 });
+
+const tlsError = 'Internal Service Worker Error: Error: Hyper client: hyper_util::client::legacy::Error(Connect, Io(Custom { kind: UnexpectedEof, error: "tls handshake eof" }))';
+
+test('the reported plain-text Epoxy TLS error advances Auto to Libcurl and remembers the working choice', async () => {
+	const saved = storage();
+	const cacheKey = JSON.stringify(['https://example.com', '']);
+	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2', car:'epoxy', time:100 } }));
+	const { frame, doc } = frameFixture(); const attempts = [], status = [];
+	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async (engine, car) => { attempts.push([engine, car]); return { engine }; } });
+	const result = await auto.open({ url:'https://example.com/', engine:'auto', car:'auto', onattempt:attempt => status.push(attempt.attempt),
+		load:(_session, candidate) => waitForProxyDocument(frame, () => {
+			frame.contentDocument = candidate.car === 'epoxy' ? doc('', tlsError) : doc('Example Domain');
+			frame.dispatchEvent(new Event('load'));
+		})
+	});
+	assert.deepEqual(attempts, [['sj2','epoxy'], ['sj2','libcurl']]);
+	assert.deepEqual(status, [1, 2]); assert.equal(result.car, 'libcurl');
+	assert.equal(JSON.parse(saved.getItem('velora:auto-connections:v1'))[cacheKey].car, 'libcurl');
+});
+
+test('actual UV and SJ error templates trigger fallback without exposing their diagnostics', async () => {
+	for (const [title, markers] of [['Error', ['textarea#errorTrace','#fetchedURL','#uvVersion']], ['Scramjet', ['textarea#errorTrace','#fetchedURL','#version-wrapper']]]) {
+		const { frame, doc } = frameFixture();
+		await assert.rejects(waitForProxyDocument(frame, () => {
+			frame.contentDocument = { ...doc(title, 'Failed to load a private URL'), querySelector:selector => markers.includes(selector) ? {} : null };
+			frame.dispatchEvent(new Event('load'));
+		}), error => error.message === 'The proxy could not load this page.' && !error.message.includes('private'));
+	}
+});
+
+test('website error titles, HTTP failures, and articles quoting connection errors remain website responses', async () => {
+	for (const [title, text] of [['Error','Internal Server Error'], ['403 Forbidden','Access denied'], ['500','Service unavailable'], ['Scramjet','A project homepage'], ['TLS troubleshooting',`Here is an example: ${tlsError}`]]) {
+		const { frame, doc } = frameFixture();
+		await waitForProxyDocument(frame, () => { frame.contentDocument = doc(title, text); frame.dispatchEvent(new Event('load')); });
+	}
+});
+
+test('all failed document loads stop at six attempts and evict only the failed cached origin', async () => {
+	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '']);
+	const otherKey = JSON.stringify(['https://other.example', '']);
+	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2', car:'epoxy', time:100 }, [otherKey]:{ engine:'uv',car:'libcurl',time:100 } }));
+	const { frame, doc } = frameFixture(); let attempts = 0;
+	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async engine => { attempts++; return {engine}; } });
+	await assert.rejects(auto.open({ url:'https://example.com', engine:'auto', car:'auto', load:() => waitForProxyDocument(frame, () => {
+		frame.contentDocument = doc('', tlsError); frame.dispatchEvent(new Event('load'));
+	}) }), error => error instanceof AggregateError && error.errors.length === 6);
+	assert.equal(attempts, 6);
+	const remembered = JSON.parse(saved.getItem('velora:auto-connections:v1'));
+	assert.equal(remembered[cacheKey], undefined); assert.equal(remembered[otherKey].engine, 'uv');
+});
+
+test('a failed old navigation cannot remove a newer cached connection from another navigation', async () => {
+	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '']);
+	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2',car:'epoxy',time:100 } }));
+	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async () => { throw Error('Offline'); } });
+	await assert.rejects(auto.open({ url:'https://example.com',engine:'auto',car:'auto', onattempt:({attempt}) => {
+		if (attempt === 1) saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2',car:'epoxy',time:102 } }));
+	}, load:async()=>{} }));
+	assert.equal(JSON.parse(saved.getItem('velora:auto-connections:v1'))[cacheKey].time, 102);
+});
+
+test('manual connection choices never switch on a proxy error document', async () => {
+	const { frame, doc } = frameFixture(); let attempts = 0;
+	const auto = createAutoNavigator({ prepare:async engine => { attempts++; return {engine}; } });
+	await assert.rejects(auto.open({ url:'https://example.com',engine:'sj2',car:'epoxy',load:() => waitForProxyDocument(frame, () => {
+		frame.contentDocument = doc('', tlsError); frame.dispatchEvent(new Event('load'));
+	}) }), /proxy connection failed/);
+	assert.equal(attempts, 1);
+});
+
+test('an abort after a failed document stops fallback and never caches a connection', async () => {
+	const { frame, doc } = frameFixture(); const abort = new AbortController(), saved = storage(); let attempts = 0;
+	const auto = createAutoNavigator({ storage:saved, prepare:async engine => { attempts++; return {engine}; } });
+	await assert.rejects(auto.open({ url:'https://example.com',engine:'auto',car:'auto',signal:abort.signal, load:() => waitForProxyDocument(frame, () => {
+		frame.contentDocument = doc('', tlsError); frame.dispatchEvent(new Event('load')); abort.abort();
+	}, {signal:abort.signal}) }), {name:'AbortError'});
+	assert.equal(attempts, 1); assert.equal(saved.getItem('velora:auto-connections:v1'), undefined);
+});
