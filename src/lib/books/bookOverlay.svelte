@@ -31,7 +31,9 @@
 	}
 
 	function onkeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && game) onclose();
+		// A fullscreen app must receive Esc without closing its game overlay.
+		if (e.key === 'Escape' && !e.repeat && game && !document.fullscreenElement &&
+			!('webkitFullscreenElement' in document && document.webkitFullscreenElement)) onclose();
 	}
 </script>
 

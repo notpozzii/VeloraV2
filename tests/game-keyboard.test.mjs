@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { installGameKeyboard } from '../src/lib/utils/browser/game-keyboard.js';
 
-function fixture(lock = async () => {}) {
+function fixture(lock = async () => {}, allApps = false) {
   const doc = new EventTarget();
   doc.fullscreenElement = null;
   const desktop = {};
@@ -11,7 +11,7 @@ function fixture(lock = async () => {}) {
     lock(keys) { calls.push(['lock', keys]); return lock(); },
     unlock() { calls.push(['unlock']); }
   } };
-  const remove = installGameKeyboard({ document: doc, navigator, desktop });
+  const remove = installGameKeyboard({ document: doc, navigator, desktop, allApps });
   function fullscreen(element) {
     doc.fullscreenElement = element;
     doc.dispatchEvent(new Event('fullscreenchange'));
@@ -123,4 +123,48 @@ test('an old permission rejection cannot clear a newer fullscreen request', asyn
   f.remove();
   rejects[1](new Error('Cleanup'));
   await new Promise(resolve => setImmediate(resolve));
+});
+
+
+test('one layout owner captures Escape for every app and releases only when fullscreen ends', async () => {
+  const f = fixture(async () => {}, true);
+  for (const app of [{ name: 'Browser' }, { name: 'TikTok' }, { name: 'Games' }, { name: 'Settings' }, { name: 'GeForce NOW' }]) {
+    f.fullscreen(app);
+    await Promise.resolve();
+    f.doc.activeElement = {};
+    f.doc.dispatchEvent(new Event('focusin'));
+  }
+  assert.deepEqual(f.calls, [['lock', ['Escape']]]);
+  f.fullscreen(null);
+  assert.deepEqual(f.calls, [['lock', ['Escape']], ['unlock']]);
+  f.fullscreen({ name: 'Apps' });
+  assert.deepEqual(f.calls.at(-1), ['lock', ['Escape']]);
+  f.remove();
+});
+
+test('all-app fullscreen capture leaves key events intact and cleans up on layout disposal', async () => {
+  const f = fixture(async () => {}, true);
+  f.fullscreen({});
+  const event = new Event('keydown', { cancelable: true });
+  f.doc.dispatchEvent(event);
+  assert.equal(event.defaultPrevented, false);
+  f.remove();
+  await Promise.resolve();
+  f.fullscreen({});
+  assert.deepEqual(f.calls, [['lock', ['Escape']], ['unlock']]);
+});
+
+
+test('all-app mode retries a denied lock only in the next fullscreen session, not on focus changes', async () => {
+  const f = fixture(() => Promise.reject(new Error('Permission denied')), true);
+  f.fullscreen({});
+  await new Promise(resolve => setImmediate(resolve));
+  f.doc.dispatchEvent(new Event('focusin'));
+  f.doc.dispatchEvent(new Event('focusin'));
+  assert.equal(f.calls.length, 1);
+  f.fullscreen(null);
+  f.fullscreen({});
+  assert.equal(f.calls.length, 2);
+  await new Promise(resolve => setImmediate(resolve));
+  f.remove();
 });

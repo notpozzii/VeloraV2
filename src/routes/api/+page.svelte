@@ -18,7 +18,6 @@ autoSW:    legacy parameter; apps now load automatically
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
-	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
@@ -52,16 +51,10 @@ autoSW:    legacy parameter; apps now load automatically
 	const apiType = $derived($page.url.searchParams.get('type'));
 	const apiTransport = $derived($page.url.searchParams.get('transport'));
 	const apiWisp = $derived($page.url.searchParams.get('wisp') || undefined);
-	const apiHost = $derived(apiUrl ? new URL(apiUrl).hostname : '');
 
 	onMount(() => {
 		if (apiUrl === null) return;
-		// Keyboard Lock must be requested by the top-level page. The desktop
-		// window owns this when embedded; standalone GeForce needs its own owner.
-		const stopGameKeys = window.top === window && apiHost === 'play.geforcenow.com'
-			? installGameKeyboard({ document, navigator, desktop: iframeEl }) : () => {};
 		void start();
-		return stopGameKeys;
 	});
 
 	async function start() {
