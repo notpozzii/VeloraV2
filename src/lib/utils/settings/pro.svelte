@@ -41,7 +41,7 @@
 	}
 
 	const proxies = [
-		{ value: 'auto', label: 'Auto' },
+		{ value: 'auto', label: 'Auto (EXPERIMENTAL)' },
 		{ value: 'sj2', label: 'SJ2' },
 		{ value: 'sj', label: 'SJ' },
 		{ value: 'uv', label: 'Ultraviolet' }
@@ -52,7 +52,7 @@
 		{ value: 'brave', label: 'Brave' }
 	];
 	const transports = [
-		{ value: 'auto', label: 'Auto' },
+		{ value: 'auto', label: 'Auto (EXPERIMENTAL)' },
 		{ value: 'libcurl', label: 'Libcurl' },
 		{ value: 'epoxy', label: 'Epoxy' }
 	];
