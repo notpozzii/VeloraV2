@@ -35,8 +35,10 @@ function fixture() {
 	return { data, legacy, session, options, writes, notifications, store, get transactions() { return transactions; }, fail:() => { fail = true; } };
 }
 
-test('the release resets only engine, transport and custom relay and removes their legacy copies', async () => {
+test('the release resets connections again after the previous migration and preserves unrelated settings', async () => {
 	const f = fixture();
+	f.data.set(connectionResetKey, '2026-10-29.1');
+	f.session.setItem(sessionKey, '2026-10-29.1');
 	assert.equal(await createConnectionReset(f.options).ensure(), true);
 	for (const [key, value] of Object.entries(connectionDefaults)) {
 		assert.equal(f.data.get(key), value); assert.equal(f.legacy.getItem(key), null);
