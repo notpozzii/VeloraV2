@@ -24,6 +24,7 @@ const events = {
 	'attempt-failed': ['connection', 'Page connection failed', 'warn'],
 	'cancelled': ['connection', 'Page navigation cancelled'],
 	'resource': ['network', 'Resource finished'],
+	'speed-test': ['network', 'Page speed test completed'],
 	'resource-error': ['errors', 'Resource failed to load', 'error'],
 	'error': ['errors', 'JavaScript error', 'error'],
 	'rejection': ['errors', 'Unhandled promise rejection', 'error'],
