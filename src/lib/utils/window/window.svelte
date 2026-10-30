@@ -593,70 +593,19 @@
 			if (!event.target.closest('button')) maximizeWindow();
 		}}
 	>
-		<div class="bar-left">
-			<span class="window-status-dot" aria-hidden="true"></span>
-			<p class="window-title" id={`${id}-title`}>{name}</p>
-		</div>
-		<div class="bar-middle"></div>
-		<div class="bar-right">
-			<button
-				class="navControl fullscreen-control"
-				onclick={fullscreenWindow}
-				type="button"
-				aria-label={`Full screen ${name}`}
-				title="Full screen"><Icon name="fullscreen" size={14} /></button
-			>
-			<button
-				class="navControl"
-				onclick={minimizeWindow}
-				type="button"
-				aria-label={`Minimize ${name}`}
-				title="Minimize"
-			>
-				<svg
-					width="13"
-					height="13"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					stroke-linecap="round"
-					aria-hidden="true"><path d="M4 8h8" /></svg
-				>
+		<div class="window-controls" role="group" aria-label="Window actions">
+			<button class="window-control close-control" onclick={closeWindow} type="button" aria-label={`Close ${name}`} title="Close">
+				<Icon name="close" size={9} />
 			</button>
-			<button
-				class="navControl"
-				onclick={maximizeWindow}
-				type="button"
-				aria-label={`${maximizedStat ? 'Restore' : 'Maximize'} ${name}`}
-				title={maximizedStat ? 'Restore' : 'Maximize'}
-			>
-				<svg
-					width="13"
-					height="13"
-					viewBox="0 0 16 16"
-					fill="none"
-					stroke="currentColor"
-					stroke-linejoin="round"
-					aria-hidden="true"
-					>{#if maximizedStat}<path d="M6 4V2.5h7.5V10H12M2.5 6H10v7.5H2.5z" />{:else}<rect
-							x="3.5"
-							y="3.5"
-							width="9"
-							height="9"
-							rx="1.5"
-						/>{/if}</svg
-				>
+			<button class="window-control minimize-control" onclick={minimizeWindow} type="button" aria-label={`Minimize ${name}`} title="Minimize">
+				<svg width="9" height="9" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><path d="M2 5h6" /></svg>
 			</button>
-			<button
-				class="navControl closeDiv"
-				onclick={closeWindow}
-				type="button"
-				aria-label={`Close ${name}`}
-				title="Close"
-			>
-				<Icon name="close" size={14} />
+			<button class="window-control fullscreen-control" onclick={(event) => event.altKey ? maximizeWindow() : fullscreenWindow()} type="button" aria-label={`Full screen ${name}`} title={`Full screen · Alt-click to ${maximizedStat ? 'restore' : 'maximize'}`}>
+				<svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true"><path d="M1.5 1.5h3.6L1.5 5.1zm7 7H4.9l3.6-3.6z" /></svg>
 			</button>
 		</div>
+		<p class="window-title" id={`${id}-title`}>{name}</p>
+		<div class="window-control-spacer" aria-hidden="true"></div>
 	</div>
 	{#if fullscreenError}<p class="window-fullscreen-error" role="alert">
 			{fullscreenError}<button
