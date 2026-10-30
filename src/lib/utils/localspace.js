@@ -4,6 +4,7 @@
 import { browser } from '$app/environment';
 import localspace from 'localspace';
 import { resetInProgress } from './reset-core.js';
+import { connectionDefaults, createConnectionReset, isConnectionSetting } from './connection-reset.js';
 
 // One namespaced store for all Galaxy settings (IndexedDB, falling back to
 // localStorage/memory automatically). Null on the server — there is no storage
@@ -15,6 +16,14 @@ const store = browser && !resetInProgress() ? localspace.createInstance({ name: 
 // A BroadcastChannel lets a `saveSetting` in one context notify every other
 // same-origin context so they can live-update instead of waiting for a reload.
 const channel = browser ? new BroadcastChannel('galaxy-settings') : null;
+const connectionReset = browser ? createConnectionReset({
+	store,
+	legacyStorage: () => window.localStorage,
+	sessionStorage: () => window.sessionStorage,
+	lock: navigator.locks?.request ? work => navigator.locks.request('velora:connection-defaults', work) : undefined,
+	resetting: () => resetInProgress(),
+	notify: (key, value) => channel?.postMessage({ key, value })
+}) : null;
 
 /**
  * Subscribe to live changes for a single setting key. The callback fires with
@@ -50,6 +59,10 @@ export function onSettingChange(key, callback) {
  */
 export async function loadSetting(key, fallback, migrate = (raw) => raw) {
 	if (!browser || !store || resetInProgress()) return fallback;
+	if (isConnectionSetting(key)) {
+		if (!await connectionReset.ensure()) return connectionDefaults[key];
+		if (resetInProgress()) return fallback;
+	}
 
 	let value = await store.getItem(key);
 	if (resetInProgress()) return fallback;
@@ -87,6 +100,8 @@ export async function saveSetting(key, value) {
 	// rejections here (quota exceeded, IndexedDB blocked) instead of leaking an
 	// unhandled promise rejection.
 	try {
+		if (isConnectionSetting(key)) await connectionReset.ensure();
+		if (resetInProgress()) return;
 		await store.setItem(key, value);
 		if (resetInProgress()) return;
 		// Notify other contexts (other tabs, the OS desktop behind the settings
