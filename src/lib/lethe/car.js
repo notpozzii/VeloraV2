@@ -1,5 +1,5 @@
 export function getWispUrl(custom) {
-  return custom || 'wss://anura.pro/';
+  return custom || 'wss://galxy.it.com/jsonn/';
 }
 
 export function createConnection() {
