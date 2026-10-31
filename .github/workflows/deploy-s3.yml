@@ -36,7 +36,7 @@ jobs:
       - name: Build the standalone S3 site
         run: bun run export:s3
       - name: Verify S3 routes and automatic connections
-        run: node --test tests/s3-package.test.js tests/auto-connection.test.mjs tests/desktop-widgets.test.mjs tests/site-reset.test.mjs tests/developer-mode.test.mjs tests/uv-window-open.test.mjs tests/uv-class-fields.test.mjs tests/uv-esm-imports.test.mjs
+        run: node --test tests/portable-download.test.mjs tests/s3-package.test.js tests/auto-connection.test.mjs tests/desktop-widgets.test.mjs tests/site-reset.test.mjs tests/developer-mode.test.mjs tests/uv-window-open.test.mjs tests/uv-class-fields.test.mjs tests/uv-esm-imports.test.mjs
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: velora-s3

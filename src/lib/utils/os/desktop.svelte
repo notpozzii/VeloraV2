@@ -28,6 +28,9 @@
 	import gsap from 'gsap';
 	import { loadSetting, saveSetting, onSettingChange } from '$lib/utils/localspace.js';
 	import faviconFetch from 'favicon-fetch';
+	import tiktokIcon from '../../../../static/img/tiktok-dock.svg';
+	let { appOrigin = '' } = $props();
+	const onlineUrl = (url) => appOrigin ? new URL(url, appOrigin).href : url;
 
 	let activeButton = $state(null);
 	let menuOpen = $state(false);
@@ -155,7 +158,7 @@
 				...(customWisp ? { wisp: customWisp } : {})
 			})}`,
 			name: 'TikTok',
-			icon: '/img/tiktok-dock.svg',
+			icon: tiktokIcon,
 			height: '80%',
 			width: '80%',
 			top: 0,
@@ -276,11 +279,12 @@
 		return false;
 	}
 	function openWindow(url, name, height, width, top, left, appId) {
-		if (localStorage.getItem('firstVisit') == 'false') {
-		} else {
-			localStorage.setItem('firstVisit', 'false');
-			$notif = 'Right click an app to open new window!';
-		}
+		try {
+			if (localStorage.getItem('firstVisit') !== 'false') {
+				localStorage.setItem('firstVisit', 'false');
+				$notif = 'Right click an app to open new window!';
+			}
+		} catch { /* Restricted file storage must not prevent opening an app. */ }
 		let appWindows = getAppWindows(appId);
 		if (appWindows.length > 1) {
 			previewApp = appId;
@@ -577,7 +581,7 @@
 			const browserApp = getAppConfig(1);
 			const existing = getAppWindows(1).at(-1);
 			let accepted = false;
-			if (existing) {
+			if (existing && !appOrigin) {
 				const index = $windowList.findIndex((entry) => entry.id === existing.id);
 				accepted = (await windowComps[index]?.openBrowserSearch(value)) || false;
 				if (accepted) focusWindow(existing.sender);
@@ -684,10 +688,10 @@
 			<div class="desktop-brand"><span class="velora-mark">v.</span><span>velora</span></div>
 			<span class="header-divider"></span>
 			<span class="desktop-label">Workspace</span>
-			<a href="/download" class="desktop-download">Download <Icon name="arrow" size={12} /></a>
+			<a href={onlineUrl('/download')} target={appOrigin ? '_blank' : undefined} rel={appOrigin ? 'noopener' : undefined} class="desktop-download">Download <Icon name="arrow" size={12} /></a>
 		</div>
 		<div class="desktop-status">
-			<a href="/slate" class="browser-mode" title="Open browser without desktop windows"
+			<a href={onlineUrl('/slate')} target={appOrigin ? '_blank' : undefined} rel={appOrigin ? 'noopener' : undefined} class="browser-mode" title="Open browser without desktop windows"
 				><Icon name="globe" size={14} /><span>Browser mode</span></a
 			>
 			<button class="menubar-icon" onclick={openGlass} aria-label="Adjust liquid glass" aria-haspopup="dialog" title="Liquid glass"><Icon name="settings" size={16} /></button>
@@ -1103,7 +1107,7 @@
 	{#each $windowList as window, i (window.id)}
 		<Window
 			bind:this={windowComps[i]}
-			url={window.url}
+			url={onlineUrl(window.url)}
 			name={window.name}
 			height={window.height}
 			width={window.width}

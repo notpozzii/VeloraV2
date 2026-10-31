@@ -27,7 +27,7 @@ export default function staticPackage() {
 			const downloads = join(output, 'download/files');
 			mkdirSync(downloads, { recursive: true });
 			for (const file of ['index.html', 'velora.svg']) {
-				cpSync(`src/lib/downloads/${file}`, join(downloads, file));
+				cpSync(file === 'index.html' ? 'static/portable/index.html' : `src/lib/downloads/${file}`, join(downloads, file));
 			}
 			const missingAssets = ['books/gmes.json', 'pyrite/index.html']
 				.filter((asset) => !existsSync(join(output, asset)));

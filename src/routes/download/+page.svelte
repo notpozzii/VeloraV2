@@ -4,7 +4,7 @@
 
 <svelte:head>
 	<title>Velora — Downloads</title>
-	<meta name="description" content="Download the Velora HTML or SVG launcher." />
+	<meta name="description" content="Download the Velora desktop as a single HTML file." />
 </svelte:head>
 
 <main class="downloads">
@@ -15,7 +15,7 @@
 		</header>
 		<section aria-labelledby="download-title">
 			<h1 id="download-title">Download Velora</h1>
-			<p class="intro">Both files open your online desktop. Internet required.</p>
+			<p class="intro">HTML runs the desktop from your file. Online apps need internet. SVG opens the hosted desktop.</p>
 			<div class="files">
 				<a class="file" href="/download/files/index.html" download="index.html" data-sveltekit-reload aria-label="Download index.html">
 					<span class="format" aria-hidden="true">HTML</span>
