@@ -12,6 +12,7 @@ function fixture() {
 		async registerProxyWorker() { calls.push('worker'); },
 		createConnection() { calls.push('connection'); return connection; },
 		async setCar(_, car, wisp) { calls.push(['legacy', car, wisp]); },
+		async bindProxyTransport() { calls.push('bind-transport'); },
 		createScramjetController() { return polygon; },
 		async createPrismController(car, wisp) { calls.push(['prism', car, wisp]); return controller; },
 		async setPrismTransport(car, wisp) { calls.push(['prism-transport', car, wisp]); },
@@ -62,6 +63,21 @@ test('transport changes wait in order and preserve a custom relay', async () => 
 	assert.deepEqual(f.calls.filter(x => x[0] === 'prism-transport'), [
 		['prism-transport', 'libcurl', wisp], ['prism-transport', 'epoxy', wisp], ['prism-transport', 'libcurl', wisp]
 	]);
+});
+
+test('UV configures its transport before binding it, and a failed binding is retryable', async () => {
+	const f = fixture();
+	let attempts = 0;
+	f.dependencies.bindProxyTransport = async () => {
+		assert.ok(f.calls.some(call => call[0] === 'legacy'));
+		if (++attempts === 1) throw new Error('Port unavailable');
+	};
+	const runtime = createProxyRuntime({ dependencies: f.dependencies });
+	await assert.rejects(runtime.prepare('uv', 'libcurlRaw'), /Port unavailable/);
+	const session = await runtime.prepare('uv', 'libcurlRaw');
+	await session.connect();
+	assert.equal(attempts, 3);
+	assert.equal(f.calls.filter(call => call[0] === 'legacy').length, 1);
 });
 
 test('a failed background warmup can be retried by the next click', async () => {
