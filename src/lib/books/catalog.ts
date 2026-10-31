@@ -19,14 +19,20 @@ function fromRoot(path: string): string {
 
 export const CATALOG_URL = fromRoot('gmes.json');
 
-export const TOP_GAME_ID = 'baseball-irish';
-const topGame: Game = {
-	id: TOP_GAME_ID,
+export const TOP_GAME_IDS = ['baseball-irish', 'kickball-irish'];
+const topGames: Game[] = [{
+	id: TOP_GAME_IDS[0],
 	name: 'baseball.irish',
 	thumb: '/game-covers/baseball-irish.svg',
 	url: 'https://baseball.irish/',
 	tags: ['sports']
-};
+}, {
+	id: TOP_GAME_IDS[1],
+	name: 'kickball.irish',
+	thumb: '/game-covers/kickball-irish.svg',
+	url: 'https://kickball.irish/',
+	tags: ['sports']
+}];
 
 interface RawGame {
 	file_name?: string;
@@ -77,7 +83,7 @@ export function normalize(raw: RawGame[]): Game[] {
 export async function loadCatalog(fetchFn: typeof fetch = fetch): Promise<Game[]> {
 	const res = await fetchFn(CATALOG_URL);
 	if (!res.ok) throw new Error(`Failed to load catalog (${res.status})`);
-	return [topGame, ...normalize(await res.json()).filter((game) => game.id !== TOP_GAME_ID && game.url !== topGame.url)];
+	return [...topGames, ...normalize(await res.json()).filter((game) => !topGames.some((top) => game.id === top.id || game.url === top.url))];
 }
 
 export function collectTags(games: Game[]): string[] {
