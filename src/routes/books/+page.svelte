@@ -1,7 +1,7 @@
 <!-- The game catalog integration originated in Endis. Velora's library interface is maintained here. -->
 <script lang="ts">
 	import type { Game } from '$lib/books/types';
-	import { collectTags, formatTag } from '$lib/books/catalog';
+	import { collectTags, formatTag, TOP_GAME_ID } from '$lib/books/catalog';
 	import { favorites } from '$lib/books/favorites.svelte';
 	import { trackVisit } from '$lib/books/history';
 	import { intersect } from '$lib/books/intersect';
@@ -34,6 +34,8 @@
 				(collection !== 'saved' || favorites.has(game.id))
 		);
 		return games.sort((a, b) => {
+			const topOrder = Number(b.id === TOP_GAME_ID) - Number(a.id === TOP_GAME_ID);
+			if (topOrder) return topOrder;
 			const favoriteOrder = Number(favorites.has(b.id)) - Number(favorites.has(a.id));
 			if (favoriteOrder) return favoriteOrder;
 			return sort === 'za'
@@ -43,7 +45,7 @@
 	});
 	const visible = $derived(filtered.slice(0, displayedCount));
 	const picks = $derived(
-		['10 Minutes Till Dawn', 'Slope', '2048']
+		['baseball.irish', '10 Minutes Till Dawn', 'Slope', '2048']
 			.map((name) => data.games.find((game) => game.name.toLowerCase() === name.toLowerCase()))
 			.filter((game): game is Game => !!game)
 	);

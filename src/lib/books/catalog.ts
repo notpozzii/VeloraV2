@@ -19,6 +19,15 @@ function fromRoot(path: string): string {
 
 export const CATALOG_URL = fromRoot('gmes.json');
 
+export const TOP_GAME_ID = 'baseball-irish';
+const topGame: Game = {
+	id: TOP_GAME_ID,
+	name: 'baseball.irish',
+	thumb: '/game-covers/baseball-irish.svg',
+	url: 'https://baseball.irish/',
+	tags: ['sports']
+};
+
 interface RawGame {
 	file_name?: string;
 	title?: string;
@@ -68,7 +77,7 @@ export function normalize(raw: RawGame[]): Game[] {
 export async function loadCatalog(fetchFn: typeof fetch = fetch): Promise<Game[]> {
 	const res = await fetchFn(CATALOG_URL);
 	if (!res.ok) throw new Error(`Failed to load catalog (${res.status})`);
-	return normalize(await res.json());
+	return [topGame, ...normalize(await res.json()).filter((game) => game.id !== TOP_GAME_ID && game.url !== topGame.url)];
 }
 
 export function collectTags(games: Game[]): string[] {
