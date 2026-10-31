@@ -1,5 +1,5 @@
 export function getWispUrl(custom) {
-  return custom || 'wss://system.pilotrights.com/jsonn/';
+  return custom || 'wss://anura.pro/';
 }
 
 export function createConnection() {

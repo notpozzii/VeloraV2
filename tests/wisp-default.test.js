@@ -15,7 +15,7 @@ test('GeForce opens through the ad-capable engine with raw libcurl', () => {
 test('blank Wisp settings use the same relay as the GeForce launcher', () => {
 	const geforce = new URL(getGeForceLauncherUrl(), 'https://example.test');
 	const relay = geforce.searchParams.get('wisp');
-	assert.equal(relay, 'wss://system.pilotrights.com/jsonn/');
+	assert.equal(relay, 'wss://anura.pro/');
 	for (const value of [undefined, null, '']) assert.equal(getWispUrl(value), relay);
 });
 
