@@ -685,7 +685,7 @@
 	<div class="desktop-shade"></div>
 	<header class="desktop-menubar">
 		<div class="desktop-identity">
-			<div class="desktop-brand"><span class="velora-mark">v.</span><span>velora</span></div>
+			<a class="desktop-brand" href="https://discord.gg/3vcMsqJMd" target="_blank" rel="noopener noreferrer" aria-label="Join Velora on Discord" title="Join Velora on Discord"><span class="velora-mark">v.</span><span>velora</span></a>
 			<span class="header-divider"></span>
 			<span class="desktop-label">Workspace</span>
 			<a href={onlineUrl('/download')} target={appOrigin ? '_blank' : undefined} rel={appOrigin ? 'noopener' : undefined} class="desktop-download">Download <Icon name="arrow" size={12} /></a>
