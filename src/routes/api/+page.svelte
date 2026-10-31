@@ -81,6 +81,7 @@ autoSW:    legacy parameter; apps now load automatically
 			async load(session) {
 				if (automatic) { resetProxyFrame(iframeEl); iframeEl.src = 'about:blank'; }
 				await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
+				if (session.engine === 'uv') await session.connect();
 				const navigate = () => {
 					if (session.engine === 'uv') iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(apiUrl);
 					else if (session.engine === 'sj') iframeEl.src = session.polygon.encodeUrl(apiUrl);

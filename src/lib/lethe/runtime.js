@@ -3,10 +3,11 @@ import { registerProxyWorker } from './serviceworker.js';
 import { createConnection, setCar } from './car.js';
 import { createScramjetController } from './poly.js';
 import { createPrismController, setPrismTransport } from './prism.js';
+import { bindProxyTransport } from './transport-bridge.js';
 import { recordActivity, activityReason } from '../utils/developer/diagnostics.js';
 
 const defaults = {
-	loadScript, registerProxyWorker, createConnection, setCar,
+	loadScript, registerProxyWorker, createConnection, setCar, bindProxyTransport,
 	createScramjetController, createPrismController, setPrismTransport,
 	async enablePopups() { await (await import('./reflux.js')).enablePopupInterceptor(); }
 };
@@ -29,7 +30,11 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 			const key = JSON.stringify([engine, car, wisp || '']);
 			if (requestedKey === key && pending) return pending;
 			const prepare = async () => {
-				if (key === currentKey) { recordActivity('connection-reused', { engine, transport: car }); return current; }
+				if (key === currentKey) {
+					if (engine === 'uv') await d.bindProxyTransport();
+					recordActivity('connection-reused', { engine, transport: car });
+					return current;
+				}
 				recordActivity('connection-start', { engine, transport: car });
 				let result;
 				if (engine === 'sj2') {
@@ -50,6 +55,7 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 						await d.setCar(connection, car, wisp);
 						legacyTransportKey = transportKey;
 					}
+					if (engine === 'uv') await d.bindProxyTransport();
 					if (engine === 'sj' && !polygon) {
 						const next = d.createScramjetController();
 						await next.init();
@@ -59,7 +65,7 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 						await d.enablePopups();
 						popupsReady = true;
 					}
-					result = { engine, connection, polygon };
+					result = { engine, connection, polygon, connect: d.bindProxyTransport };
 				}
 				currentKey = key;
 				current = result;
