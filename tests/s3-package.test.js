@@ -109,6 +109,10 @@ test(
 		for (const entry of readdirSync(join(root, '_app/immutable/entry'))) {
 			assert.ok(existsSync(join(root, '_app/immutable/entry', entry)));
 		}
+		const portable = readFileSync(join(root, 'download/files/index.html'), 'utf8');
+		assert.equal(portable, readFileSync('static/portable/index.html', 'utf8'));
+		assert.match(portable, /velora-root/);
+		assert.doesNotMatch(portable.replace(/<script>[\s\S]*?<\/script>/g, ''), /<iframe\b/i);
 		assert.ok(manifest.serverOnly.includes('/api/byod'));
 	}
 );

@@ -1,3 +1,4 @@
+import { buildPortable } from './scripts/build-portable.mjs';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import sirv from 'sirv';
@@ -45,5 +46,5 @@ export default defineConfig({
 			ignored: ['**/static/books/**']
 		}
 	},
-	plugins: [sveltekit(), lethePlugin()]
+	plugins: [{ name: 'velora-portable-download', buildStart: () => buildPortable().then(() => {}) }, sveltekit(), lethePlugin()]
 });

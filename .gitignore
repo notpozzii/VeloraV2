@@ -36,3 +36,6 @@ curate-deleted.json
 !.dev.vars.example
 
 /dist
+
+# Generated self-contained desktop download
+/static/portable/

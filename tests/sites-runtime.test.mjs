@@ -53,3 +53,15 @@ test('GeForce redirects and missing routes retain their proper statuses', async 
 	const missing = await worker.fetch(new Request('https://velora.example/not-an-app'), env, ctx);
 	assert.equal(missing.status, 404);
 });
+
+
+test('HTML download serves the bundled desktop with attachment headers instead of the old hosted wrapper', async () => {
+ const response = await worker.fetch(new Request('https://velora.example/download/files/index.html'), env, ctx);
+ assert.equal(response.status, 200);
+ assert.match(response.headers.get('content-disposition'), /attachment; filename="index.html"/);
+ const html = await response.text();
+ assert.equal(html, await readFile(new URL('../dist/client/portable/index.html', import.meta.url), 'utf8'));
+ const document = html.replace(/<script>[\s\S]*?<\/script>/g, '');
+ assert.doesNotMatch(document, /<iframe\b/i);
+ assert.match(document, /velora-root/);
+});
