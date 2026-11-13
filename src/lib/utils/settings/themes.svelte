@@ -2,6 +2,7 @@
 	import '$lib/style/themes.css';
 	import { themes, themeLabel, saveTheme, loadTheme } from '$lib/utils/theme.js';
 	import { onMount } from 'svelte';
+	import DockPreferences from './dock-preferences.svelte';
 
 	let active = $state('');
 
@@ -15,6 +16,7 @@
 	}
 </script>
 
+<DockPreferences />
 <div class="themeGrid">
 	{#each themes as slug}
 		<button

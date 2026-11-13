@@ -1,0 +1,14 @@
+Christmas wallpaper photograph
+
+Title: A house covered in snow with Christmas lights
+Description: Stone house with lights in snow in Vermont
+Photographer: J K (Unsplash)
+Source: https://unsplash.com/photos/a-house-covered-in-snow-with-christmas-lights-l6CZdnICibQ
+Image: https://images.unsplash.com/photo-1671331467674-7d63ee3ecf25
+Published: December 18, 2022 (Unsplash source page)
+License: Unsplash License, https://unsplash.com/license
+Downloaded: November 1, 2026
+
+Real photograph. No generative editing was used.
+Local adaptations: resize and JPEG compression for the wallpaper and thumbnail.
+The app adds a separate animated snow overlay when Christmas mode is enabled.

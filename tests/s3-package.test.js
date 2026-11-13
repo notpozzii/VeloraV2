@@ -42,6 +42,8 @@ test(
 			assert.ok(
 				calls.some((args) => args.includes('s3://velorastudy/slate') && args.includes('text/html'))
 			);
+			assert.ok(calls.some((args) => args[0] === 's3api' && args.includes('roblox/')));
+			assert.ok(calls.some((args) => args.includes('s3://velorastudy/roblox') && args.some((arg) => arg.endsWith('/roblox.html'))));
 			assert.ok(calls.some((args) => args.includes('application/wasm')));
 			assert.ok(calls.every((args) => !args.includes('--delete')));
 			const sync = calls.find((args) => args[0] === 's3' && args[1] === 'sync');
@@ -114,5 +116,7 @@ test(
 		assert.match(portable, /velora-root/);
 		assert.doesNotMatch(portable.replace(/<script>[\s\S]*?<\/script>/g, ''), /<iframe\b/i);
 		assert.ok(manifest.serverOnly.includes('/api/byod'));
+		const roblox = readFileSync(join(root, 'roblox.html'), 'utf8');
+		assert.match(roblox, /https:\/\/velora\.notpozzi\.chatgpt\.site\/roblox\//);
 	}
 );

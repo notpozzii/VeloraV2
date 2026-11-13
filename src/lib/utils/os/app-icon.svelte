@@ -12,6 +12,7 @@
 	class:settings={app.id === 5}
 	class:geforce={app.id === 6}
 	class:tiktok={app.id === 7}
+	class:roblox={app.id === 8}
 	style:--icon-size={`${size}px`}
 >
 	{#if app.id === 6}
@@ -63,6 +64,13 @@
 	}
 	.tiktok {
 		background: #171a17;
+	}
+	.roblox {
+		background: #000;
+	}
+	.roblox img {
+		width: 100%;
+		height: 100%;
 	}
 	img {
 		width: 58%;

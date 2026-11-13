@@ -1,6 +1,9 @@
 import { Server } from '../.svelte-kit/output/server/index.js';
 import { manifest, prerendered, base_path } from '../.svelte-kit/cloudflare-tmp/manifest.js';
 import { proxyRecoveryResponse } from './proxy-recovery-response.mjs';
+import { robloxRuntimeResponse } from './roblox-runtime-response.mjs';
+
+const robloxRuntimeFiles = __VELORA_ROBLOX_RUNTIME_FILES__;
 
 // Sites runs in a dispatch Worker where caches.default is unavailable. Keep
 // SvelteKit's routing, but leave static-file caching to the asset binding.
@@ -9,6 +12,8 @@ let initialized;
 
 export default {
 	async fetch(request, env, ctx) {
+		const runtime = robloxRuntimeResponse(request, robloxRuntimeFiles);
+		if (runtime) return runtime;
 		const reconnect = proxyRecoveryResponse(request);
 		if (reconnect) return reconnect;
 		const url = new URL(request.url);
@@ -33,7 +38,14 @@ export default {
 		);
 		const appPath = `/${manifest.appPath}`;
 		if (isAsset || prerendered.has(pathname) || pathname === `${appPath}/version.json` || pathname.startsWith(`${appPath}/immutable/`)) {
-			return env.ASSETS.fetch(request);
+			const response = await env.ASSETS.fetch(request);
+			if (!pathname.startsWith('/roblox/')) return response;
+			const headers = new Headers(response.headers);
+			headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+			headers.set('Cross-Origin-Embedder-Policy', 'require-corp');
+			headers.set('Cross-Origin-Resource-Policy', 'same-origin');
+			headers.set('Document-Isolation-Policy', 'isolate-and-require-corp');
+			return new Response(response.body, { status: response.status, headers });
 		}
 
 		const alternate = pathname.endsWith('/') ? stripped : `${pathname}/`;

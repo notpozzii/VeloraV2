@@ -1,6 +1,5 @@
 <script>
 	// @ts-nocheck
-	import Window from '$lib/utils/window/window.svelte';
 	import Notifications from '$lib/utils/notifications.svelte';
 	import {
 		windowList,
@@ -14,8 +13,14 @@
 	import { onMount } from 'svelte';
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
-	import Wallpaper from '$lib/utils/os/wallpaper.svelte';
+	import DynamicIsland from '$lib/utils/os/dynamic-island.svelte';
+	import DesktopDock from '$lib/utils/os/desktop-dock.svelte';
 	import WidgetBoard from '$lib/utils/os/widget-board.svelte';
+	import WeatherEffects from '$lib/utils/os/weather-effects.svelte';
+	import legacyWinterWallpaper from '$lib/img/bg/christmas-photo.jpg';
+	import { migrateLegacyWallpaper } from './wallpaper-migration.js';
+	import { loadWeatherPreferences, normalizeWeatherMode, normalizeWeatherSpeed, normalizeWeatherIntensity } from './weather.js';
+	import { saveSettingShared } from '$lib/utils/settingsSync.js';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import { getGeForceLauncherUrl } from '$lib/utils/browser/geforce.js';
 	import browser from '$lib/img/icons/earthWhite.png';
@@ -25,12 +30,21 @@
 	import sp from '$lib/img/icons/nvidia.png';
 	import { get } from 'svelte/store';
 	import { applyStartupSettings } from '$lib/utils/cloak.js';
-	import gsap from 'gsap';
+	import { installPanicKey } from '$lib/utils/panic-key.js';
 	import { loadSetting, saveSetting, onSettingChange } from '$lib/utils/localspace.js';
 	import faviconFetch from 'favicon-fetch';
 	import tiktokIcon from '../../../../static/img/tiktok-dock.svg';
+	import robloxIcon from '$lib/assets/roblox-dock.png';
 	let { appOrigin = '' } = $props();
 	const onlineUrl = (url) => appOrigin ? new URL(url, appOrigin).href : url;
+	// Small menu entrances do not need the full window animation engine.
+	function enter(node, transform, duration) {
+		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		const animation = node.animate?.([
+			{ opacity: 0, transform }, { opacity: 1, transform: 'none' }
+		], { duration, easing: 'cubic-bezier(.22,1,.36,1)' });
+		return () => animation?.cancel();
+	}
 
 	let activeButton = $state(null);
 	let menuOpen = $state(false);
@@ -43,8 +57,9 @@
 	let hoverTimeout = null;
 	let timeString = $state('');
 	let dateString = $state('');
-	let clockFace = $state('');
-	let clockPeriod = $state('');
+	let weatherMode = $state('off');
+	let weatherSpeed = $state(1);
+	let weatherIntensity = $state(60);
 	let shortcutModifier = $state('⌘');
 	const appDetails = {
 		1: 'Web browser',
@@ -52,6 +67,7 @@
 		2: 'Game library',
 		4: 'App library',
 		7: 'Watch short videos',
+		8: 'Play Roblox in a new tab',
 		5: 'Settings'
 	};
 	const filteredApps = $derived(
@@ -75,6 +91,7 @@
 	let fullscreen = $state(false);
 	let hydrated = $state(false);
 	let navSizeMulti = $state(24);
+	let compactDock = $state(false);
 	let temp = 0;
 	let accumY = 0;
 	let dragging = $state(false);
@@ -159,6 +176,17 @@
 			})}`,
 			name: 'TikTok',
 			icon: tiktokIcon,
+			height: '80%',
+			width: '80%',
+			top: 0,
+			left: 0,
+			center: true
+		},
+		{
+			id: 8,
+			url: '/roblox/',
+			name: 'Roblox',
+			icon: robloxIcon,
 			height: '80%',
 			width: '80%',
 			top: 0,
@@ -278,7 +306,13 @@
 		}
 		return false;
 	}
+	function openRobloxTab() {
+		window.open(onlineUrl('/roblox/'), '_blank', 'noopener,noreferrer');
+		previewOpen = false;
+		closeMenu();
+	}
 	function openWindow(url, name, height, width, top, left, appId) {
+		if (appId === 8) { openRobloxTab(); return; }
 		try {
 			if (localStorage.getItem('firstVisit') !== 'false') {
 				localStorage.setItem('firstVisit', 'false');
@@ -332,6 +366,7 @@
 	}
 
 	function openNewWindow(url, name, height, width, top, left, appId) {
+		if (appId === 8) { openRobloxTab(); return; }
 		let uniqueSender = `${appId}-${Date.now()}`;
 		let newName = String(name) + ' (' + getAppWindows(appId).length + ')';
 		name = newName;
@@ -511,22 +546,23 @@
 		const now = new Date();
 		timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 		dateString = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-		clockFace = now
-			.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })
-			.replace(/\s*[AP]M$/i, '');
-		clockPeriod = now.getHours() >= 12 ? 'PM' : 'AM';
 	}
 
 	onMount(() => {
 		let disposed = false;
-		Promise.all([
+		const disposePanic = installPanicKey(window);
+		migrateLegacyWallpaper({ read: loadSetting, write: saveSetting }, legacyWinterWallpaper)
+			.catch(() => {})
+			.then(() => Promise.all([
 			loadSetting('bg', mainBG),
 			loadSetting('bgFit', 'cover'),
 			loadSetting('navbarsize', 24),
 			loadSetting('customApps', []),
 			loadSetting('customWisp', ''),
-			loadSetting('desktopGlassStrength', 60)
-		]).then(([background, fit, size, savedApps, wisp, strength]) => {
+			loadSetting('desktopGlassStrength', 60),
+			loadSetting('compactDock', false),
+			loadWeatherPreferences({ read: loadSetting, write: saveSettingShared }).catch(() => ({ mode: 'off', speed: 1, intensity: 60 }))
+		])).then(([background, fit, size, savedApps, wisp, strength, compact, weather]) => {
 			if (disposed) return;
 			bgURL = background || mainBG;
 			bgFit = fit === 'contain' ? 'contain' : 'cover';
@@ -534,6 +570,10 @@
 			customApps = Array.isArray(savedApps) ? savedApps : [];
 			customWisp = wisp || '';
 			glassStrength = normalizeGlassStrength(strength);
+			compactDock = compact === true;
+			weatherMode = weather.mode;
+			weatherSpeed = weather.speed;
+			weatherIntensity = weather.intensity;
 			hydrated = true;
 		});
 		updateTime();
@@ -553,10 +593,15 @@
 			}),
 			onSettingChange('desktopGlassStrength', (value) => {
 				glassStrength = normalizeGlassStrength(value);
-			})
+			}),
+			onSettingChange('weatherMode', value => { weatherMode = normalizeWeatherMode(value); }),
+			onSettingChange('weatherSpeed', value => { weatherSpeed = normalizeWeatherSpeed(value); }),
+			onSettingChange('weatherIntensity', value => { weatherIntensity = normalizeWeatherIntensity(value); }),
+			onSettingChange('compactDock', value => { compactDock = value === true; })
 		];
 		return () => {
 			disposed = true;
+			disposePanic();
 			clearInterval(interval);
 			subscriptions.forEach((unsubscribe) => unsubscribe());
 		};
@@ -572,9 +617,9 @@
 		launcherError = '';
 		launcherOpen = !launcherOpen;
 	}
-	async function browseFromLauncher() {
-		const value = launcherQuery;
-		if (!value || !hydrated || launcherBusy) return;
+	async function browseFromLauncher(query) {
+		const value = typeof query === 'string' ? query.trim() : launcherQuery;
+		if (!value || !hydrated || launcherBusy) return false;
 		launcherBusy = true;
 		launcherError = '';
 		try {
@@ -600,9 +645,11 @@
 				);
 			}
 			launcherOpen = false;
+			return true;
 		} catch (error) {
 			launcherError =
 				error instanceof Error ? error.message : 'The browser could not open. Please try again.';
+			return false;
 		} finally {
 			launcherBusy = false;
 		}
@@ -683,45 +730,28 @@
 		style:background-size={bgFit}
 	></div>
 	<div class="desktop-shade"></div>
-	<header class="desktop-menubar">
-		<div class="desktop-identity">
-			<a class="desktop-brand" href="https://discord.gg/3vcMsqJMd" target="_blank" rel="noopener noreferrer" aria-label="Join Velora on Discord" title="Join Velora on Discord"><span class="velora-mark">v.</span><span>velora</span></a>
-			<span class="header-divider"></span>
-			<span class="desktop-label">Workspace</span>
-			<a href={onlineUrl('/download')} target={appOrigin ? '_blank' : undefined} rel={appOrigin ? 'noopener' : undefined} class="desktop-download">Download <Icon name="arrow" size={12} /></a>
-		</div>
-		<div class="desktop-status">
-			<a href={onlineUrl('/slate')} target={appOrigin ? '_blank' : undefined} rel={appOrigin ? 'noopener' : undefined} class="browser-mode" title="Open browser without desktop windows"
-				><Icon name="globe" size={14} /><span>Browser mode</span></a
-			>
-			<button class="menubar-icon" onclick={openGlass} aria-label="Adjust liquid glass" aria-haspopup="dialog" title="Liquid glass"><Icon name="settings" size={16} /></button>
-			<button class="menubar-icon" data-widget-picker-toggle onclick={(event) => { event.stopPropagation(); closeMenu(); launcherOpen = false; widgetBoard?.togglePicker(event); }} aria-label="Add desktop widgets" aria-haspopup="dialog" title="Add widgets"><Icon name="widgets" size={16} /></button>
-			<button
-				class="menubar-icon"
-				onclick={toggleFullscreen}
-				aria-label={fullscreen ? 'Exit full screen' : 'Enter full screen'}
-				><Icon name="fullscreen" size={14} /></button
-			>
-			<time>{timeString}</time>
-		</div>
-	</header>
+	<WeatherEffects mode={weatherMode} speed={weatherSpeed} intensity={weatherIntensity} />
+	<DynamicIsland
+		time={timeString}
+		date={dateString}
+		activity={$windowList.find((win) => win.sender === $activeSignal && !win.minimized)?.name || ''}
+		browserUrl={onlineUrl('/slate')}
+		downloadUrl={onlineUrl('/download')}
+		external={!!appOrigin}
+		{fullscreen}
+		onexpand={() => { closeMenu(); launcherOpen = false; previewOpen = false; }}
+		onglass={openGlass}
+		onwidgets={(event) => { closeMenu(); launcherOpen = false; widgetBoard?.togglePicker(event); }}
+		onfullscreen={toggleFullscreen}
+		onwallpaper={personalize}
+		onsearch={browseFromLauncher}
+	/>
 	<Notifications />
 	<main
 		class="desktop-workspace"
 		aria-label="Velora desktop"
 		oncontextmenu={(e) => openMenu(e, 'navBar')}
 	>
-		<section class="desktop-clock" aria-label="Clock">
-			<div class="clock-digits">{clockFace}<span>{clockPeriod}</span></div>
-			<p>{dateString}</p>
-		</section>
-		<section class="desktop-search" aria-label="App and web search">
-			<button class="desktop-command" onclick={toggleLauncher} aria-label="Search apps or the web">
-				<Icon name="search" size={18} /><span>Search apps or the web</span><kbd
-					>{shortcutModifier} K</kbd
-				><Icon name="arrow" size={16} />
-			</button>
-		</section>
 	</main>
 	<WidgetBoard bind:this={widgetBoard} {apps} windows={$windowList} ready={hydrated} onlaunch={launchApp} onfocus={focusWindow} />
 
@@ -847,6 +877,9 @@
 		</dialog>
 	{/if}
 	{#if wallpaperOpen}
+		{#await import('./wallpaper.svelte')}
+			<p class="desktop-module-notice" role="status">Opening wallpapers…</p>
+		{:then { default: Wallpaper }}
 		<Wallpaper
 			onclose={() => {
 				wallpaperOpen = false;
@@ -856,6 +889,9 @@
 				bgFit = fit;
 			}}
 		/>
+		{:catch}
+			<p class="desktop-module-notice" role="alert">Wallpaper settings couldn’t load. <button onclick={() => location.reload()}>Reload</button></p>
+		{/await}
 	{/if}
 
 	{#if menuOpen}
@@ -878,7 +914,7 @@
 							menuSender.appId
 						)}
 				>
-					Open New Window
+					{menuSender.appId === 8 ? 'Open in New Tab' : 'Open New Window'}
 				</button>
 				{#if isCustomApp(menuSender.appId)}
 					<button class="menuOption danger" onclick={() => removeApp(menuSender.appId)}>
@@ -912,13 +948,7 @@
 			<div
 				class="modal"
 				onclick={(e) => e.stopPropagation()}
-				{@attach (node) => {
-					gsap.fromTo(
-						node,
-						{ y: 12, opacity: 0, scale: 0.97 },
-						{ y: 0, opacity: 1, scale: 1, duration: 0.25, ease: 'power2.out' }
-					);
-				}}
+				{@attach (node) => enter(node, 'translateY(12px) scale(.97)', 250)}
 			>
 				<p class="modalTitle">Add App</p>
 
@@ -958,9 +988,7 @@
 				{#if advancedOpen}
 					<div
 						class="advancedPanel"
-						{@attach (node) => {
-							gsap.fromTo(node, { opacity: 0, y: -6 }, { opacity: 1, y: 0, duration: 0.2 });
-						}}
+						{@attach (node) => enter(node, 'translateY(-6px)', 200)}
 					>
 						<p class="modalLabel">Proxy</p>
 						<div class="modalOptions">
@@ -1019,18 +1047,7 @@
 			id="previewPanel"
 			class="previewPanel"
 			onclick={(e) => e.stopPropagation()}
-			{@attach (node) => {
-				gsap.fromTo(
-					node,
-					{ y: 20, opacity: 0 },
-					{
-						y: 0,
-						opacity: 1,
-						duration: 0.3,
-						ease: 'power2.out'
-					}
-				);
-			}}
+			{@attach (node) => enter(node, 'translateY(20px)', 300)}
 			onmouseenter={() => clearTimeout(closeTimeout)}
 			onmouseleave={() => {
 				previewOpen = false;
@@ -1044,7 +1061,7 @@
 			{/each}
 		</div>
 	{/if}
-	<nav class="desktop-dock" aria-label="App dock">
+	<DesktopDock compact={compactDock} keepOpen={launcherOpen || menuOpen || previewOpen || dragging}>
 		<div
 			class="navResize"
 			onmousedown={startNavResize}
@@ -1102,8 +1119,12 @@
 			title="Change wallpaper"
 			><Icon name="desktop" size={21} /><span class="dock-tooltip">Wallpaper</span></button
 		>
-	</nav>
+	</DesktopDock>
 
+	{#if $windowList.length}
+	{#await import('$lib/utils/window/window.svelte')}
+		<p class="desktop-module-notice" role="status">Opening app…</p>
+	{:then { default: Window }}
 	{#each $windowList as window, i (window.id)}
 		<Window
 			bind:this={windowComps[i]}
@@ -1117,4 +1138,13 @@
 			sender={window.sender}
 		/>
 	{/each}
+	{:catch}
+		<p class="desktop-module-notice" role="alert">This app couldn’t open. <button onclick={() => location.reload()}>Reload</button></p>
+	{/await}
+	{/if}
 </div>
+
+<style>
+	.desktop-module-notice { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 10003; margin: 0; padding: 12px 18px; border-radius: 10px; background: #1e281f; color: #eff4e8; font: 13px/1.5 system-ui,sans-serif; }
+	.desktop-module-notice button { margin-left: 8px; border: 0; border-radius: 5px; padding: 4px 8px; color: #20281b; background: #d3e5b0; cursor: pointer; }
+</style>

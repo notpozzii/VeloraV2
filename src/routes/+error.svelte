@@ -1,7 +1,5 @@
 <script>
 	import { page } from '$app/stores';
-	import { onMount } from 'svelte';
-	import gsap from 'gsap';
 
 	const status = $page.status;
 
@@ -13,9 +11,6 @@
 
 	const info = messages[status] ?? { title: 'Unknown error', sub: 'Something went wrong.' };
 
-	onMount(() => {
-		gsap.fromTo('.err-wrap', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.4 });
-	});
 </script>
 
 <div class="wrap">
@@ -42,7 +37,10 @@
 		align-items: center;
 		gap: 0.5rem;
 		text-align: center;
+		animation: reveal 400ms ease-out;
 	}
+	@keyframes reveal { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+	@media (prefers-reduced-motion: reduce) { .err-wrap { animation: none; } }
 
 	.code {
 		font-family: var(--font-family-display);

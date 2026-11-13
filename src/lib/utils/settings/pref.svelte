@@ -3,6 +3,7 @@
 	import { loadSetting, saveSetting } from '$lib/utils/localspace.js';
 	import { openAboutBlank, openBlob, saveTabPreset, setAntiClose } from '$lib/utils/cloak.js';
 	import { onMount } from 'svelte';
+	import Panic from './panic.svelte';
 	let localAutoAB = $state(false);
 	let localAutoBlob = $state(false);
 	let localAntiClose = $state(false);
@@ -82,6 +83,7 @@
 	];
 </script>
 
+<Panic />
 <div class="settings-card">
 	<div class="setting-row">
 		<div class="setting-copy"><h2>About:blank tab</h2><p>Open Velora inside an about:blank tab.</p></div>

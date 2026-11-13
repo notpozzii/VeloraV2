@@ -613,7 +613,7 @@
 		bind:this={appFrame}
 		onload={() => recordActivity('app-load', { target: url })}
 		onerror={() => recordActivity('app-error', { target: url })}
-		allow={mediaPermissions}
+		allow={`${mediaPermissions}; cross-origin-isolated`}
 		allowfullscreen
 		class="noSelect"
 		src={url}
