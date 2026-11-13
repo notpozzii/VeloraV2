@@ -18,6 +18,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
+	import { watchMediaFailures } from '$lib/utils/browser/media-failure.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	function normalizeUrl(raw) {
 		const trimmed = (raw ?? '').trim();
@@ -36,6 +37,7 @@ autoSW:    legacy parameter; apps now load automatically
 	const params = [];
 	let ready = $state(false);
 	let loadError = $state('');
+	let mediaFailure = $state(null);
 	let starting = $state(false);
 	let iframeEl;
 	const launchAbort = new AbortController();
@@ -55,6 +57,9 @@ autoSW:    legacy parameter; apps now load automatically
 	onMount(() => {
 		if (apiUrl === null) return;
 		void start();
+		if (new URL(apiUrl).hostname === 'play.geforcenow.com') {
+			return watchMediaFailures(iframeEl, failure => { mediaFailure = failure; });
+		}
 	});
 
 	async function start() {
@@ -121,6 +126,15 @@ autoSW:    legacy parameter; apps now load automatically
 
 {#if autoStatus && !loadError}<div class="auto-status" role="status">Auto · {autoStatus}</div>{/if}
 
+{#if mediaFailure}
+	<aside class="media-failure" role="alert" aria-label="GeForce playback error">
+		<button class="dismiss" aria-label="Dismiss playback error" onclick={() => { mediaFailure = null; }}>×</button>
+		<strong>GeForce video couldn’t play</strong>
+		<p>Error {mediaFailure.code}: {mediaFailure.description}. {mediaFailure.source}.</p>
+		{#if mediaFailure.detail}<p class="detail">{mediaFailure.detail}</p>{/if}
+	</aside>
+{/if}
+
 {#if loadError}
 	<div class="start">
 		<button onclick={start}>Try again</button>
@@ -139,6 +153,10 @@ autoSW:    legacy parameter; apps now load automatically
 </div>
 
 <style>
+	.media-failure { position: fixed; bottom: 16px; left: 16px; right: 16px; z-index: 10000; max-width: 560px; padding: 15px 42px 15px 16px; border: 1px solid #e2bc8966; border-radius: 12px; background: #242820f5; color: #f5f5ef; font: 13px/1.5 system-ui, sans-serif; box-shadow: 0 6px 24px #0005; }
+	.media-failure p { margin: 5px 0 0; }
+	.media-failure .detail { font-size: 11px; color: #d6d7cc; overflow-wrap: anywhere; }
+	.media-failure .dismiss { position: absolute; right: 8px; top: 7px; width: 28px; height: 28px; border: 0; background: transparent; color: inherit; font-size: 22px; cursor: pointer; }
 	.auto-status { position: fixed; bottom: 14px; left: 14px; z-index: 100; padding: 8px 12px; border-radius: 9px; border: 1px solid #d3e5b02a; background: #18231ef2; color: #d3e5b0; font: 11px system-ui, sans-serif; pointer-events: none; }
 	:global(body) {
 		height: 100vh;
