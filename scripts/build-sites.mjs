@@ -31,6 +31,8 @@ await build({
 // Stop older service-worker code surviving an update of a direct deployment.
 await writeFile('dist/client/_headers', `/_app/immutable/*
   Cache-Control: public, max-age=31536000, immutable
+/glass/*
+  Cache-Control: no-cache
 /servy.js
   Cache-Control: no-store
   Service-Worker-Allowed: /
@@ -46,7 +48,9 @@ await writeFile('dist/client/_headers', `/_app/immutable/*
   Cache-Control: no-cache
 /prism/stream-transfer.js
   Cache-Control: no-cache
-/geforce/servy.js
+/geforce/glass/*
+  Cache-Control: no-cache
+/servy.js
   Cache-Control: no-store
   Service-Worker-Allowed: /geforce/
 /geforce/route-recovery.js

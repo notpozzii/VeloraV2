@@ -2,7 +2,7 @@ self.__uv$config = {
   prefix: "/service/glass/",
   encodeUrl: Ultraviolet.codec.xor.encode,
   decodeUrl: Ultraviolet.codec.xor.decode,
-  handler: "/glass/glass.handler.js",
+  handler: "/glass/glass.handler.js?v=media-blob-20261113",
   client: "/glass/glass.client.js",
   bundle: "/glass/glass.bundle.js",
   config: "/glass/glass.config.js",
