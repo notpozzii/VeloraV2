@@ -1,5 +1,7 @@
 ## Local compatibility patch
 
+The media `src` hooks resolve blob URLs for both media elements and `<source>` elements, including URLs created in another proxied frame. Preserve the native origin when a URL is absent from the current frame's blob map; assigning `undefined` or fetching a MediaSource through the HTTP proxy leaves ad video black. `tests/uv-media-blob.test.mjs` exercises both property and attribute assignments in the shipped handler.
+
 The `window.open` override in `glass.handler.js` rewrites only the URL and forwards all remaining arguments to the native function, including the browsing target and window features. It returns the real native result.
 
 Preserve this change when updating the vendored engine. Dropping the target changes GeForce NOW's `window.open(url, "_self")` sign-in redirect into a new tab. Named authentication popups also need their target and features intact.
