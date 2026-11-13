@@ -3,7 +3,7 @@
 const prepared = new WeakSet();
 export function resetProxyFrame(frame) { prepared.delete(frame); }
 
-export function prepareProxyFrame(frame, { signal, timeoutMs = 15000, host = window } = {}) {
+export function prepareProxyFrame(frame, { signal, timeoutMs = 15000, host = window, frameUrl = '/proxy-frame.html' } = {}) {
 	if (signal?.aborted) return Promise.reject(new DOMException('Launch cancelled', 'AbortError'));
 	if (prepared.has(frame)) return Promise.resolve();
 	return new Promise((resolve, reject) => {
@@ -26,6 +26,6 @@ export function prepareProxyFrame(frame, { signal, timeoutMs = 15000, host = win
 		const timer = setTimeout(() => fail(new Error('The app connection timed out. Try again.')), timeoutMs);
 		host.addEventListener('message', onMessage);
 		signal?.addEventListener('abort', onAbort, { once: true });
-		frame.src = `/proxy-frame.html?request=${encodeURIComponent(request)}`;
+		frame.src = `${frameUrl}?request=${encodeURIComponent(request)}`;
 	});
 }

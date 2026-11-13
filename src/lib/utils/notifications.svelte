@@ -1,36 +1,8 @@
 <script>
 	import { notif } from '$lib/stores/index';
-	import gsap from 'gsap';
-	let notification = $state();
-	$effect(() => {
-		notification = $notif;
-		if (!$notif) return;
-		gsap.killTweensOf('.notification');
-		gsap.fromTo(
-			'.notification',
-			{ x: 0, opacity: 0, scale: 0.95 },
-			{
-				x: -280,
-				opacity: 1,
-				scale: 1,
-				duration: 0.45,
-				ease: 'power3.out',
-				onComplete: () => {
-					gsap.to('.notification', {
-						x: 0,
-						opacity: 0,
-						scale: 0.95,
-						duration: 0.3,
-						delay: 2,
-						ease: 'power2.in'
-					});
-				}
-			}
-		);
-	});
 </script>
 
-<div class="notification"><p>{notification}</p></div>
+{#if $notif}{#key $notif}<div class="notification" role="status"><p>{$notif}</p></div>{/key}{/if}
 
 <style>
 	.notification {
@@ -50,6 +22,15 @@
 		font-size: 13px;
 		opacity: 0;
 		z-index: 10000;
+		animation: notify 2750ms ease-in-out both;
+	}
+	@keyframes notify {
+		0%, 100% { transform: translateX(0) scale(.95); opacity: 0; }
+		16%, 89% { transform: translateX(-280px) scale(1); opacity: 1; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.notification { animation-name: notify-still; }
+		@keyframes notify-still { 0%, 89% { transform: translateX(-280px); opacity: 1; } 100% { transform: translateX(-280px); opacity: 0; } }
 	}
 
 	.notification p {

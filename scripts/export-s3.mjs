@@ -14,13 +14,20 @@ run(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], {
 	env: { ...process.env, VELORA_S3_EXPORT: '1', VITE_VELORA_S3: '1' }
 });
 const manifest = JSON.parse(readFileSync('build/s3/manifest.json', 'utf8'));
+// S3's object endpoint cannot set the isolation headers required by Roblox's
+// shared-memory engine. Send the S3 copy to the existing isolated Velora page.
+const robloxRedirect = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Opening Velora Roblox</title><meta http-equiv="refresh" content="0;url=https://velora.notpozzi.chatgpt.site/roblox/"></head><body><p>Opening <a href="https://velora.notpozzi.chatgpt.site/roblox/">Velora Roblox</a>…</p><script>location.replace('https://velora.notpozzi.chatgpt.site/roblox/'+location.search+location.hash)</script></body></html>`;
+writeFileSync('build/s3/site/roblox.html', robloxRedirect);
 // Exact /api, /slate, etc. keys let existing iframe URLs work on S3's REST host.
 // These aliases are uploaded as HTML, even though the keys lack an extension.
 const aliases = manifest.routes
 	.filter((route) => route !== '/')
 	.map(
-		(route) =>
-			`aws s3 cp "$package_dir/site/index.html" "$bucket_url${route}" --content-type text/html --cache-control no-cache`
+		(route) => {
+			const source = route === '/roblox' ? 'roblox.html' : 'index.html';
+			return `aws s3 cp "$package_dir/site/${source}" "$bucket_url${route}" --content-type text/html --cache-control no-cache
+aws s3api put-object --bucket "$1" --key "${route.slice(1)}/" --body "$package_dir/site/${source}" --content-type text/html --cache-control no-cache >/dev/null`;
+		}
 	)
 	.join('\n');
 writeFileSync(

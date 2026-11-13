@@ -40,7 +40,7 @@ async function generate() {
 	const script = result.outputFiles.find(file => file.path.endsWith('.js')).text.replace(/<\/script/gi, '<\\/script');
 	const style = result.outputFiles.find(file => file.path.endsWith('.css')).text.replace(/<\/style/gi, '<\\/style');
 	const template = await readFile(resolve(root, 'src/lib/downloads/index.html'), 'utf8');
-	const html = template.replace('<!-- PORTABLE_STYLE -->', `<style>${style}</style>`).replace('<!-- PORTABLE_SCRIPT -->', `<script>${script}</script>`);
+	const html = template.replace('<!-- PORTABLE_STYLE -->', () => `<style>${style}</style>`).replace('<!-- PORTABLE_SCRIPT -->', () => `<script>${script}</script>`);
 	const output = resolve(root, 'static/portable/index.html');
 	await mkdir(dirname(output), { recursive: true });
 	await writeFile(output, html);

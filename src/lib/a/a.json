@@ -1,5 +1,13 @@
 [
 	{
+		"name": "Roblox",
+		"url": "/roblox/",
+		"image": "apps/roblox.svg",
+		"genre": "Games",
+		"type": "local",
+		"subtitle": "Velora web client · Experimental"
+	},
+	{
 		"name": "Amazon",
 		"url": "https://amazon.com/",
 		"image": "1.png",

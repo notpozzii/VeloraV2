@@ -23,7 +23,12 @@
 		busy = true;
 		exportMsg = null;
 		try {
-			await downloadSnapshot({ sessionStorage: includeSession });
+			const date = new Date().toISOString().slice(0, 10);
+			const host = location.hostname || 'velora';
+			await downloadSnapshot({
+				sessionStorage: includeSession,
+				filename: `${host}-${date}.velora`
+			});
 			exportMsg = { type: 'ok', text: 'Snapshot downloaded.' };
 		} catch (error) {
 			exportMsg = { type: 'error', text: 'Export failed: ' + (error?.message ?? error) };
@@ -100,7 +105,7 @@
 			<label class="actionBtn">
 				<img class="icons" src={uploadImg} alt="" />
 				Choose File
-				<input type="file" accept=".galaxy,application/octet-stream" hidden onchange={pickImport} />
+				<input type="file" accept=".velora,.galaxy,application/octet-stream" hidden onchange={pickImport} />
 			</label>
 		</div>
 

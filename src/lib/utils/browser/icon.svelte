@@ -1,6 +1,7 @@
 <script>
 	let { name, size = 18 } = $props();
 	const paths = {
+		home: 'm3 10 9-7 9 7v11h-6v-7H9v7H3z',
 		activity: 'M3 12h4l3-8 4 16 3-8h4',
 		clock: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M12 7v5l3 2',
 		calendar: 'M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1M8 3v4M16 3v4M4 10h16M8 14h1M12 14h1M8 17h1M12 17h1',
@@ -27,6 +28,13 @@
 		fullscreen: 'M8 3H3v5M16 3h5v5M3 16v5h5M21 16v5h-5',
 		globe: 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M3 12h18M12 3c5 5 5 13 0 18-5-5-5-13 0-18',
 		arrow: 'M4 12h16m-6-6 6 6-6 6',
+		download: 'M12 3v12m-5-5 5 5 5-5M4 16v5h16v-5',
+		'weather-off': 'M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0M6 6l12 12',
+		rain: 'M7 15H6a4 4 0 1 1 .6-8A6 6 0 0 1 18 7a4 4 0 1 1 0 8h-1M9 17l-1 4M14 17l-1 4',
+		snow: 'M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9 5l3 3 3-3M9 19l3-3 3 3',
+		storm: 'M7 14H6a4 4 0 1 1 .6-8A6 6 0 0 1 18 6a4 4 0 1 1 1 8M13 11l-5 7h5l-1 5 6-8h-5l2-4',
+		fog: 'M8 6h8M5 10h14M3 14h18M6 18h12',
+		sun: 'M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5',
 		apps: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
 		desktop: 'M3 4h18v13H3zM12 17v4M8 21h8'
 	};

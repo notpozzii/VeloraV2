@@ -14,9 +14,6 @@ import { realpathSync } from 'node:fs';
 const lethePlugin = () => ({
 	name: 'lethe',
 	configureServer(server) {
-		server.middlewares.use((req, res, next) => {
-			next();
-		});
 		server.middlewares.use('/libbybutslightlyworse', sirv(epoxyPath, { dev: true }));
 		server.middlewares.use('/libby', sirv(libcurlPath, { dev: true }));
 		server.middlewares.use('/reflux', sirv(refluxPath, { dev: true }));
@@ -46,5 +43,18 @@ export default defineConfig({
 			ignored: ['**/static/books/**']
 		}
 	},
-	plugins: [{ name: 'velora-portable-download', buildStart: () => buildPortable().then(() => {}) }, sveltekit(), lethePlugin()]
+	plugins: [{
+		name: 'velora-roblox-isolation',
+		configureServer(server) {
+			server.middlewares.use((req, res, next) => {
+				if (req.url?.split('?')[0].startsWith('/roblox/')) {
+					res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+					res.setHeader('Cross-Origin-Embedder-Policy', 'require-corp');
+					res.setHeader('Cross-Origin-Resource-Policy', 'same-origin');
+					res.setHeader('Document-Isolation-Policy', 'isolate-and-require-corp');
+				}
+				next();
+			});
+		}
+	}, { name: 'velora-portable-download', buildStart: () => buildPortable().then(() => {}) }, sveltekit(), lethePlugin()]
 });

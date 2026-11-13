@@ -2,6 +2,9 @@
 	import { onMount } from 'svelte';
 	import { loadSetting, saveSetting, onSettingChange } from '$lib/utils/localspace.js';
 	import Icon from '$lib/utils/browser/icon.svelte';
+	import WeatherControls from './weather-controls.svelte';
+	import christmasBackground from '$lib/img/bg/christmas-photo.jpg';
+	import christmasThumbnail from '$lib/img/bg-downsized/christmas-photo.jpg';
 	import curatedWallpapers from './curated-wallpapers.json';
 	import defaultBackground from '$lib/img/bg/highlands.jpg';
 	import mountains from '$lib/img/bg/dark-mountains.webp';
@@ -37,6 +40,7 @@
 	const maxSize = 8 * 1024 * 1024;
 	const acceptedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'];
 	const wallpapers = [
+		{ title: 'Winter cottage', category: 'Nature', src: christmasBackground, thumbnail: christmasThumbnail },
 		{
 			title: 'Highlands',
 			category: 'Nature',
@@ -281,7 +285,7 @@
 	<header>
 		<div>
 			<h2 id="wallpaper-heading">Wallpaper</h2>
-			<p id="wallpaper-description">Choose a desktop background.</p>
+			<p id="wallpaper-description">Choose a background and weather effect.</p>
 		</div>
 		<button
 			class="close-button"
@@ -292,6 +296,7 @@
 	</header>
 
 	<div class="panel-body">
+		<WeatherControls />
 		<div class="section-label">
 			<h3>Curated backgrounds</h3>
 			<span>{String(visibleWallpapers.length).padStart(2, '0')} views</span>

@@ -46,7 +46,7 @@
 	});
 	const visible = $derived(filtered.slice(0, displayedCount));
 	const picks = $derived(
-		['baseball.irish', 'kickball.irish', '10 Minutes Till Dawn', 'Slope']
+		['1v1.LoL', 'Basket Random', '10 Minutes Till Dawn', 'Slope']
 			.map((name) => data.games.find((game) => game.name.toLowerCase() === name.toLowerCase()))
 			.filter((game): game is Game => !!game)
 	);

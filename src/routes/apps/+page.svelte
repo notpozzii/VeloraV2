@@ -28,6 +28,7 @@
 		'Streaming',
 		'Music',
 		'Social Media',
+		'Games',
 		'Cloud Gaming',
 		'Productivity',
 		'Design',
@@ -183,6 +184,11 @@
 		iframeEl.src = 'about:blank';
 	}
 	async function handleSubmit(url, type) {
+		if (type === 'local') {
+			recordActivity('app-open', { target: url });
+			window.open(new URL(url, window.location.href).href, '_blank', 'noopener,noreferrer');
+			return;
+		}
 		if (openingApp) return;
 		activityUrl = url;
 		recordActivity('app-open', { target: url });
@@ -294,7 +300,7 @@
 										onerror={() => (failedImages = [...failedImages, app.image])}
 									/>{/if}</span
 							><span class="app-details"
-								><strong>{app.displayName}</strong><span>{hostname(app.url)}</span></span
+								><strong>{app.displayName}</strong><span>{app.subtitle || hostname(app.url)}</span></span
 							><span class="app-open-arrow"><Icon name="arrow" size={17} /></span></button
 						>
 						<div class="app-card-footer">

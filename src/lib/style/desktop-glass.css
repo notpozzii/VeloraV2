@@ -1,18 +1,10 @@
-.velora-desktop.glass-desktop .desktop-menubar {
-	position: absolute;
-	top: 16px;
-	left: 20px;
-	right: 20px;
-	height: 52px;
-	padding: 0 18px;
-	border-radius: 17px;
-}
-
 .velora-desktop.glass-desktop .desktop-workspace {
 	inset: 84px 0 calc(var(--dock-height) + 36px);
 }
 
-.velora-desktop.glass-desktop .desktop-menubar,
+.velora-desktop.glass-desktop .dynamic-island,
+.velora-desktop.glass-desktop .desktop-search-surface,
+.velora-desktop.glass-desktop .desktop-search-trigger,
 .velora-desktop.glass-desktop .desktop-dock,
 .velora-desktop.glass-desktop .desktop-command,
 .velora-desktop.glass-desktop .app-launcher,
@@ -133,19 +125,6 @@
 }
 
 @media (max-width: 480px) {
-	.velora-desktop.glass-desktop .desktop-menubar {
-		top: 10px;
-		left: 10px;
-		right: 10px;
-		height: 49px;
-		padding: 0 12px;
-		border-radius: 15px;
-	}
-	.velora-desktop.glass-desktop .desktop-label,
-	.velora-desktop.glass-desktop .header-divider,
-	.velora-desktop.glass-desktop .desktop-status time {
-		display: none;
-	}
 	.velora-desktop .glass-settings {
 		top: 72px;
 		right: 15px;
