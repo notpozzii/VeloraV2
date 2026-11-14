@@ -228,6 +228,33 @@
 	background: #f5f7ec09;
 	transform: translateY(-3px);
 }
+.velora-desktop .dock-wave-item {
+	position: relative;
+	flex: 0 0 auto;
+	width: calc((var(--dock-height) - 14px) * var(--dock-scale, 1));
+	height: calc(var(--dock-height) - 14px);
+}
+.velora-desktop .dock-wave-item > :is(.dock-app, .dock-launcher, .dock-personalize) {
+	position: absolute;
+	left: 0;
+	bottom: var(--dock-lift, 0px);
+	width: 100%;
+	height: calc((var(--dock-height) - 14px) * var(--dock-scale, 1));
+	border-radius: calc(12px * var(--dock-scale, 1));
+	transform: none;
+	transition: background 160ms, border-color 160ms;
+}
+.velora-desktop .dock-wave-item:hover { z-index: 1; }
+.velora-desktop .dock-visual {
+	display: grid;
+	place-items: center;
+	transform: scale(var(--dock-scale, 1));
+	pointer-events: none;
+}
+.velora-desktop .dock-wave-ready .dock-apps { overflow: visible; }
+.velora-desktop .dock-wave-item .dock-indicator {
+	bottom: calc(-4px - var(--dock-lift, 0px));
+}
 .velora-desktop .dock-app.active,
 .velora-desktop .dock-launcher.active {
 	background: #e6efdb10;
