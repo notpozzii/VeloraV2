@@ -15,6 +15,7 @@
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import DynamicIsland from '$lib/utils/os/dynamic-island.svelte';
 	import DesktopDock from '$lib/utils/os/desktop-dock.svelte';
+	import { DEFAULT_DOCK_HOVER_STRENGTH, DOCK_HOVER_SETTING, normalizeDockHoverStrength } from './dock-settings.js';
 	import WidgetBoard from '$lib/utils/os/widget-board.svelte';
 	import WeatherEffects from '$lib/utils/os/weather-effects.svelte';
 	import legacyWinterWallpaper from '$lib/img/bg/christmas-photo.jpg';
@@ -92,6 +93,7 @@
 	let hydrated = $state(false);
 	let navSizeMulti = $state(24);
 	let compactDock = $state(false);
+	let dockHoverStrength = $state(DEFAULT_DOCK_HOVER_STRENGTH);
 	let temp = 0;
 	let accumY = 0;
 	let dragging = $state(false);
@@ -561,8 +563,9 @@
 			loadSetting('customWisp', ''),
 			loadSetting('desktopGlassStrength', 60),
 			loadSetting('compactDock', false),
+			loadSetting(DOCK_HOVER_SETTING, DEFAULT_DOCK_HOVER_STRENGTH),
 			loadWeatherPreferences({ read: loadSetting, write: saveSettingShared }).catch(() => ({ mode: 'off', speed: 1, intensity: 60 }))
-		])).then(([background, fit, size, savedApps, wisp, strength, compact, weather]) => {
+		])).then(([background, fit, size, savedApps, wisp, strength, compact, dockStrength, weather]) => {
 			if (disposed) return;
 			bgURL = background || mainBG;
 			bgFit = fit === 'contain' ? 'contain' : 'cover';
@@ -571,6 +574,7 @@
 			customWisp = wisp || '';
 			glassStrength = normalizeGlassStrength(strength);
 			compactDock = compact === true;
+			dockHoverStrength = normalizeDockHoverStrength(dockStrength);
 			weatherMode = weather.mode;
 			weatherSpeed = weather.speed;
 			weatherIntensity = weather.intensity;
@@ -597,7 +601,8 @@
 			onSettingChange('weatherMode', value => { weatherMode = normalizeWeatherMode(value); }),
 			onSettingChange('weatherSpeed', value => { weatherSpeed = normalizeWeatherSpeed(value); }),
 			onSettingChange('weatherIntensity', value => { weatherIntensity = normalizeWeatherIntensity(value); }),
-			onSettingChange('compactDock', value => { compactDock = value === true; })
+			onSettingChange('compactDock', value => { compactDock = value === true; }),
+			onSettingChange(DOCK_HOVER_SETTING, value => { dockHoverStrength = normalizeDockHoverStrength(value); })
 		];
 		return () => {
 			disposed = true;
@@ -1061,7 +1066,7 @@
 			{/each}
 		</div>
 	{/if}
-	<DesktopDock compact={compactDock} keepOpen={launcherOpen || menuOpen || previewOpen || dragging}>
+	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || menuOpen || previewOpen || dragging}>
 		<div
 			class="navResize"
 			onmousedown={startNavResize}
