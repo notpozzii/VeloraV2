@@ -41,3 +41,6 @@ curate-deleted.json
 
 # Generated self-contained desktop download
 /static/portable/
+
+# Bundled standalone restore script; rebuilt before deployment.
+/static/site-restore.js

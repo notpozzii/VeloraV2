@@ -1,3 +1,5 @@
+import { restoreInProgress } from './restore-state.js';
+
 export const resetStorageKey = 'velora:reset-in-progress';
 export const resetIntentKey = 'velora:reset-intent';
 export const resetWaitKey = 'velora:reset-wait';
@@ -13,7 +15,7 @@ export function readResetMarker(host) {
 }
 
 export function resetInProgress(host = globalThis.window) {
-	return !!host && (host.__veloraResetting === true || !!readResetMarker(host));
+	return !!host && (host.__veloraResetting === true || !!readResetMarker(host) || restoreInProgress(host));
 }
 
 export function highestSameOriginWindow(host) {

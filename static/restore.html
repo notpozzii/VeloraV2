@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Restore Velora</title>
+	<style>
+		*{box-sizing:border-box}body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;background:#152019;color:#edf1e7;font:14px/1.6 system-ui,sans-serif}main{width:min(470px,100%);padding:32px;border:1px solid #e3edda24;border-radius:22px;background:linear-gradient(135deg,#ffffff06,transparent),#1b281f;box-shadow:0 20px 80px #0003}.mark{color:#d3e5b0;font:italic bold 35px Georgia,serif;margin-bottom:22px}h1{font-size:25px;line-height:1.25;letter-spacing:-.7px;font-weight:550;margin:0 0 15px}p{color:#bac8b1;font-size:13px;margin:0 0 18px}.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:24px}button{font:inherit;font-size:12px;border:1px solid #ffffff28;border-radius:9px;padding:10px 14px;background:#ffffff07;color:#eff3e9;cursor:pointer}button:hover{background:#ffffff12}button:focus-visible{outline:2px solid #d3e5b0;outline-offset:3px}.primary{background:#d3e5b0;color:#263422;border-color:transparent}.help{padding:13px;border:1px solid #d3e5b02a;border-radius:9px;font-size:12px;color:#d3e5b0}[hidden]{display:none!important}.small{font-size:11px;color:#99ab90}
+	</style>
+</head>
+<body>
+<main>
+	<div class="mark" aria-hidden="true">v.</div>
+	<section id="progress-view">
+		<h1>Restoring Velora…</h1>
+		<p id="progress-status" role="status">Closing open Velora apps…</p>
+		<p id="blocked-help" class="help" hidden>Close other Velora tabs using this link. Your restore will continue automatically when they release their saved data.</p>
+		<p class="small">Keep this page open. Velora will reopen when your backup is restored.</p>
+	</section>
+	<section id="wait-view" hidden>
+		<h1>Restore in progress</h1>
+		<p>Another Velora page is restoring this backup. This tab will reopen when it finishes.</p>
+		<p class="small">If you closed the restore page, you can continue here.</p>
+		<div class="actions"><button id="resume-restore">Continue restore</button></div>
+	</section>
+	<section id="error-view" hidden>
+		<h1>The restore couldn’t finish</h1>
+		<p id="restore-error" role="alert"></p>
+		<p class="small">Keep your backup file. If the restore started, some data may already have changed; retry to finish restoring it.</p>
+		<div class="actions"><button id="retry-restore" class="primary">Retry restore</button><button id="leave-restore">Return to Velora</button></div>
+	</section>
+</main>
+<script type="module" src="/site-restore.js"></script>
+</body>
+</html>
