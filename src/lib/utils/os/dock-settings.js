@@ -1,4 +1,4 @@
-export const DEFAULT_DOCK_HOVER_STRENGTH = 25;
+export const DEFAULT_DOCK_HOVER_STRENGTH = 10;
 export const DOCK_HOVER_SETTING = 'dockHoverStrength';
 
 export function normalizeDockHoverStrength(value) {
