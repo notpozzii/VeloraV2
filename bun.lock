@@ -38,6 +38,7 @@
   },
   "patchedDependencies": {
     "@mercuryworkshop/libcurl-transport@1.5.2": "patches/@mercuryworkshop%2Flibcurl-transport@1.5.2.patch",
+    "origin-snapshot@0.1.2": "patches/origin-snapshot@0.1.2.patch",
   },
   "packages": {
     "@cloudflare/kv-asset-handler": ["@cloudflare/kv-asset-handler@0.5.0", "", {}, "sha512-jxQYkj8dSIzc0cD6cMMNdOc1UVjqSqu8BZdor5s8cGjW2I8BjODt/kWPVdY+u9zj3ms75Q5qaZgnxUad83+eAg=="],

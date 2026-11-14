@@ -1,0 +1,149 @@
+diff --git a/src/index.d.ts b/src/index.d.ts
+index 8d2c30f60cc9b452c84b9cd18b4ca2a1205528d8..67f141aa0104266b8037961d609ae9e95b97ee45 100644
+--- a/src/index.d.ts
++++ b/src/index.d.ts
+@@ -10,6 +10,8 @@ export interface ExportOptions {
+ 
+ export interface ImportOptions {
+   clear?: boolean;
++  preserveStorageKeys?: string[];
++  onblocked?: (databaseName: string) => void;
+ }
+ 
+ export interface SnapshotManifest {
+diff --git a/src/index.js b/src/index.js
+index 4bb85ad0d69274a8498f6c58d5d313bb8d019676..a251181636ed0f7f03dea787c00a762d07a93770 100644
+--- a/src/index.js
++++ b/src/index.js
+@@ -72,7 +72,7 @@ export async function exportOrigin(options = {}) {
+  */
+ 
+ export async function importOrigin(source, options = {}) {
+-  const { clear = true } = options;
++  const { clear = true, preserveStorageKeys = [], onblocked = () => {} } = options;
+   const blob = toBlob(source);
+   const { manifest, bin } = await decodeContainer(blob);
+ 
+@@ -87,13 +87,13 @@ export async function importOrigin(source, options = {}) {
+ 
+   const s = manifest.sections || {};
+   if (s.localStorage && typeof localStorage !== "undefined") {
+-    restoreWebStorage(localStorage, s.localStorage, { clear });
++    restoreWebStorage(localStorage, s.localStorage, { clear, preserveKeys: preserveStorageKeys });
+   }
+   if (s.sessionStorage && typeof sessionStorage !== "undefined") {
+-    restoreWebStorage(sessionStorage, s.sessionStorage, { clear });
++    restoreWebStorage(sessionStorage, s.sessionStorage, { clear, preserveKeys: preserveStorageKeys });
+   }
+   if (s.indexedDB && typeof indexedDB !== "undefined") {
+-    await restoreDatabases(s.indexedDB, bin, { clear });
++    await restoreDatabases(s.indexedDB, bin, { clear, onblocked });
+   }
+   if (s.opfs) {
+     await restoreOPFS(s.opfs, bin, { clear });
+diff --git a/src/storage/indexeddb.js b/src/storage/indexeddb.js
+index 675e65708f0efb5972325f41fdbcf91c0760d5d4..685d121ecfa29a13f54939dc899ebaaa947042f5 100644
+--- a/src/storage/indexeddb.js
++++ b/src/storage/indexeddb.js
+@@ -68,10 +68,10 @@ async function dumpStore(db, storeName, bin) {
+  * @param {Uint8Array[]} bin
+  * @param {{ clear?: boolean }} [options]
+  */
+-export async function restoreDatabases(dump, bin, { clear = true } = {}) {
++export async function restoreDatabases(dump, bin, { clear = true, onblocked = () => {} } = {}) {
+ 	for (const dbInfo of dump) {
+-		if (clear) await deleteDatabase(dbInfo.name);
+-		const db = await openForRestore(dbInfo, clear);
++		if (clear) await deleteDatabase(dbInfo.name, onblocked);
++		const db = await openForRestore(dbInfo, clear, onblocked);
+ 		try {
+ 			for (const storeInfo of dbInfo.stores) {
+ 				await restoreStore(db, storeInfo, bin);
+@@ -120,9 +120,9 @@ function openExisting(name) {
+  * @param {boolean} wasCleared 
+  * @returns {Promise<IDBDatabase>}
+  */
+-async function openForRestore(dbInfo, wasCleared) {
++async function openForRestore(dbInfo, wasCleared, onblocked) {
+ 	if (wasCleared) {
+-		return openAndUpgrade(dbInfo.name, dbInfo.version || 1, dbInfo.stores);
++		return openAndUpgrade(dbInfo.name, dbInfo.version || 1, dbInfo.stores, onblocked);
+ 	}
+ 
+ 	const current = await openExisting(dbInfo.name);
+@@ -131,7 +131,7 @@ async function openForRestore(dbInfo, wasCleared) {
+ 
+ 	const targetVersion = Math.max(current.version + 1, dbInfo.version || 1);
+ 	current.close();
+-	return openAndUpgrade(dbInfo.name, targetVersion, dbInfo.stores);
++	return openAndUpgrade(dbInfo.name, targetVersion, dbInfo.stores, onblocked);
+ }
+ 
+ /**
+@@ -151,7 +151,7 @@ function hasSchema(db, storeInfo) {
+  * @param {any[]} stores
+  * @returns {Promise<IDBDatabase>}
+  */
+-function openAndUpgrade(name, version, stores) {
++function openAndUpgrade(name, version, stores, onblocked) {
+ 	return new Promise((resolve, reject) => {
+ 		const open = indexedDB.open(name, version);
+ 		open.onupgradeneeded = () => {
+@@ -173,30 +173,22 @@ function openAndUpgrade(name, version, stores) {
+ 		};
+ 		open.onsuccess = () => resolve(open.result);
+ 		open.onerror = () => reject(open.error);
+-		// A blocked upgrade never fires success/error on its own — fail fast with an
+-		// actionable error instead of leaving the restore hung forever.
+-		open.onblocked = () => reject(blockedError(name));
++		// The request remains queued while blocked. Keep this restore pending so
++		// it can complete safely once the other connection closes.
++		open.onblocked = () => onblocked(name);
+ 	});
+ }
+ 
+ /** @param {string} name */
+-function deleteDatabase(name) {
++function deleteDatabase(name, onblocked) {
+ 	return new Promise((resolve, reject) => {
+ 		const req = indexedDB.deleteDatabase(name);
+ 		req.onsuccess = () => resolve(undefined);
+ 		req.onerror = () => reject(req.error);
+-		req.onblocked = () => reject(blockedError(name));
++		req.onblocked = () => onblocked(name);
+ 	});
+ }
+ 
+-/** @param {string} name */
+-function blockedError(name) {
+-	return new DOMException(
+-		`IndexedDB "${name}" is blocked by another open connection — close other tabs on this origin and retry`,
+-		'InvalidStateError'
+-	);
+-}
+-
+ /** @param {IDBRequest} req */
+ function request(req) {
+ 	return new Promise((resolve, reject) => {
+diff --git a/src/storage/webstorage.js b/src/storage/webstorage.js
+index 860b1a370a374a68f7f757f9d757bc6430d3231c..665994caafcb6f08c939a4c899844006dcd70b1b 100644
+--- a/src/storage/webstorage.js
++++ b/src/storage/webstorage.js
+@@ -17,7 +17,14 @@ export function dumpWebStorage(storage) {
+  * @param {Record<string, string>} data
+  * @param {{ clear?: boolean }} [options]
+  */
+-export function restoreWebStorage(storage, data, { clear = false } = {}) {
+-	if (clear) storage.clear();
+-	for (const [key, value] of Object.entries(data)) storage.setItem(key, value);
++export function restoreWebStorage(storage, data, { clear = false, preserveKeys = [] } = {}) {
++	const preserved = new Set(preserveKeys);
++	if (clear) {
++		if (!preserved.size) storage.clear();
++		else for (let i = storage.length - 1; i >= 0; i--) {
++			const key = storage.key(i);
++			if (key !== null && !preserved.has(key)) storage.removeItem(key);
++		}
++	}
++	for (const [key, value] of Object.entries(data)) if (!preserved.has(key)) storage.setItem(key, value);
+ }

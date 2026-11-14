@@ -1,7 +1,8 @@
 <script>
 	import '$lib/style/settings.css';
 	import uploadImg from '$lib/img/icons/upload.png';
-	import { downloadSnapshot, importOrigin, readManifest } from 'origin-snapshot';
+	import { downloadSnapshot, readManifest } from 'origin-snapshot';
+	import { beginSiteRestore, exportDatabaseNames, validateRestoreManifest } from '$lib/utils/restore-core.js';
 	import Reset from './reset.svelte';
 
 	let includeSession = $state(false);
@@ -27,6 +28,7 @@
 			const host = location.hostname || 'velora';
 			await downloadSnapshot({
 				sessionStorage: includeSession,
+				databases: await exportDatabaseNames(window),
 				filename: `${host}-${date}.velora`
 			});
 			exportMsg = { type: 'ok', text: 'Snapshot downloaded.' };
@@ -43,7 +45,7 @@
 		if (!file || busy) return;
 		importMsg = null;
 		try {
-			const manifest = await readManifest(file);
+			const manifest = validateRestoreManifest(await readManifest(file));
 			pending = { file, manifest };
 		} catch {
 			pending = null;
@@ -54,10 +56,9 @@
 	async function confirmImport() {
 		if (!pending || busy) return;
 		busy = true;
+		importMsg = null;
 		try {
-			await importOrigin(pending.file);
-			importMsg = { type: 'ok', text: 'Restored. Reload the page to see your data.' };
-			pending = null;
+			await beginSiteRestore(window, pending.file, pending.manifest);
 		} catch (error) {
 			importMsg = { type: 'error', text: 'Import failed: ' + (error?.message ?? error) };
 		} finally {
@@ -99,7 +100,7 @@
 		<p class="subHeading">Import</p>
 		<p class="desc">
 			Restore a snapshot saved from this site. This replaces your current data, so export a backup
-			first if you're unsure.
+			first if you're unsure. Restoring closes open Velora apps and reopens Velora when it finishes.
 		</p>
 		<div class="content">
 			<label class="actionBtn">

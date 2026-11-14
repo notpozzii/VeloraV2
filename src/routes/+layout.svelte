@@ -7,6 +7,7 @@
 	import { onMount, setContext, tick } from 'svelte';
 	import { STARTUP_CONTEXT } from '$lib/utils/startup.js';
 	import { installResetCoordinator } from '$lib/utils/reset-core.js';
+	import { installRestoreCoordinator } from '$lib/utils/restore-core.js';
 	import { activityOwner, getActivityHub, installActivityCollector } from '$lib/utils/developer/diagnostics.js';
 	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
 	import { installPanicKey } from '$lib/utils/panic-key.js';
@@ -41,20 +42,23 @@
 
 	onMount(() => {
 		const reset = installResetCoordinator(window);
-		const disposePanic = reset.holding ? () => {} : installPanicKey(window);
+		const restore = reset.holding ? null : installRestoreCoordinator(window);
+		const holding = reset.holding || restore?.holding;
+		const disposePanic = holding ? () => {} : installPanicKey(window);
 		// Keyboard Lock is top-level only. One owner covers every app, including
 		// fullscreen requests made inside nested app and browser frames.
-		const disposeFullscreenKeys = !reset.holding && window.top === window
+		const disposeFullscreenKeys = !holding && window.top === window
 			? installGameKeyboard({ document, navigator, allApps: true }) : () => {};
-		const disposeActivity = reset.holding ? () => {} : installActivityCollector(window);
+		const disposeActivity = holding ? () => {} : installActivityCollector(window);
 		// Diagnostics stay available for existing opt-in users, without making
 		// every visitor download their interface and speed lab at startup.
-		const disposeActivityUI = !reset.holding && activityOwner(window) === window
+		const disposeActivityUI = !holding && activityOwner(window) === window
 			? getActivityHub(window).subscribe(state => { activityEnabled = state.enabled; }) : () => {};
-		if (!reset.holding) startContent();
+		if (!holding) startContent();
 
 		return () => {
 			reset.dispose();
+			restore?.dispose();
 			disposePanic();
 			disposeFullscreenKeys();
 			disposeActivity();
