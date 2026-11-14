@@ -1,6 +1,5 @@
 <script>
 	import { onMount, onDestroy, tick } from 'svelte';
-	import Icon from '$lib/utils/browser/icon.svelte';
 	import { dockMagnification } from './dock-magnification.js';
 	import { DEFAULT_DOCK_HOVER_STRENGTH } from './dock-settings.js';
 	let { compact = false, keepOpen = false, hoverStrength = DEFAULT_DOCK_HOVER_STRENGTH, children } = $props();
@@ -65,8 +64,7 @@
 		<button class="dock-compact-trigger" type="button" bind:this={trigger} onclick={open}
 			aria-label="Expand app dock" aria-expanded={isOpen} aria-controls="desktop-dock-content"
 			aria-hidden={isOpen} inert={isOpen} title="Apps">
-			<Icon name="apps" size={14} /><span class="dock-grip" aria-hidden="true"></span>
-			<svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 7.5 3-3 3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+			<span class="dock-grip" aria-hidden="true"></span>
 		</button>
 	{/if}
 	<div class="dock-content" id="desktop-dock-content" bind:this={content} inert={!isOpen} aria-hidden={!isOpen}>
@@ -81,11 +79,9 @@
 	.compact .dock-content { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); opacity: 1; visibility: visible; transition: opacity 160ms ease 100ms, visibility 0s; }
 	.desktop-dock.compact:not(.dock-open) { width: 156px; height: 26px; padding: 0; border-radius: 14px; }
 	.compact:not(.dock-open) .dock-content { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 90ms ease, visibility 0s linear 100ms; }
-	.dock-compact-trigger { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; gap: 14px; width: 100%; padding: 0 15px; border: 0; border-radius: inherit; background: transparent; color: var(--os-text); cursor: pointer; transition: opacity 100ms ease 100ms; }
+	.dock-compact-trigger { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; width: 100%; padding: 0 15px; border: 0; border-radius: inherit; background: transparent; color: var(--os-text); cursor: pointer; transition: opacity 100ms ease 100ms; }
 	.dock-compact-trigger::before { content: ''; position: absolute; inset: -9px -6px; }
 	.dock-grip { width: 48px; height: 3px; flex: none; border-radius: 3px; background: var(--os-accent); opacity: .35; }
-	.dock-compact-trigger :global(svg) { flex: none; color: var(--os-accent); }
-	.dock-compact-trigger > svg { opacity: .65; }
 	.dock-open .dock-compact-trigger { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 80ms ease; }
 	@media(max-width:480px) { .desktop-dock { --dock-padding: 6px; --dock-viewport-gap: 16px; } .dock-content { gap: 3px; } }
 	@media(prefers-reduced-motion:reduce) { .desktop-dock.compact,.compact .dock-content,.dock-compact-trigger { transition: none; } }
