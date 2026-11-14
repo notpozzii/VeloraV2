@@ -44,3 +44,5 @@ curate-deleted.json
 
 # Bundled standalone restore script; rebuilt before deployment.
 /static/site-restore.js
+
+/static/connection-help.js

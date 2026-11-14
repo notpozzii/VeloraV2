@@ -10,6 +10,7 @@
 	import { ROBLOX_CUSTOM_THEME_KEY, parseCustomTheme } from '$lib/roblox/custom-theme.js';
 	import { robloxPlaybackSupport } from '$lib/roblox/compatibility.js';
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
+	import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
 
 	let state = $state('preparing');
 	let status = $state('Preparing your connection…');
@@ -182,7 +183,7 @@
 <svelte:head><title>Home — Velora</title><link rel="icon" href={mark} /><meta name="robots" content="noindex" /></svelte:head>
 
 <div class="roblox-client">
-	{#if error && !playing}<p class="session-error" role="alert">{error}{#if state === 'error'}<button class="secondary" onclick={() => location.reload()}>Try again</button>{/if}</p>{/if}
+	{#if error && !playing}<div class="session-error" role="alert"><div><p>{error}</p><ConnectionHelp {error} /></div>{#if state === 'error'}<button class="secondary" onclick={() => location.reload()}>Try again</button>{/if}</div>{/if}
 	<div class="browser" class:hidden={playing}>
 		{#if !browsing}<div class="loading" role="status"><span class="spinner"></span><strong>Opening Roblox</strong><p>The real Roblox website. Play here in Velora.</p></div>{/if}
 		<iframe bind:this={siteElement} onload={browserLoaded} title="Roblox website" allow="clipboard-write; fullscreen" allowfullscreen></iframe>

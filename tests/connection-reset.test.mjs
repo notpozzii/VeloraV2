@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import localspace from 'localspace';
-import { connectionDefaults, connectionResetKey, connectionResetVersion, createConnectionReset, isConnectionSetting } from '../src/lib/utils/connection-reset.js';
+import { connectionDefaults, connectionResetKey, connectionResetVersion, createConnectionReset, isConnectionSetting, restoreConnectionDefaults } from '../src/lib/utils/connection-reset.js';
 
 const sessionKey = `${connectionResetKey}:session`;
 const autoKey = 'velora:auto-connections:v1';
@@ -111,4 +111,37 @@ test('the installed settings library supports this migration through its memory 
 	assert.equal(await createConnectionReset({ store }).ensure(), true);
 	assert.equal(await store.getItem('car'), 'epoxy');
 	await store.clear();
+});
+
+test('manual connection reset atomically restores three defaults without touching saved data or search', async () => {
+	const f = fixture();
+	await restoreConnectionDefaults(f.options);
+	for (const [key, value] of Object.entries(connectionDefaults)) {
+		assert.equal(f.data.get(key), value);
+		assert.equal(f.legacy.getItem(key), null);
+	}
+	assert.deepEqual(f.writes, ['lethe', 'car', 'customWisp']);
+	assert.deepEqual(f.notifications, Object.entries(connectionDefaults));
+	assert.equal(f.session.getItem(autoKey), null);
+	assert.equal(f.session.getItem('unrelated'), 'keep');
+	assert.deepEqual(f.data.get('bookmarks'), ['keep']);
+	assert.equal(f.data.get('searchEngine'), 'ddg');
+	assert.equal(f.data.get('theme'), 'dark');
+});
+
+test('a failed manual reset rolls back and does not announce success or discard Auto history', async () => {
+	const f = fixture(); f.fail();
+	await assert.rejects(restoreConnectionDefaults(f.options), /Quota/);
+	assert.equal(f.data.get('lethe'), 'uv');
+	assert.equal(f.data.get('car'), 'epoxy');
+	assert.equal(f.data.get('customWisp'), 'wss://old.example/');
+	assert.equal(f.session.getItem(autoKey), 'old epoxy choice');
+	assert.equal(f.notifications.length, 0);
+});
+
+test('manual reset yields to a full site restore/reset in progress', async () => {
+	const f = fixture();
+	await assert.rejects(restoreConnectionDefaults({ ...f.options, resetting: () => true }), /unavailable/);
+	assert.equal(f.transactions, 0);
+	assert.equal(f.notifications.length, 0);
 });

@@ -4,7 +4,7 @@
 import { browser } from '$app/environment';
 import localspace from 'localspace';
 import { resetInProgress } from './reset-core.js';
-import { connectionDefaults, createConnectionReset, isConnectionSetting } from './connection-reset.js';
+import { connectionDefaults, createConnectionReset, isConnectionSetting, restoreConnectionDefaults } from './connection-reset.js';
 
 // One namespaced store for all Galaxy settings (IndexedDB, falling back to
 // localStorage/memory automatically). Null on the server — there is no storage
@@ -24,6 +24,14 @@ const connectionReset = browser ? createConnectionReset({
 	resetting: () => resetInProgress(),
 	notify: (key, value) => channel?.postMessage({ key, value })
 }) : null;
+
+export async function resetConnectionSettings() {
+	await connectionReset?.ensure();
+	await restoreConnectionDefaults({
+		store, legacyStorage: () => window.localStorage, sessionStorage: () => window.sessionStorage,
+		resetting: () => resetInProgress(), notify: (key, value) => channel?.postMessage({ key, value })
+	});
+}
 
 /**
  * Subscribe to live changes for a single setting key. The callback fires with

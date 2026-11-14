@@ -1,4 +1,5 @@
 <script>
+	import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
 	import { recordActivity, activityReason } from '$lib/utils/developer/diagnostics.js';
 	import appCatalog from '$lib/a/a.json';
 	import { onMount, onDestroy } from 'svelte';
@@ -336,5 +337,5 @@
 	style:display={frameDisplay}
 ></iframe>
 {#if loadError}<div class="app-launch-error" role="alert">
-		<span>{loadError}</span><button onclick={closeFrame}>Back to apps</button>
+		<span>{loadError}</span><ConnectionHelp error={loadError} /><button onclick={closeFrame}>Back to apps</button>
 	</div>{/if}

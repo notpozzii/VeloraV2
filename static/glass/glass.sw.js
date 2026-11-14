@@ -26,6 +26,7 @@
         <textarea id="errorTrace" cols="40" rows="10" readonly></textarea>
         <p>Try:</p>
         <ul>
+        <li>Resetting your connection settings to defaults, then reloading. <a href="/settings#connection" target="_top">Open connection settings</a></li>
         <li>Checking your internet connection</li>
         <li>Verifying you entered the correct address</li>
         <li>Clearing the site data</li>

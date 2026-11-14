@@ -4,6 +4,7 @@
   import { loadSetting } from '$lib/utils/localspace.js';
   import Icon from '$lib/utils/browser/icon.svelte';
   import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
+  import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
 
   let frame;
   let app;
@@ -59,6 +60,7 @@
   {#if error}
     <div class="error" role="alert">
       <p>{error}</p>
+      <ConnectionHelp {error} />
       <button onclick={() => window.location.reload()}>Try again</button>
       <button onclick={() => { error = ''; }}>Dismiss</button>
     </div>

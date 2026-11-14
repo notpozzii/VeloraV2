@@ -5,6 +5,20 @@ const sessionResetKey = `${connectionResetKey}:session`;
 const autoChoicesKey = 'velora:auto-connections:v1';
 export const isConnectionSetting = key => Object.hasOwn(connectionDefaults, key);
 
+export async function restoreConnectionDefaults({ store, legacyStorage, sessionStorage, notify = () => {}, resetting = () => false }) {
+	if (!store || resetting()) throw new Error('Connection settings are unavailable');
+	await store.runTransaction('readwrite', async transaction => {
+		await Promise.all(Object.entries(connectionDefaults).map(([key, value]) => transaction.set(key, value)));
+		if (resetting()) throw new Error('Site reset in progress');
+	});
+	if (resetting()) return;
+	try { sessionStorage?.()?.removeItem(autoChoicesKey); } catch {}
+	for (const [key, value] of Object.entries(connectionDefaults)) {
+		try { legacyStorage?.()?.removeItem(key); } catch {}
+		try { notify(key, value); } catch {}
+	}
+}
+
 // This release resets connection choices once per origin, not on every visit.
 // Use the settings driver's transaction so a second tab cannot observe a reset
 // marker before all three defaults have committed.
