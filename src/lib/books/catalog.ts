@@ -1,5 +1,6 @@
 import type { Game } from './types';
 import { GAMES_BASE } from './config';
+import bundledCatalog from './catalog.json';
 
 const BASE = GAMES_BASE.replace(/\/+$/, '');
 
@@ -17,6 +18,7 @@ function fromRoot(path: string): string {
 	return asset(`${BOOKS_ROOT}/${path.replace(/^\/+/, '')}`);
 }
 
+// Upstream source for refreshing catalog.json, not a page-load dependency.
 export const CATALOG_URL = fromRoot('gmes.json');
 
 export const TOP_GAME_IDS = ['baseball-irish', 'kickball-irish'];
@@ -80,10 +82,10 @@ export function normalize(raw: RawGame[]): Game[] {
 	return games;
 }
 
-export async function loadCatalog(fetchFn: typeof fetch = fetch): Promise<Game[]> {
-	const res = await fetchFn(CATALOG_URL);
-	if (!res.ok) throw new Error(`Failed to load catalog (${res.status})`);
-	return [...topGames, ...normalize(await res.json()).filter((game) => !topGames.some((top) => game.id === top.id || game.url === top.url))];
+// The list ships with Velora. A failed connection to the game host must not
+// prevent the library opening; only launching games needs that connection.
+export async function loadCatalog(): Promise<Game[]> {
+	return [...topGames, ...normalize(bundledCatalog).filter((game) => !topGames.some((top) => game.id === top.id || game.url === top.url))];
 }
 
 export function collectTags(games: Game[]): string[] {

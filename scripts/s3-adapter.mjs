@@ -29,7 +29,7 @@ export default function staticPackage() {
 			for (const file of ['index.html', 'velora.svg']) {
 				cpSync(`static/portable/${file}`, join(downloads, file));
 			}
-			const missingAssets = ['books/gmes.json', 'pyrite/index.html']
+			const missingAssets = ['pyrite/index.html']
 				.filter((asset) => !existsSync(join(output, asset)));
 			for (const asset of missingAssets) builder.log.warn(`Optional app assets missing: static/${asset}`);
 			writeFileSync('build/s3/manifest.json', JSON.stringify({
