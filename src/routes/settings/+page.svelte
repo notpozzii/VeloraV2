@@ -6,6 +6,7 @@
 	import Data from '$lib/utils/settings/data.svelte';
 	import About from '$lib/utils/settings/about.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
+	import { onMount } from 'svelte';
 	let activeSection = $state('pref');
 	const sections = [
 		{ name: 'General', id: 'pref', icon: 'settings' },
@@ -14,6 +15,16 @@
 		{ name: 'Data', id: 'data', icon: 'bookmark' },
 		{ name: 'About', id: 'about', icon: 'star' }
 	];
+	onMount(() => {
+		const syncSection = () => {
+			const hash = location.hash.slice(1);
+			const section = hash === 'connection' ? 'pro' : hash;
+			if (sections.some(item => item.id === section)) activeSection = section;
+		};
+		syncSection();
+		window.addEventListener('hashchange', syncSection);
+		return () => window.removeEventListener('hashchange', syncSection);
+	});
 </script>
 
 <svelte:head><title>Velora — Settings</title></svelte:head>

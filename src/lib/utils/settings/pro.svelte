@@ -1,13 +1,17 @@
 <script>
 	import '$lib/style/settings.css';
-	import { loadSetting } from '$lib/utils/localspace.js';
+	import { loadSetting, resetConnectionSettings } from '$lib/utils/localspace.js';
 	import { saveSettingShared } from '$lib/utils/settingsSync.js';
 	import { onMount } from 'svelte';
+	import { connectionDefaults } from '$lib/utils/connection-reset.js';
 
 	let lethe = $state('sj2');
 	let searchEngine = $state('google');
 	let car = $state('libcurl');
 	let customWisp = $state('');
+	let ready = $state(false);
+	let resetting = $state(false);
+	let resetMessage = $state('');
 
 	onMount(async () => {
 		const [savedLethe, savedSearch, savedCar, savedWisp] = await Promise.all([
@@ -20,7 +24,21 @@
 		searchEngine = savedSearch;
 		car = savedCar;
 		customWisp = savedWisp;
+		ready = true;
 	});
+
+	async function resetConnection() {
+		if (!ready || resetting) return;
+		resetting = true;
+		resetMessage = '';
+		try {
+			await resetConnectionSettings();
+			({ lethe, car, customWisp } = connectionDefaults);
+			resetMessage = 'Connection settings reset. Reload the app and try again.';
+		} catch {
+			resetMessage = 'Could not reset connection settings. Please try again.';
+		} finally { resetting = false; }
+	}
 
 	function selectProxy(value) {
 		lethe = value;
@@ -77,6 +95,14 @@
 			{#each transports as transport}<option value={transport.value}>{transport.label}</option>{/each}
 		</select>
 	</div>
+</div>
+<div class="subGroup">
+	<p class="subHeading">Reset connection settings</p>
+	<p class="desc">Restore the default browser engine, transport, and relay.</p>
+	<button class="actionBtn" type="button" onclick={resetConnection} disabled={!ready || resetting}>
+		{resetting ? 'Resetting…' : 'Reset connection settings to defaults'}
+	</button>
+	{#if resetMessage}<p class="desc" role="status">{resetMessage}</p>{/if}
 </div>
 <div class="subGroup">
 	<label class="subHeading" for="settings-wisp">Custom relay</label>

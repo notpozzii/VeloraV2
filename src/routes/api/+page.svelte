@@ -21,6 +21,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { watchMediaFailures } from '$lib/utils/browser/media-failure.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
+	import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
 
 	const api = '/api?url={}&type={}&transport={}&wisp={}&notif={}&autoSW={}';
 	const params = [];
@@ -98,6 +99,7 @@ autoSW:    legacy parameter; apps now load automatically
 {#if loadError}
 	<div role="alert" style="position:fixed;inset:16px 16px auto;z-index:10000;padding:16px;border-radius:8px;background:#242526;color:#eee;font:14px system-ui">
 		{loadError}
+		<ConnectionHelp error={loadError} />
 	</div>
 {/if}
 
@@ -121,6 +123,7 @@ autoSW:    legacy parameter; apps now load automatically
 		<strong>GeForce video couldn’t play</strong>
 		<p>Error {mediaFailure.code}: {mediaFailure.description}. {mediaFailure.source}.</p>
 		{#if mediaFailure.detail}<p class="detail">{mediaFailure.detail}</p>{/if}
+		{#if mediaFailure.code === 2}<ConnectionHelp error="Video network connection failed" />{/if}
 	</aside>
 {/if}
 

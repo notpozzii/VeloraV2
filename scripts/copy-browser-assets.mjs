@@ -9,6 +9,7 @@ import { refluxPath } from '@nightnetwork/reflux';
 cpSync('src/lib/utils/reset-core.js', 'static/reset-core.js');
 cpSync('src/lib/utils/restore-state.js', 'static/restore-state.js');
 buildSync({ entryPoints: ['src/lib/utils/restore-page.js'], outfile: 'static/site-restore.js', bundle: true, format: 'esm', platform: 'browser', target: 'es2022', minify: true, legalComments: 'none' });
+buildSync({ entryPoints: ['src/lib/utils/connection-help.js'], outfile: 'static/connection-help.js', bundle: true, format: 'iife', globalName: 'VeloraConnectionHelp', platform: 'browser', target: 'es2022', minify: true, legalComments: 'none' });
 
 for (const [source, folder] of [
   ['glass', 'glass'],

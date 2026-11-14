@@ -28,7 +28,7 @@
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     if (controller.shouldRoute(event)) return controller.route(event);
-    return new Response('The browser connection expired. Refresh Velora to reconnect.', {
+    return new Response('The browser connection expired. Refresh Velora to reconnect. If it still fails, try resetting your connection settings to defaults in Settings → Connection.', {
       status: 503,
       headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' }
     });

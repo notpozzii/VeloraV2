@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFile } from 'node:fs/promises';
+import { isConnectionError } from '../src/lib/utils/connection-help.js';
 
 const source = await readFile(new URL('../static/roblox/player.js', import.meta.url), 'utf8');
 
@@ -16,8 +17,9 @@ function player({ isolated = true, clipboardDenied = false, snapshot = {} } = {}
 		get src() { return this.value || ''; }
 		set src(value) { this.value = value; }
 	}
-	const nodes = new Map(['loading-cancel', 'loading-error-leave', 'loading-overlay', 'loading-error-title', 'loading-error-message', 'loading-error-code', 'status', 'error-panel', 'connection-report-tools', 'connection-report-copy', 'connection-report-status', 'connection-report-text'].map(id => [id, element()]));
+	const nodes = new Map(['loading-cancel', 'loading-error-leave', 'loading-overlay', 'loading-error-title', 'loading-error-message', 'loading-error-code', 'status', 'error-panel', 'connection-report-tools', 'connection-report-copy', 'connection-report-status', 'connection-report-text', 'connection-reset-help'].map(id => [id, element()]));
 	for (const id of ['connection-report-tools', 'connection-report-text']) nodes.get(id).hidden = true;
+	nodes.get('connection-reset-help').hidden = true;
 	for (const id of ['loading-experience-icon', 'loading-background-image']) nodes.set(id, new Image());
 	const events = new Map(), messages = [], statuses = [], fetched = [], revoked = [], engineLoads = [], copied = [], observers = new Map();
 	class LocalURL extends URL {
@@ -30,6 +32,7 @@ function player({ isolated = true, clipboardDenied = false, snapshot = {} } = {}
 		crossOriginIsolated: isolated,
 		document: { getElementById: id => nodes.get(id), querySelector: () => nodes.get('error-panel'), createElement: () => ({}), head: { append(script) { engineLoads.push(script.src); queueMicrotask(() => script.onload?.()); } } },
 		__veloraRobloxBridge: { connect() {}, status: (...args) => statuses.push(args), connectionSnapshot: () => snapshot },
+		VeloraConnectionHelp: { isConnectionError },
 		navigator: { clipboard: { async writeText(text) { if (clipboardDenied) throw Error('Clipboard unavailable'); copied.push(text); } } },
 		fetch: async url => { fetched.push(url); return new Response(new Uint8Array([137, 80, 78, 71]), { headers: { 'content-type': 'image/png' } }); },
 		addEventListener(type, callback) {
@@ -76,6 +79,20 @@ test('an error rendered by the engine itself reveals the report button too', asy
 	p.nodes.get('loading-error-message').textContent = 'Failed to connect to the experience';
 	p.observers.get(p.nodes.get('error-panel'))();
 	assert.equal(p.nodes.get('connection-report-tools').hidden, false);
+	assert.equal(p.nodes.get('connection-reset-help').hidden, false);
+});
+
+test('connection defaults are suggested for error 279 and hidden again for a memory failure', async () => {
+	const p = player();
+	await p.events.get('message')({ source: p.parent, origin: 'https://velora.test', data: { type: 'velora:roblox-connect', nonce: 'test' }, ports: [{}] });
+	p.nodes.get('loading-error-message').textContent = 'Unable to join';
+	p.nodes.get('loading-error-code').textContent = '(Error Code: 279)';
+	p.observers.get(p.nodes.get('error-panel'))();
+	assert.equal(p.nodes.get('connection-reset-help').hidden, false);
+	p.nodes.get('loading-error-message').textContent = 'Could not allocate memory';
+	p.nodes.get('loading-error-code').textContent = '';
+	p.observers.get(p.nodes.get('error-panel'))();
+	assert.equal(p.nodes.get('connection-reset-help').hidden, true);
 });
 
 test('a validated Play starts the engine without an unrelated network round trip', async () => {

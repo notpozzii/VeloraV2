@@ -10,7 +10,13 @@
   const reportButton = document.getElementById('connection-report-copy');
   const reportStatus = document.getElementById('connection-report-status');
   const reportText = document.getElementById('connection-report-text');
+  const resetHelp = document.getElementById('connection-reset-help');
   function showReportTools(panel) {
+    if (resetHelp) {
+      if (!panel.contains(resetHelp)) panel.appendChild(resetHelp);
+      const text = ['loading-error-message', 'loading-error-code'].map(id => document.getElementById(id)?.textContent || '').join(' ');
+      resetHelp.hidden = !self.VeloraConnectionHelp?.isConnectionError(text);
+    }
     if (!reportTools) return;
     if (!panel.contains(reportTools)) panel.appendChild(reportTools);
     reportTools.hidden = false;
@@ -98,9 +104,9 @@
     overlay.setAttribute('aria-busy', 'false');
     const panel = document.querySelector('.loading-error-panel');
     panel.hidden = false;
-    showReportTools(panel);
     document.getElementById('loading-error-title').textContent = 'Unable to join';
     document.getElementById('loading-error-message').textContent = text;
+    showReportTools(panel);
     document.getElementById('status').textContent = text;
     bridge.status('error', text);
   }

@@ -206,7 +206,7 @@ var $scramjetController;
 			} catch (e) {
 				return (
 					console.error('Service Worker error:', e),
-					new Response('Internal Service Worker Error: ' + e.message, { status: 500 })
+					new Response('Internal Service Worker Error: ' + e.message + '\nTry resetting your connection settings to defaults in Settings → Connection, then reload.', { status: 500 })
 				);
 			}
 		}

@@ -29,6 +29,7 @@
 	import { createTabFrames } from '$lib/lethe/tab-frames.js';
 	import { createBrowserSearchBridge } from '$lib/utils/browser/desktop-search-bridge.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
+	import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
 	import { subscribeSettings } from '$lib/utils/settingsSync.js';
 	let tabs = $state([]);
 	let frames = $state([]);
@@ -681,7 +682,7 @@
 						onclick={closePalette}><Icon name="close" size={16} /></button
 					>
 				</div>
-				{#if paletteError}<p class="palette-error" role="alert">{paletteError}</p>{/if}
+				{#if paletteError}<div role="alert"><p class="palette-error">{paletteError}</p><ConnectionHelp error={paletteError} /></div>{/if}
 				<div class="palette-footer">
 					<span>{ready ? 'Search the web or go to a page' : 'Starting browser…'}</span><button
 						class="palette-go"
