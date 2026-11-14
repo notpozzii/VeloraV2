@@ -1,16 +1,11 @@
-import svg from '$lib/downloads/velora.svg?raw';
-
 export async function GET({ params, fetch, platform, url }) {
-	let content, type;
-	if (params.file === 'index.html') {
-		const built = platform?.env?.ASSETS
-			? await platform.env.ASSETS.fetch(new URL('/portable/index.html', url.origin))
-			: await fetch('/portable/index.html');
-		if (!built.ok) return new Response('The desktop download is temporarily unavailable.', { status: 503 });
-		content = built.body; type = 'text/html';
-	} else if (params.file === 'velora.svg') {
-		content = svg; type = 'image/svg+xml';
-	} else return new Response('File not found', { status: 404 });
+	if (!['index.html', 'velora.svg'].includes(params.file)) return new Response('File not found', { status: 404 });
+	const built = platform?.env?.ASSETS
+		? await platform.env.ASSETS.fetch(new URL(`/portable/${params.file}`, url.origin))
+		: await fetch(`/portable/${params.file}`);
+	if (!built.ok) return new Response('The desktop download is temporarily unavailable.', { status: 503 });
+	const content = built.body;
+	const type = params.file === 'index.html' ? 'text/html' : 'image/svg+xml';
 	return new Response(content, {
 		headers: {
 			'Content-Type': `${type}; charset=utf-8`,

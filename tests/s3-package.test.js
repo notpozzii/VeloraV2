@@ -113,6 +113,7 @@ test(
 		}
 		const portable = readFileSync(join(root, 'download/files/index.html'), 'utf8');
 		assert.equal(portable, readFileSync('static/portable/index.html', 'utf8'));
+		assert.equal(readFileSync(join(root, 'download/files/velora.svg'), 'utf8'), readFileSync('static/portable/velora.svg', 'utf8'));
 		assert.match(portable, /velora-root/);
 		assert.doesNotMatch(portable.replace(/<script>[\s\S]*?<\/script>/g, ''), /<iframe\b/i);
 		assert.ok(manifest.serverOnly.includes('/api/byod'));
