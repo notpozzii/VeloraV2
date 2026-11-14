@@ -1068,7 +1068,7 @@
 			title="Drag to resize dock"
 			role="presentation"
 		></div>
-		<button
+		<div class="dock-wave-item"><button
 			class="dock-launcher"
 			class:active={launcherOpen}
 			aria-label="Open app launcher"
@@ -1077,12 +1077,11 @@
 				e.stopPropagation();
 				launcherSearch = '';
 				launcherOpen = !launcherOpen;
-			}}><Icon name="apps" size={21} /><span class="dock-tooltip">All apps</span></button
-		>
+			}}><span class="dock-visual"><Icon name="apps" size={21} /></span><span class="dock-tooltip">All apps</span></button></div>
 		<span class="dock-divider"></span>
 		<div class="dock-apps" class:many-apps={apps.length > 8} oncontextmenu={(e) => openMenu(e, 'navBar')}>
 			{#each apps as app (app.id)}
-				<button
+				<div class="dock-wave-item"><button
 					class="dock-app"
 					class:active={isAppActive(app.id)}
 					class:running={runningCount(app.id) > 0}
@@ -1105,20 +1104,19 @@
 					onmouseenter={(e) => hoverStart(e, app.id)}
 					onmouseleave={hoverEnd}
 				>
-					<AppIcon {app} size={Math.round(25 + navSizeMulti * 0.55)} /><span class="dock-tooltip"
+					<span class="dock-visual"><AppIcon {app} size={Math.round(25 + navSizeMulti * 0.55)} /></span><span class="dock-tooltip"
 						>{app.name}</span
 					><span class="dock-indicator"></span>
-				</button>
+				</button></div>
 			{/each}
 		</div>
 		<span class="dock-divider"></span>
-		<button
+		<div class="dock-wave-item"><button
 			class="dock-personalize"
 			onclick={personalize}
 			aria-label="Change wallpaper"
 			title="Change wallpaper"
-			><Icon name="desktop" size={21} /><span class="dock-tooltip">Wallpaper</span></button
-		>
+			><span class="dock-visual"><Icon name="desktop" size={21} /></span><span class="dock-tooltip">Wallpaper</span></button></div>
 	</DesktopDock>
 
 	{#if $windowList.length}
