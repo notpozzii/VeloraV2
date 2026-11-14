@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readFile, access } from 'node:fs/promises';
 import { Script } from 'node:vm';
 import { buildPortable } from '../scripts/build-portable.mjs';
 import { loadSetting, saveSetting, onSettingChange } from '../src/lib/downloads/portable/settings.js';
@@ -23,6 +23,25 @@ test('the portable artifact bundles executable desktop code and all initial asse
 	assert.match(scripts[0][1], /Desktop runs from this file/);
 	assert.match(scripts[0][1], /velorastudy\.s3\.us-east-2\.amazonaws\.com/);
 	assert.ok(built.bytes < 20 * 1024 * 1024, 'download must fit the static asset size limit');
+});
+
+test('the direct SVG contains the current desktop and its hosted assets are packaged', async () => {
+	const built = await buildPortable();
+	const svg = await readFile(built.svgOutput, 'utf8');
+	assert.equal(svg, await readFile(new URL('../static/velora-direct.svg', import.meta.url), 'utf8'));
+	assert.ok(!/<!-- PORTABLE_(?:STYLE|SCRIPT) -->/.test(svg), 'SVG build markers are replaced');
+	const document = svg.replace(/<script\b[\s\S]*?<\/script>/g, '');
+	assert.ok(!/<iframe\b/i.test(document), 'no hosted desktop wrapper');
+	assert.match(svg, /velora-svg-body/);
+	assert.match(svg, /desktop-top-controls/);
+	assert.match(svg, /dock-compact-trigger/);
+	const script = svg.match(/<script type="application\/ecmascript"><!\[CDATA\[([\s\S]*?)\]\]><\/script>/)?.[1];
+	assert.ok(script, 'the desktop executes inside the SVG');
+	assert.doesNotThrow(() => new Script(script.replaceAll(']]]]><![CDATA[>', ']]>')));
+	const assets = [...new Set(svg.match(/https:\/\/velorastudy\.s3\.us-east-2\.amazonaws\.com\/portable\/assets\/[\w.-]+/g))];
+	assert.ok(assets.length > 10, 'images remain compact hosted assets');
+	for (const asset of assets) await access(new URL('../static' + new URL(asset).pathname, import.meta.url));
+	assert.ok(built.svgBytes < 1024 * 1024, 'the direct SVG stays compact');
 });
 
 test('portable preferences stay usable when file storage is denied and notify local listeners', async () => {

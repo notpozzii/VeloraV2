@@ -65,3 +65,12 @@ test('HTML download serves the bundled desktop with attachment headers instead o
  assert.doesNotMatch(document, /<iframe\b/i);
  assert.match(document, /velora-root/);
 });
+
+
+test('SVG download serves the generated direct desktop rather than a hosted wrapper', async () => {
+ const response = await worker.fetch(new Request('https://velora.example/download/files/velora.svg'), env, ctx);
+ assert.equal(response.status, 200);
+ assert.match(response.headers.get('content-type'), /image\/svg\+xml/);
+ assert.match(response.headers.get('content-disposition'), /attachment; filename="velora.svg"/);
+ assert.equal(await response.text(), await readFile(new URL('../dist/client/portable/velora.svg', import.meta.url), 'utf8'));
+});
