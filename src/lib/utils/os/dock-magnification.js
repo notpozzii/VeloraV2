@@ -1,8 +1,11 @@
+import { DEFAULT_DOCK_HOVER_STRENGTH, normalizeDockHoverStrength } from './dock-settings.js';
+
 // Keep the dock's anchor fixed while neighboring slots share a smooth wave.
-export function dockMagnification(node, { enabled = true } = {}) {
+export function dockMagnification(node, { enabled = true, strength = DEFAULT_DOCK_HOVER_STRENGTH } = {}) {
   const host = node.ownerDocument.defaultView;
   const doc = node.ownerDocument;
   const motion = host.matchMedia('(prefers-reduced-motion: reduce)');
+  let hoverStrength = normalizeDockHoverStrength(strength);
   let items = [];
   let pointer = null;
   let animation = 0;
@@ -32,12 +35,12 @@ export function dockMagnification(node, { enabled = true } = {}) {
     }
     const style = host.getComputedStyle(node);
     padding = number(style.paddingLeft) + number(style.paddingRight) + number(style.borderLeftWidth) + number(style.borderRightWidth);
-    node.classList.toggle('dock-wave-ready', enabled && !motion.matches && baseWidth + padding < host.innerWidth - 28);
+    node.classList.toggle('dock-wave-ready', enabled && hoverStrength > 0 && !motion.matches && baseWidth + padding < host.innerWidth - 28);
     schedule();
   }
 
   function schedule() {
-    if (!animation && enabled && !motion.matches) animation = host.requestAnimationFrame(draw);
+    if (!animation && enabled && hoverStrength > 0 && !motion.matches) animation = host.requestAnimationFrame(draw);
   }
   function draw(time) {
     animation = 0;
@@ -65,10 +68,12 @@ export function dockMagnification(node, { enabled = true } = {}) {
       } else moving = true;
     }
     const requested = items.reduce((sum, item) => sum + item.base * item.value, 0);
-    const gain = requested ? Math.min(0.55, available / requested) : 0.55;
+    const maxScaleGain = hoverStrength / 100;
+    const maxLift = hoverStrength * 0.12;
+    const gain = requested ? Math.min(maxScaleGain, available / requested) : maxScaleGain;
     for (const item of items) {
       item.node.style.setProperty('--dock-scale', (1 + gain * item.value).toFixed(4));
-      item.node.style.setProperty('--dock-lift', (7 * item.value * gain / 0.55).toFixed(2) + 'px');
+      item.node.style.setProperty('--dock-lift', (maxLift * item.value * gain / maxScaleGain).toFixed(2) + 'px');
     }
     if (moving) schedule();
     else lastTime = 0;
@@ -116,7 +121,8 @@ export function dockMagnification(node, { enabled = true } = {}) {
   return {
     update(options) {
       enabled = options.enabled;
-      if (!enabled) reset();
+      hoverStrength = normalizeDockHoverStrength(options.strength);
+      if (!enabled || hoverStrength === 0) reset();
       measure();
     },
     destroy() {

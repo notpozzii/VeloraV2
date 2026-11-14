@@ -2,7 +2,8 @@
 	import { onMount, onDestroy, tick } from 'svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
 	import { dockMagnification } from './dock-magnification.js';
-	let { compact = false, keepOpen = false, children } = $props();
+	import { DEFAULT_DOCK_HOVER_STRENGTH } from './dock-settings.js';
+	let { compact = false, keepOpen = false, hoverStrength = DEFAULT_DOCK_HOVER_STRENGTH, children } = $props();
 	let expanded = $state(false);
 	let contentWidth = $state(0);
 	let root;
@@ -56,7 +57,7 @@
 />
 
 <nav class="desktop-dock" class:compact class:dock-open={isOpen} aria-label="App dock" bind:this={root}
-	use:dockMagnification={{ enabled: isOpen }}
+	use:dockMagnification={{ enabled: isOpen, strength: hoverStrength }}
 	style:--dock-content-width={`${contentWidth}px`}
 	onpointerenter={enter} onpointerleave={leave}
 	onfocusout={(event) => { if (!root?.contains(event.relatedTarget)) scheduleClose(); }}>
