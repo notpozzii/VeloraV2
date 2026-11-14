@@ -20,7 +20,7 @@ test('the portable artifact bundles executable desktop code and all initial asse
 	const css = [...document.matchAll(/<style>([\s\S]*?)<\/style>/g)].map(match => match[1]).join('\n');
 	for (const url of css.matchAll(/url\(([^)]+)\)/g)) assert.match(url[1], /^["']?data:/);
 	assert.match(scripts[0][1], /data:image\/jpeg;base64,/);
-	assert.match(scripts[0][1], /Desktop runs from this file/);
+	assert.doesNotMatch(html, /Desktop runs from this file|portable-note/);
 	assert.match(scripts[0][1], /velorastudy\.s3\.us-east-2\.amazonaws\.com/);
 	assert.ok(built.bytes < 20 * 1024 * 1024, 'download must fit the static asset size limit');
 });
@@ -35,6 +35,7 @@ test('the direct SVG contains the current desktop and its hosted assets are pack
 	assert.match(svg, /velora-svg-body/);
 	assert.match(svg, /desktop-top-controls/);
 	assert.match(svg, /dock-compact-trigger/);
+	assert.doesNotMatch(svg, /Desktop runs from this file|portable-note/);
 	const script = svg.match(/<script type="application\/ecmascript"><!\[CDATA\[([\s\S]*?)\]\]><\/script>/)?.[1];
 	assert.ok(script, 'the desktop executes inside the SVG');
 	assert.doesNotThrow(() => new Script(script.replaceAll(']]]]><![CDATA[>', ']]>')));
