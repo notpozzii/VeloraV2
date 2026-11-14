@@ -1,7 +1,7 @@
 <!--
 /api?url={}&type={}&transport={}&wisp={}&notif={}&autoSW={}
 
-url:       required, https:// is added when missing, must contain a dot
+url:       required website address; https:// is added when missing
 type:      auto, prism (SJv2, default), polygon (SJ), glass (UV)
 transport: auto, libcurl (default), libcurlRaw, epoxy
 wisp:      wss://..., defaults to the server's own wisp
@@ -20,18 +20,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { watchMediaFailures } from '$lib/utils/browser/media-failure.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
-	function normalizeUrl(raw) {
-		const trimmed = (raw ?? '').trim();
-		if (!trimmed) return null;
-		const withProtocol = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-		try {
-			const parsed = new URL(withProtocol);
-			if (!parsed.hostname.includes('.')) return null;
-			return parsed.href;
-		} catch {
-			return null;
-		}
-	}
+	import { normalizeWebUrl } from '$lib/utils/web-url.js';
 
 	const api = '/api?url={}&type={}&transport={}&wisp={}&notif={}&autoSW={}';
 	const params = [];
@@ -49,7 +38,7 @@ autoSW:    legacy parameter; apps now load automatically
 	let prismController;
 	let prismFrame;
 
-	const apiUrl = $derived(normalizeUrl($page.url.searchParams.get('url')));
+	const apiUrl = $derived(normalizeWebUrl($page.url.searchParams.get('url')));
 	const apiType = $derived($page.url.searchParams.get('type'));
 	const apiTransport = $derived($page.url.searchParams.get('transport'));
 	const apiWisp = $derived($page.url.searchParams.get('wisp') || undefined);

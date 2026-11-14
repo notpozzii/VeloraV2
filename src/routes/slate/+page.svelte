@@ -28,6 +28,7 @@
 	import { isAutoConnection, autoLauncherUrl } from '$lib/lethe/auto.js';
 	import { createTabFrames } from '$lib/lethe/tab-frames.js';
 	import { createBrowserSearchBridge } from '$lib/utils/browser/desktop-search-bridge.js';
+	import { normalizeWebUrl } from '$lib/utils/web-url.js';
 	import { subscribeSettings } from '$lib/utils/settingsSync.js';
 	let tabs = $state([]);
 	let frames = $state([]);
@@ -194,7 +195,7 @@
 		});
 	}
 
-	async function navigateTo(rawQuery, { signal } = {}) {
+	async function navigateTo(rawQuery, { signal, engine } = {}) {
 		inputFocused = false;
 		const target = activeFrame;
 		if (!target || signal?.aborted) return;
@@ -207,15 +208,16 @@
 			if (startupError) throw startupError;
 			if (previewMode) throw new Error('Open the browser from your desktop to browse.');
 			const fixedUrl = search(rawQuery, searchEngine);
-			if (isAutoConnection(letheEngine, car)) {
+			const selectedEngine = engine ?? letheEngine;
+			if (isAutoConnection(selectedEngine, car)) {
 				if (signal?.aborted || !frames.includes(target) || target.navigation !== navigation) return;
 				tabFrames.release(target.id);
-				target.url = autoLauncherUrl(fixedUrl, letheEngine, car, customWisp);
+				target.url = autoLauncherUrl(fixedUrl, selectedEngine, car, customWisp);
 				target.displayUrl = fixedUrl;
 				return;
 			}
-			const session = await prepareBrowserEngine();
-			if (signal?.aborted || !target) {
+			const session = await prepareBrowserEngine(selectedEngine);
+			if (browserDestroyed || signal?.aborted || !frames.includes(target) || target.navigation !== navigation) {
 				return;
 			}
 			let encoded;
@@ -228,7 +230,7 @@
 			} else {
 				encoded = session.polygon.encodeUrl(fixedUrl);
 			}
-			if (signal?.aborted || !frames.includes(target) || target.navigation !== navigation) return;
+			if (browserDestroyed || signal?.aborted || !frames.includes(target) || target.navigation !== navigation) return;
 			target.url = encoded;
 			if (rawQuery.includes('discord')) {
 				LastPopupIntState = popupInterceptor;
@@ -270,9 +272,12 @@
 	let activeFrameURL = $state();
 	let activeFrameTitle = $state();
 	let activeFrameEngine = $state();
+	let bookmarkError = $state('');
 
 	function startBookmark() {
+		if (!activeFrame?.displayUrl) return;
 		settingsOpen = false;
+		bookmarkError = '';
 		activeFrameURL = activeFrame.displayUrl;
 		activeFrameTitle = activeFrame.title;
 		activeFrameEngine = letheEngine;
@@ -282,8 +287,12 @@
 		bookmarkMenu = !bookmarkMenu;
 	}
 	function addBookmark() {
-		if (!activeFrame?.displayUrl) return;
-		bookmarks.push({ url: activeFrameURL, title: activeFrameTitle, lethe: activeFrameEngine });
+		const url = normalizeWebUrl(activeFrameURL);
+		if (!url) {
+			bookmarkError = 'Enter a valid website address, such as example.com.';
+			return;
+		}
+		bookmarks.push({ url, title: activeFrameTitle?.trim() || new URL(url).hostname, lethe: activeFrameEngine });
 		bookmarkMenu = false;
 	}
 	function removeBookmark(index) {
@@ -292,28 +301,20 @@
 	async function bookmarkSearch(url, lethe) {
 		const target = activeFrame;
 		if (!target) return;
-		await settingsReady;
-		if (isAutoConnection(lethe, car)) {
-			tabFrames.release(target.id);
-			target.url = autoLauncherUrl(url, lethe, car, customWisp);
-			target.displayUrl = url;
+		bookmarkListOpen = false;
+		let navigation = target.navigation;
+		try {
+			const address = normalizeWebUrl(url);
+			if (!address) throw new Error('This bookmark has an invalid address. Enter a website address to continue.');
+			const pending = navigateTo(address, { engine: lethe });
+			navigation = target.navigation;
+			await pending;
 			inputEl?.blur();
-			return;
+		} catch (error) {
+			if (activeFrame === target && frames.includes(target) && target.navigation === navigation) {
+				await reportDesktopSearchError(error, { query: url || '' });
+			}
 		}
-		const session = await prepareBrowserEngine(lethe);
-		let encoded;
-		if (session.engine === 'sj2') {
-			const sjFrame = await tabFrames.get(target.id);
-			encoded = prismEncode(url, sjFrame);
-		} else if (session.engine === 'uv') {
-			// @ts-ignore
-			encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(url);
-		} else {
-			encoded = session.polygon.encodeUrl(url);
-		}
-		if (!frames.includes(target)) return;
-		target.url = encoded;
-		inputEl?.blur();
 	}
 
 	function handleNavigate(id, { url, title }) {
@@ -801,7 +802,6 @@
 									await tick();
 								}
 								await bookmarkSearch(bm.url, bm.lethe);
-								bookmarkListOpen = false;
 							}}
 							oncontextmenu={(event) => {
 								event.preventDefault();
@@ -845,8 +845,15 @@
 				}}
 			>
 				<label>Name<input bind:value={activeFrameTitle} /></label><label
-					>URL<input bind:value={activeFrameURL} /></label
-				><button class="save-button" type="submit">Done</button>
+					>URL<input
+						bind:value={activeFrameURL}
+						oninput={() => (bookmarkError = '')}
+						aria-invalid={!!bookmarkError}
+						aria-describedby={bookmarkError ? 'bookmark-error' : undefined}
+					/></label
+				>
+				{#if bookmarkError}<p id="bookmark-error" class="palette-error" role="alert">{bookmarkError}</p>{/if}
+				<button class="save-button" type="submit">Done</button>
 			</form>
 		</Modal>
 	{/if}

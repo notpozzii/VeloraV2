@@ -15,6 +15,8 @@
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import DynamicIsland from '$lib/utils/os/dynamic-island.svelte';
 	import DesktopDock from '$lib/utils/os/desktop-dock.svelte';
+	import { createDockResize } from './dock-resize.js';
+	import { normalizeWebUrl } from '$lib/utils/web-url.js';
 	import { DEFAULT_DOCK_HOVER_STRENGTH, DOCK_HOVER_SETTING, normalizeDockHoverStrength } from './dock-settings.js';
 	import WidgetBoard from '$lib/utils/os/widget-board.svelte';
 	import WeatherEffects from '$lib/utils/os/weather-effects.svelte';
@@ -94,34 +96,19 @@
 	let navSizeMulti = $state(24);
 	let compactDock = $state(false);
 	let dockHoverStrength = $state(DEFAULT_DOCK_HOVER_STRENGTH);
-	let temp = 0;
-	let accumY = 0;
 	let dragging = $state(false);
+	let dockResize;
 	let windowComps = [];
 	let widgetBoard;
 	function startNavResize(e) {
-		dragging = true;
-		temp = navSizeMulti;
-		accumY = 0;
-		e.currentTarget.requestPointerLock();
-		addEventListener('mousemove', dragStart);
-		addEventListener('mouseup', dragStop);
-		document.addEventListener('pointerlockchange', onPointerLockChange);
-	}
-	function dragStart(e) {
-		accumY += e.movementY;
-		navSizeMulti = Math.max(Math.min(temp - accumY * 0.2, 39), 8);
-	}
-	function dragStop(e) {
-		removeEventListener('mousemove', dragStart);
-		removeEventListener('mouseup', dragStop);
-		document.removeEventListener('pointerlockchange', onPointerLockChange);
-		if (document.pointerLockElement) document.exitPointerLock();
-		dragging = false;
-		callTaskbarHeight();
-	}
-	function onPointerLockChange() {
-		if (!document.pointerLockElement) dragStop();
+		dockResize ??= createDockResize({
+			host: window,
+			getSize: () => navSizeMulti,
+			setSize: (size) => { navSizeMulti = size; },
+			onDragging: (value) => { dragging = value; },
+			onCommit: callTaskbarHeight
+		});
+		dockResize.start(e);
 	}
 	const baseApps = $derived([
 		{
@@ -263,7 +250,7 @@
 			document.removeEventListener('fullscreenchange', syncFullscreen);
 			clearTimeout(hoverTimeout);
 			clearTimeout(closeTimeout);
-			dragStop();
+			dockResize?.stop();
 		};
 	});
 
@@ -465,24 +452,20 @@
 	function closeAddApp() {
 		addOpen = false;
 	}
-
-	function hostnameOf(url) {
-		try {
-			return new URL(/^https?:\/\//i.test(url) ? url : `https://${url}`).hostname;
-		} catch {
-			return null;
-		}
-	}
 	function nextWindowPosition() {
 		const step = customApps.length % 6;
 		return { top: 60 + step * 24, left: 90 + step * 40 };
 	}
 
 	function addApp() {
-		const url = newUrl.trim();
 		const name = newName.trim();
-		if (!url || !name) {
+		if (!newUrl.trim() || !name) {
 			addError = 'Name and URL are required';
+			return;
+		}
+		const url = normalizeWebUrl(newUrl);
+		if (!url) {
+			addError = 'Enter a valid website address, such as example.com.';
 			return;
 		}
 
@@ -490,7 +473,7 @@
 		if (newNotif.trim()) params.set('notif', newNotif.trim());
 		if (newWisp.trim()) params.set('wisp', newWisp.trim());
 
-		const host = hostnameOf(url);
+		const host = new URL(url).hostname;
 		const { top, left } = nextWindowPosition();
 		customApps.push({
 			id: `custom-${Date.now()}`,
@@ -961,6 +944,7 @@
 				<input
 					class="modalInput"
 					type="text"
+					aria-label="URL"
 					placeholder="example.com"
 					bind:value={newUrl}
 					oninput={() => (addError = null)}
@@ -971,6 +955,7 @@
 				<input
 					class="modalInput"
 					type="text"
+					aria-label="Name"
 					placeholder="Example"
 					bind:value={newName}
 					oninput={() => (addError = null)}
@@ -1036,7 +1021,7 @@
 				{/if}
 
 				{#if addError}
-					<p class="modalError">{addError}</p>
+					<p class="modalError" role="alert">{addError}</p>
 				{/if}
 
 				<div class="modalActions">
@@ -1124,6 +1109,8 @@
 			><span class="dock-visual"><Icon name="desktop" size={21} /></span><span class="dock-tooltip">Wallpaper</span></button></div>
 	</DesktopDock>
 
+	{#if dragging}<div class="dock-resize-shield" aria-hidden="true"></div>{/if}
+
 	{#if $windowList.length}
 	{#await import('$lib/utils/window/window.svelte')}
 		<p class="desktop-module-notice" role="status">Opening app…</p>
@@ -1148,6 +1135,7 @@
 </div>
 
 <style>
+	.dock-resize-shield { position: fixed; inset: 0; z-index: 2147483646; cursor: ns-resize; }
 	.desktop-module-notice { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 10003; margin: 0; padding: 12px 18px; border-radius: 10px; background: #1e281f; color: #eff4e8; font: 13px/1.5 system-ui,sans-serif; }
 	.desktop-module-notice button { margin-left: 8px; border: 0; border-radius: 5px; padding: 4px 8px; color: #20281b; background: #d3e5b0; cursor: pointer; }
 </style>
