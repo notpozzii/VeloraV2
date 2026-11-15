@@ -1,0 +1,46 @@
+# Velora
+
+> Velora is a customizable browser-based desktop for games, apps, and web browsing, with a windowed workspace and portable HTML and SVG editions.
+
+Velora brings a game library, app library, built-in web browser, Roblox experience, and GeForce NOW shortcut together in one desktop. Its interface includes a dock, a dynamic island for desktop controls, a separate expandable search button, and app windows.
+
+- Games: Browse a searchable catalog with categories, quick picks, favorites, recent activity, and a random-game option.
+- Apps and browsing: Open web apps and browse with tabs, bookmarks, search, selectable proxy engines, transports, and custom relay settings. Supported connection choices include Scramjet 2, Ultraviolet, Libcurl, and Epoxy.
+- Roblox and Velblox: Browse Roblox, sign in with a Roblox account, and launch experiences from Velora. Personalize the interface with Velora, classic Roblox, and custom themes using the theme builder.
+- GeForce NOW: Open NVIDIA's cloud-gaming website from the desktop dock. The GeForce NOW launcher defaults to Scramjet 2 with Libcurl.
+- Personalization: Choose themes and wallpapers, add rain, snow, and thunderstorm effects, configure desktop widgets, adjust dock movement, and enable a compact dock that expands on hover.
+- Quick controls: Search from the expandable desktop search button and configure a panic key with a custom destination.
+- Data: Export settings and saved data as a .velora backup and import a backup through Settings.
+- Portable editions: Download the Velora desktop as index.html or velora.svg.
+
+## Explore Velora
+
+- [Desktop](https://velora.notpozzi.chatgpt.site/os): The Velora workspace, dock, app launcher, search, and desktop controls.
+- [Games](https://velora.notpozzi.chatgpt.site/books): Search and explore the game catalog, quick picks, categories, and favorites.
+- [Apps](https://velora.notpozzi.chatgpt.site/apps): Browse and launch web apps.
+- [Browser](https://velora.notpozzi.chatgpt.site/slate): Velora's built-in web browser.
+- [Roblox and Velblox](https://velora.notpozzi.chatgpt.site/roblox/): Roblox browsing, sign-in, experience launching, and interface themes.
+- [Settings](https://velora.notpozzi.chatgpt.site/settings): General controls, connections, appearance, data import and export, and project information.
+- [Connection settings](https://velora.notpozzi.chatgpt.site/settings#connection): Proxy engine, transport, and relay configuration.
+- [Downloads](https://velora.notpozzi.chatgpt.site/download): Get the portable HTML and SVG editions.
+- [Changelog](https://velora.notpozzi.chatgpt.site/changelog): Project change notes.
+
+## Portable downloads
+
+- [index.html](https://velora.notpozzi.chatgpt.site/download/files/index.html): The portable Velora desktop in a single HTML file.
+- [velora.svg](https://velora.notpozzi.chatgpt.site/download/files/velora.svg): The portable Velora desktop in an SVG document.
+
+## Community and source
+
+- [Velora Discord](https://discord.gg/3vcMsqJMd): Community discussion, links, and support.
+- [VeloraV2 on GitHub](https://github.com/notpozzii/VeloraV2): Project source code and deployment workflows.
+
+## Other Velora addresses
+
+- [cloud.schoolcity.cc](https://cloud.schoolcity.cc/): Velora on a custom domain.
+- [schoolcity.cc](https://schoolcity.cc/): Velora on a custom domain.
+- [english.mathrightnow.org](https://english.mathrightnow.org/): Velora on a custom subdomain.
+- [mathrightnow.org](https://mathrightnow.org/): Velora on a custom domain.
+- [formative.icu](https://formative.icu/): Velora on a custom domain.
+- [Velora on S3](https://velorastudy.s3.us-east-2.amazonaws.com/index.html): The S3-hosted Velora desktop.
+- [Velora on Workers](https://velorav2.pozzi-pozzi.workers.dev/): The Cloudflare Workers deployment.
