@@ -11,6 +11,8 @@
 	import { activityOwner, getActivityHub, installActivityCollector } from '$lib/utils/developer/diagnostics.js';
 	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
 	import { installPanicKey } from '$lib/utils/panic-key.js';
+	import { dev } from '$app/environment';
+	import { startWebAnalytics } from '$lib/utils/web-analytics.js';
 	let { children } = $props();
 	let opening = $state(true);
 	let contentAllowed = $state(false);
@@ -44,6 +46,7 @@
 		const reset = installResetCoordinator(window);
 		const restore = reset.holding ? null : installRestoreCoordinator(window);
 		const holding = reset.holding || restore?.holding;
+		if (!holding && !dev) startWebAnalytics(window);
 		const disposePanic = holding ? () => {} : installPanicKey(window);
 		// Keyboard Lock is top-level only. One owner covers every app, including
 		// fullscreen requests made inside nested app and browser frames.
