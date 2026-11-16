@@ -1,4 +1,4 @@
-export const connectionDefaults = Object.freeze({ lethe: 'sj2', car: 'libcurl', customWisp: '' });
+export const connectionDefaults = Object.freeze({ lethe: 'sj2', car: 'libcurl', customWisp: '', backupWisp: '' });
 export const connectionResetKey = 'velora:connection-defaults';
 export const connectionResetVersion = '2026-10-30.1';
 const sessionResetKey = `${connectionResetKey}:session`;
@@ -21,7 +21,7 @@ export async function restoreConnectionDefaults({ store, legacyStorage, sessionS
 
 // This release resets connection choices once per origin, not on every visit.
 // Use the settings driver's transaction so a second tab cannot observe a reset
-// marker before all three defaults have committed.
+// marker before all defaults have committed.
 export function createConnectionReset({ store, legacyStorage, sessionStorage, lock, resetting = () => false, notify = () => {} }) {
 	let pending;
 	function clearAutoChoices() {

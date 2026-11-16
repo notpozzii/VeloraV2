@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <meta name="color-scheme" content="dark">
+  <title>Velora — Find a working link</title>
+  <style>
+    :root { color-scheme: dark; font: 16px/1.5 system-ui, sans-serif; background: #111a16; color: #edf0e5; }
+    * { box-sizing: border-box; }
+    body { min-height: 100svh; margin: 0; padding: 32px 20px; display: grid; place-items: center; background: radial-gradient(ellipse at 20% 0%, #34423488, transparent 65%); }
+    main { width: min(100%, 560px); padding: 32px; border: 1px solid #b8c9a82b; border-radius: 28px; background: #1a241ee8; box-shadow: 0 24px 90px #0003; }
+    .brand { display: flex; align-items: center; gap: 8px; font-size: 20px; font-weight: 650; letter-spacing: -.5px; }
+    .brand svg { width: 38px; height: 38px; }
+    h1 { font-size: clamp(27px, 5vw, 36px); line-height: 1.15; letter-spacing: -1.2px; margin: 32px 0 12px; }
+    p { margin: 0; color: #b3bdac; }
+    #status { min-height: 48px; }
+    ol { padding: 0; margin: 25px 0; list-style: none; display: grid; gap: 8px; }
+    li { display: flex; align-items: center; gap: 13px; min-height: 64px; padding: 12px 15px; border: 1px solid #b8c9a81c; border-radius: 13px; background: #ffffff03; }
+    .dot { flex: 0 0 8px; height: 8px; background: #6b776b; border-radius: 50%; }
+    .info { min-width: 0; flex: 1; }
+    .name { display: block; font-weight: 550; }
+    .host { display: block; font-size: 11px; color: #9fab96; overflow-wrap: anywhere; }
+    .state { font-size: 12px; color: #a9b69f; white-space: nowrap; }
+    .row-open { flex: 0 0 auto; padding: 5px 9px; border: 1px solid #b8c9a83a; border-radius: 8px; color: #d3e5b0; font-size: 12px; text-decoration: none; }
+    .row-open:hover { background: #d3e5b012; }
+    .auto-open { display: flex; align-items: center; gap: 9px; margin: 17px 0 0; font-size: 13px; color: #b3bdac; }
+    .auto-open input { width: 16px; height: 16px; accent-color: #d3e5b0; }
+    [data-state="checking"] { border-color: #d3e5b075; }
+    [data-state="checking"] .dot { background: #d3e5b0; animation: pulse 1s infinite alternate; }
+    [data-state="ready"] .dot { background: #d3e5b0; }
+    [data-state="failed"] .dot { background: #a98678; }
+    .actions { display: flex; gap: 9px; flex-wrap: wrap; }
+    button, .open { min-height: 44px; border: 1px solid #b8c9a83a; border-radius: 11px; padding: 10px 16px; font: inherit; cursor: pointer; color: #edf0e5; background: transparent; text-decoration: none; text-align: center; }
+    #primary { color: #1c2919; background: #d3e5b0; border-color: #d3e5b0; font-weight: 650; flex: 1; }
+    button:disabled { cursor: default; opacity: .45; }
+    button:hover:not(:disabled), .open:hover { filter: brightness(1.1); }
+    :focus-visible { outline: 2px solid #d3e5b0; outline-offset: 4px; }
+    [hidden] { display: none !important; }
+    .hint { font-size: 12px; margin-top: 22px; color: #8f9c88; }
+    @keyframes pulse { to { opacity: .25; } }
+    @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+    @media (max-width: 420px) { main { padding: 24px 18px; } .state { font-size: 11px; } }
+  </style>
+</head>
+<body>
+<main aria-labelledby="heading">
+  <div class="brand">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" aria-hidden="true"><g fill="#d3e5b0" transform="matrix(.4655093388 0 0 -.4655093388 171.1726824797 740.7978400367)"><path d="M1209 766Q1209 625 1161.5 480Q1114 335 1028 223Q926 92 802 30Q678 -32 544 -32Q366 -32 261 51Q156 134 156 289Q156 337 172 392Q188 447 212 521Q232 584 249.5 645.5Q267 707 267 762Q267 816 243 839Q219 862 157 862Q125 862 91.5 852Q58 842 34 833L56 923Q137 956 211 979.5Q285 1003 351 1003Q470 1003 534.5 943.5Q599 884 599 796Q599 731 581.5 658Q564 585 545 527Q528 475 509.5 407.5Q491 340 491 300Q491 215 532 164Q573 113 664 113Q800 113 900 214.5Q1000 316 1000 488Q1000 505 998 525Q996 545 990 570Q979 593 947 619Q915 645 893 667Q864 696 842 735.5Q820 775 820 838Q820 891 840.5 924Q861 957 890 978Q914 995 947.5 1005Q981 1015 1010 1015Q1103 1015 1156 948.5Q1209 882 1209 766ZM1430.32 166Q1430.32 87 1371.82 29Q1313.32 -29 1233.32 -29Q1152.32 -29 1093.82 28.5Q1035.32 86 1035.32 166Q1035.32 246 1093.82 304.5Q1152.32 363 1233.32 363Q1313.32 363 1371.82 304Q1430.32 245 1430.32 166Z"/></g></svg>
+    velora
+  </div>
+  <h1 id="heading">Checking your links.</h1>
+  <p id="status" role="status" aria-live="polite">Checking every Velora address on your connection.</p>
+  <label class="auto-open"><input id="auto-open" type="checkbox" checked> Open a verified page automatically</label>
+  <ol id="links" aria-label="Backup links"></ol>
+  <div class="actions">
+    <button id="primary" type="button">Check all links</button>
+    <button id="stop" type="button" hidden>Stop</button>
+    <button id="next" type="button" hidden>Use next verified page</button>
+    <a id="open" class="open" hidden rel="noreferrer">Open Velora</a>
+  </div>
+  <p class="hint">Only pages that confirm Velora started can open automatically. Unverified links can still be tried with Open.</p>
+  <noscript><p>Enable JavaScript to try links automatically. <a href="https://english.mathrightnow.org/" rel="noreferrer">Open Velora</a></p></noscript>
+</main>
+<script>
+(() => {
+  'use strict';
+  const MIRRORS = Object.freeze([
+    { name: 'English', url: 'https://english.mathrightnow.org/', probeType: 'app' },
+    { name: 'SchoolCity', url: 'https://cloud.schoolcity.cc/', probeType: 'app' },
+    { name: 'Velora', url: 'https://velora.notpozzi.chatgpt.site/', probeType: 'app' },
+    { name: 'MathRightNow', url: 'https://mathrightnow.org/', probeType: 'app' },
+    { name: 'Formative', url: 'https://formative.icu/', probeType: 'app' },
+    { name: 'Clever Learning', url: 'https://clever-learning.pozzi-pozzi.workers.dev/' },
+    { name: 'IXL', url: 'https://ixl.pozzi-pozzi.workers.dev/' },
+    { name: 'CloudFront', url: 'https://d2x6e8044vrwm0.cloudfront.net/index.html' },
+    { name: 'Amazon S3', url: 'https://velorastudy.s3.us-east-2.amazonaws.com/index.html' },
+    { name: 'jsDelivr', url: 'https://cdn.jsdelivr.net/gh/notpozzii/VeloraV2@main/static/velora-direct.svg' }
+  ]);
+  // Only a reply from the mounted app can verify a page. Asset loads and
+  // iframe load events are not evidence that Velora has started.
+  const TIMEOUT_MS = 8000;
+  const STORAGE_KEY = 'velora.launcher.lastWorking.v1';
+  const status = document.getElementById('status');
+  const heading = document.getElementById('heading');
+  const primary = document.getElementById('primary');
+  const stop = document.getElementById('stop');
+  const next = document.getElementById('next');
+  const open = document.getElementById('open');
+  const list = document.getElementById('links');
+  const autoOpen = document.getElementById('auto-open');
+  const pendingProbes = new Set();
+  let generation = 0;
+  let order = [];
+  let available = [];
+  let selected = 0;
+
+  const rows = MIRRORS.map(mirror => {
+    const row = document.createElement('li');
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.setAttribute('aria-hidden', 'true');
+    const info = document.createElement('span');
+    info.className = 'info';
+    const name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = mirror.name;
+    const host = document.createElement('span');
+    host.className = 'host';
+    host.textContent = new URL(mirror.url).hostname;
+    const state = document.createElement('span');
+    state.className = 'state';
+    const launch = document.createElement('a');
+    launch.className = 'row-open';
+    launch.textContent = 'Open';
+    launch.href = mirror.url;
+    launch.rel = 'noreferrer';
+    launch.setAttribute('aria-label', 'Open ' + mirror.name);
+    launch.addEventListener('click', () => {
+      cancel();
+      remember(mirror.url);
+    });
+    info.append(name, host);
+    row.append(dot, info, state, launch);
+    list.append(row);
+    return { row, state };
+  });
+
+  function setState(index, value, label) {
+    rows[index].row.dataset.state = value;
+    rows[index].state.textContent = label;
+  }
+
+  function cancel() {
+    generation++;
+    for (const stopProbe of [...pendingProbes]) stopProbe();
+    primary.disabled = false;
+    stop.hidden = true;
+    rows.forEach((item, index) => {
+      if (item.row.dataset.state === 'checking') setState(index, 'idle', 'Not checked');
+    });
+  }
+
+  function probe(mirror) {
+    if (mirror.probeType !== 'app') return Promise.resolve('unverified');
+    return new Promise(resolve => {
+      const frame = document.createElement('iframe');
+      const nonce = Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
+      const expected = new URL(mirror.url);
+      const url = new URL(mirror.url);
+      url.searchParams.set('velora_launch_probe', nonce);
+      url.searchParams.set('velora_launch_parent', window.location.origin);
+      let settled = false;
+      let timer;
+      const stopProbe = () => finish('cancelled');
+      const onMessage = event => {
+        const data = event.data;
+        if (event.origin !== expected.origin || event.source !== frame.contentWindow) return;
+        if (!data || data.type !== 'velora:launcher-ready' || data.version !== 1) return;
+        if (data.nonce !== nonce || data.path !== expected.pathname) return;
+        finish('ready');
+      };
+      const finish = result => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        window.removeEventListener('message', onMessage);
+        frame.remove();
+        pendingProbes.delete(stopProbe);
+        resolve(result);
+      };
+      pendingProbes.add(stopProbe);
+      window.addEventListener('message', onMessage);
+      timer = setTimeout(() => finish('unverified'), TIMEOUT_MS);
+      frame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+      frame.setAttribute('aria-hidden', 'true');
+      frame.tabIndex = -1;
+      frame.title = 'Checking ' + mirror.name;
+      frame.referrerPolicy = 'no-referrer';
+      frame.style.cssText = 'position:fixed;left:-10000px;top:0;width:320px;height:240px;opacity:0;pointer-events:none;border:0';
+      frame.src = url.href;
+      document.body.append(frame);
+    });
+  }
+
+  function remember(url) {
+    try { localStorage.setItem(STORAGE_KEY, url); } catch (_) {}
+  }
+
+  function openImmediately(mirror) {
+    cancel();
+    remember(mirror.url);
+    heading.textContent = 'Opening Velora…';
+    status.textContent = 'Opening ' + new URL(mirror.url).hostname + '…';
+    window.location.assign(mirror.url);
+  }
+
+  function showSelection() {
+    if (!available.length) return;
+    const mirror = MIRRORS[available[selected]];
+    open.href = mirror.url;
+    open.hidden = false;
+    next.hidden = available.length < 2;
+    stop.hidden = !pendingProbes.size;
+    if (autoOpen.checked) {
+      openImmediately(mirror);
+    } else {
+      status.textContent = 'Checks finished. Choose Open next to the address you want to use.';
+    }
+  }
+
+  async function checkAll() {
+    const active = generation;
+    primary.disabled = true;
+    stop.hidden = false;
+    next.hidden = true;
+    open.hidden = true;
+    heading.textContent = 'Checking your links.';
+    status.textContent = 'Checking all ' + order.length + ' addresses…';
+    let completed = 0;
+    let responded = 0;
+    await Promise.all(order.map(async index => {
+      const mirror = MIRRORS[index];
+      setState(index, 'checking', 'Checking…');
+      const result = await probe(mirror).catch(() => 'unverified');
+      if (active !== generation) return;
+      completed++;
+      if (result === 'ready') {
+        setState(index, 'ready', 'App started');
+        responded++;
+        available.push(index);
+        if (autoOpen.checked) {
+          openImmediately(mirror);
+          return;
+        }
+      } else {
+        setState(index, 'unverified', 'Unverified');
+      }
+      status.textContent = completed + ' of ' + order.length + ' checked · ' + responded + ' verified';
+    }));
+    if (active !== generation) return;
+    available = order.filter(index => rows[index].row.dataset.state === 'ready');
+    selected = 0;
+    primary.disabled = false;
+    primary.textContent = 'Check again';
+    stop.hidden = true;
+    if (available.length) {
+      heading.textContent = available.length + (available.length === 1 ? ' page verified.' : ' pages verified.');
+      showSelection();
+    } else {
+      heading.textContent = 'No link was verified.';
+      status.textContent = 'No page confirmed that Velora started. Try any Open button to check a link yourself.';
+    }
+  }
+
+  function start() {
+    cancel();
+    order = MIRRORS.map((_, index) => index);
+    let saved;
+    try { saved = localStorage.getItem(STORAGE_KEY); } catch (_) {}
+    const previous = MIRRORS.findIndex(mirror => mirror.url === saved);
+    if (previous > 0) order = [previous, ...order.filter(index => index !== previous)];
+    available = [];
+    selected = 0;
+    for (const index of order) {
+      setState(index, 'idle', 'Waiting');
+      list.append(rows[index].row);
+    }
+    primary.textContent = 'Checking links…';
+    void checkAll();
+  }
+
+  primary.addEventListener('click', start);
+  stop.addEventListener('click', () => {
+    cancel();
+    heading.textContent = 'Ready when you are.';
+    status.textContent = 'Checks and automatic opening are paused. You can open any address below.';
+    primary.textContent = 'Check all links';
+  });
+  next.addEventListener('click', () => {
+    if (!available.length) return;
+    selected = (selected + 1) % available.length;
+    showSelection();
+  });
+  autoOpen.addEventListener('change', () => {
+    if (available.length && (autoOpen.checked || !pendingProbes.size)) showSelection();
+  });
+  open.addEventListener('click', () => {
+    const url = open.href;
+    cancel();
+    remember(url);
+  });
+  window.addEventListener('pagehide', cancel);
+  if (new URLSearchParams(window.location.search).get('manual') === '1') {
+    rows.forEach((_, index) => setState(index, 'idle', 'Waiting'));
+    heading.textContent = 'A working link, in one click.';
+    status.textContent = 'Check Velora startup where supported, or open any address manually.';
+  } else {
+    start();
+  }
+})();
+</script>
+</body>
+</html>

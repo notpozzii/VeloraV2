@@ -17,8 +17,8 @@ export function connectionCandidates(engine = 'auto', transport = 'auto', url = 
 	return candidates;
 }
 
-export function autoLauncherUrl(url, engine, transport, wisp = '') {
-	return `/api?${new URLSearchParams({ url, type: engine || 'sj2', transport: transport || 'libcurl', ...(wisp ? { wisp } : {}) })}`;
+export function autoLauncherUrl(url, engine, transport, wisp = '', backupWisp = '') {
+	return `/api?${new URLSearchParams({ url, type: engine || 'sj2', transport: transport || 'libcurl', ...(wisp ? { wisp } : {}), ...(backupWisp ? { backupWisp } : {}) })}`;
 }
 
 function checkAbort(signal) {
@@ -44,9 +44,9 @@ export function createAutoNavigator({ prepare, storage, now = Date.now } = {}) {
 		} catch {}
 	}
 	return {
-		async open({ url, engine, car, wisp, signal, load, onattempt }) {
+		async open({ url, engine, car, wisp, backupWisp, signal, load, onattempt }) {
 			const automatic = isAutoConnection(engine, car);
-			const cacheKey = JSON.stringify([new URL(url).origin, wisp || '']);
+			const cacheKey = JSON.stringify([new URL(url).origin, wisp || '', backupWisp || '']);
 			const saved = read()[cacheKey];
 			const remembered = saved && now() - saved.time < 86400000 ? saved : undefined;
 			const candidates = connectionCandidates(engine, car, url, remembered);
@@ -58,7 +58,7 @@ export function createAutoNavigator({ prepare, storage, now = Date.now } = {}) {
 				recordActivity('attempt', activity);
 				onattempt?.({ ...candidate, attempt: index + 1, total: candidates.length });
 				try {
-					const session = await prepare(candidate.engine, candidate.car, wisp);
+					const session = await prepare(candidate.engine, candidate.car, wisp, backupWisp);
 					checkAbort(signal);
 					await load(session, candidate, signal);
 					checkAbort(signal);

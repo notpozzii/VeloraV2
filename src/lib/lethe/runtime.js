@@ -25,9 +25,9 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 	let legacyTransportKey;
 	let popupsReady = false;
 	return {
-		prepare(engine = 'sj2', car = 'libcurl', wisp) {
+		prepare(engine = 'sj2', car = 'libcurl', wisp, backupWisp) {
 			engine = ['uv', 'glass'].includes(engine) ? 'uv' : ['sj', 'polygon'].includes(engine) ? 'sj' : 'sj2';
-			const key = JSON.stringify([engine, car, wisp || '']);
+			const key = JSON.stringify([engine, car, wisp || '', backupWisp || '']);
 			if (requestedKey === key && pending) return pending;
 			const prepare = async () => {
 				if (key === currentKey) {
@@ -38,8 +38,8 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 				recordActivity('connection-start', { engine, transport: car });
 				let result;
 				if (engine === 'sj2') {
-					const controller = await d.createPrismController(car, wisp);
-					await d.setPrismTransport(car, wisp);
+					const controller = await d.createPrismController(car, wisp, backupWisp);
+					await d.setPrismTransport(car, wisp, backupWisp);
 					result = { engine, controller };
 				} else {
 					await Promise.all([
@@ -50,9 +50,9 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 							: d.loadScript('/poly/polygon.all.js')
 					]);
 					connection ??= d.createConnection();
-					const transportKey = JSON.stringify([car, wisp || '']);
+					const transportKey = JSON.stringify([car, wisp || '', backupWisp || '']);
 					if (legacyTransportKey !== transportKey) {
-						await d.setCar(connection, car, wisp);
+						await d.setCar(connection, car, wisp, backupWisp);
 						legacyTransportKey = transportKey;
 					}
 					if (engine === 'uv') await d.bindProxyTransport();

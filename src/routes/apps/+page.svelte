@@ -9,6 +9,7 @@
 	import { isAutoConnection, autoLauncherUrl } from '$lib/lethe/auto.js';
 	import { loadSetting } from '$lib/utils/localspace.js';
 	import { subscribeSettings } from '$lib/utils/settingsSync.js';
+	import { watchPlaybackRelayFallback } from '$lib/utils/browser/relay-playback-fallback.js';
 
 	import Shell from '$lib/utils/library/shell.svelte';
 	import Icon from '$lib/utils/browser/icon.svelte';
@@ -58,6 +59,7 @@
 	let car = $state('libcurl');
 	let preferredEngine = 'sj2';
 	let customWisp = '';
+	let backupWisp = '';
 	let resolveSettings;
 	const settingsReady = new Promise(resolve => { resolveSettings = resolve; });
 	let prismController;
@@ -161,16 +163,23 @@
 
 	onMount(async () => {
 		try {
-			[preferredEngine, car, customWisp] = await Promise.all([
-				loadSetting('lethe', 'sj2'), loadSetting('car', 'libcurl'), loadSetting('customWisp', '')
+			[preferredEngine, car, customWisp, backupWisp] = await Promise.all([
+				loadSetting('lethe', 'sj2'), loadSetting('car', 'libcurl'), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
 			]);
 		} catch {} finally { resolveSettings(); }
-		if (!isAutoConnection(preferredEngine, car)) void runtime.prepare(preferredEngine, car, customWisp || undefined).catch(() => {});
+		if (!isAutoConnection(preferredEngine, car)) void runtime.prepare(preferredEngine, car, customWisp || undefined, backupWisp || undefined).catch(() => {});
 	});
 	onMount(() => subscribeSettings((key, value) => {
 		if (key === 'lethe') preferredEngine = value;
 		else if (key === 'car') car = value;
 		else if (key === 'customWisp') customWisp = value;
+		else if (key === 'backupWisp') backupWisp = value;
+	}));
+	onMount(() => watchPlaybackRelayFallback(iframeEl, {
+		relay: () => customWisp,
+		backup: () => backupWisp,
+		url: () => activityUrl,
+		prepare: backup => runtime.prepare(preferredEngine, car, backup, backup)
 	}));
 
 	function closeFrame() {
@@ -185,6 +194,19 @@
 		iframeEl.src = 'about:blank';
 	}
 	async function handleSubmit(url, type) {
+		if (type === 'direct') {
+			launchId++;
+			launchAbort?.abort();
+			activityUrl = url;
+			recordActivity('app-open', { target: url });
+			loadError = '';
+			openingApp = false;
+			frameDisplay = 'block';
+			overflow = true;
+			resetProxyFrame(iframeEl);
+			iframeEl.src = url;
+			return;
+		}
 		if (type === 'local') {
 			recordActivity('app-open', { target: url });
 			window.open(new URL(url, window.location.href).href, '_blank', 'noopener,noreferrer');
@@ -205,10 +227,10 @@
 			const selectedEngine = preferredEngine === 'auto' ? 'auto' : type || preferredEngine;
 			if (isAutoConnection(selectedEngine, car)) {
 				await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
-				if (request === launchId) iframeEl.src = autoLauncherUrl(url, selectedEngine, car, customWisp);
+				if (request === launchId) iframeEl.src = autoLauncherUrl(url, selectedEngine, car, customWisp, backupWisp);
 				return;
 			}
-			const session = await runtime.prepare(selectedEngine, car, customWisp || undefined);
+			const session = await runtime.prepare(selectedEngine, car, customWisp || undefined, backupWisp || undefined);
 			if (request !== launchId) return;
 			await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 			if (request !== launchId) return;

@@ -1,14 +1,17 @@
+import { resolveRelays } from '../../lethe/relay-config.js';
+
 export const GEFORCE_URL = 'https://play.geforcenow.com/mall/';
 
-// Launch GeForce with Scramjet 2 and its direct Libcurl transport.
-const GEFORCE_WISP = 'wss://galxy.it.com/jsonn/';
+// GeForce ads need UV's cross-frame media blob fix. Use direct Libcurl so
+// optional request-filter plugins do not block the ad player or its downloads.
 
-export function getGeForceLauncherUrl(customWisp = '', url = GEFORCE_URL) {
+export function getGeForceLauncherUrl(customWisp = '', url = GEFORCE_URL, backupWisp = '') {
 	const params = new URLSearchParams({
 		url,
-		type: 'prism',
-		transport: 'libcurl',
-		wisp: customWisp || GEFORCE_WISP,
+		type: 'glass',
+		transport: 'libcurlRaw',
+		wisp: resolveRelays(customWisp, backupWisp).main,
+		backupWisp: resolveRelays(customWisp, backupWisp).backup,
 		autoSW: 'true'
 	});
 	return `/api?${params.toString()}`;

@@ -128,7 +128,7 @@ const tlsError = 'Internal Service Worker Error: Error: Hyper client: hyper_util
 
 test('the reported plain-text Epoxy TLS error advances Auto to Libcurl and remembers the working choice', async () => {
 	const saved = storage();
-	const cacheKey = JSON.stringify(['https://example.com', '']);
+	const cacheKey = JSON.stringify(['https://example.com', '', '']);
 	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2', car:'epoxy', time:100 } }));
 	const { frame, doc } = frameFixture(); const attempts = [], status = [];
 	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async (engine, car) => { attempts.push([engine, car]); return { engine }; } });
@@ -161,8 +161,8 @@ test('website error titles, HTTP failures, and articles quoting connection error
 });
 
 test('all failed document loads stop at six attempts and evict only the failed cached origin', async () => {
-	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '']);
-	const otherKey = JSON.stringify(['https://other.example', '']);
+	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '', '']);
+	const otherKey = JSON.stringify(['https://other.example', '', '']);
 	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2', car:'epoxy', time:100 }, [otherKey]:{ engine:'uv',car:'libcurl',time:100 } }));
 	const { frame, doc } = frameFixture(); let attempts = 0;
 	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async engine => { attempts++; return {engine}; } });
@@ -175,7 +175,7 @@ test('all failed document loads stop at six attempts and evict only the failed c
 });
 
 test('a failed old navigation cannot remove a newer cached connection from another navigation', async () => {
-	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '']);
+	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '', '']);
 	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2',car:'epoxy',time:100 } }));
 	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async () => { throw Error('Offline'); } });
 	await assert.rejects(auto.open({ url:'https://example.com',engine:'auto',car:'auto', onattempt:({attempt}) => {

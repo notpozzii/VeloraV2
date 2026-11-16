@@ -5,6 +5,8 @@
   import Icon from '$lib/utils/browser/icon.svelte';
   import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
   import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
+  import { watchPlaybackRelayFallback } from '$lib/utils/browser/relay-playback-fallback.js';
+  import { GEFORCE_URL } from '$lib/utils/browser/geforce.js';
 
   let frame;
   let app;
@@ -14,13 +16,25 @@
 
   onMount(() => {
     let disposed = false;
+    let relay = '';
+    let backupRelay = '';
+    let session;
+    const stopRecovery = watchPlaybackRelayFallback(frame, {
+      relay: () => relay, backup: () => backupRelay, url: () => GEFORCE_URL,
+      prepare: async backup => {
+        if (!session) throw new Error('The streaming connection is still starting.');
+        await session.setRelay(backup);
+      }
+    });
     const syncFullscreen = () => { fullscreen = Boolean(document.fullscreenElement); };
     document.addEventListener('fullscreenchange', syncFullscreen);
     async function launch() {
       try {
-        const wisp = await loadSetting('customWisp', '');
+        const [wisp, backup] = await Promise.all([loadSetting('customWisp', ''), loadSetting('backupWisp', '')]);
+        backupRelay = backup;
+        relay = wisp;
         if (disposed) return;
-        await startGeForce(frame, wisp, () => !disposed);
+        session = await startGeForce(frame, wisp, () => !disposed, backup);
       } catch (cause) {
         if (!disposed) {
           loading = false;
@@ -31,6 +45,7 @@
     launch();
     return () => {
       disposed = true;
+      stopRecovery();
       document.removeEventListener('fullscreenchange', syncFullscreen);
     };
   });

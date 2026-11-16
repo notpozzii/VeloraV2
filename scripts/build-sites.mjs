@@ -31,6 +31,10 @@ await build({
 // Stop older service-worker code surviving an update of a direct deployment.
 await writeFile('dist/client/_headers', `/_app/immutable/*
   Cache-Control: public, max-age=31536000, immutable
+/launcher
+  Cache-Control: no-store
+/launcher/*
+  Cache-Control: no-store
 /glass/*
   Cache-Control: no-cache
 /servy.js

@@ -1,15 +1,22 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { activeTab, reloadSignal, goBackSignal, goForwardSignal } from '$lib/stores/index.js';
 	import { getOriginalUrl } from '$lib/lethe/decode';
 	import { newTabEventName, newTabQueueName } from '$lib/lethe/popup-events.js';
 	import { mediaPermissions } from './media-permissions.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
-	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true } = $props();
+	import { watchPlaybackRelayFallback } from './relay-playback-fallback.js';
+	let { id, src = null, onnavigate, onnewtab, interceptEnabled = true, relay = '', backupRelay = '', targetUrl = '', onrelayfallback = async () => {} } = $props();
 	let frame;
 	let innerFrame;
 	let titleObserver;
 	let removeNavigationListeners = () => {};
+	onMount(() => watchPlaybackRelayFallback(frame, {
+		relay: () => relay,
+		backup: () => backupRelay,
+		url: () => targetUrl,
+		prepare: onrelayfallback
+	}));
 	function contentWindow() {
 		const outer = frame?.contentWindow;
 		try { return outer?.document.querySelector('iframe[data-proxy-content]')?.contentWindow || outer; }

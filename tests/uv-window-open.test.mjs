@@ -7,20 +7,23 @@ const canonical = readFileSync(new URL('../glass/glass.handler.js', import.meta.
 
 // Exercise the actual shipped override, rather than a second implementation of
 // it. Native window.open must receive the rewritten URL AND its browsing target.
-function fixture() {
-	const calls = [], rewrites = [];
-	const receiver = {}, nativeWindow = { location:{}, focus() {}, close() {} };
+function fixture({ blocked = false, inaccessible = false } = {}) {
+	const calls = [], rewrites = [], initialized = [];
+	const receiver = {}, nativeWindow = { location:{ href:"about:blank" }, focus() {}, close() {} };
 	const start = canonical.indexOf('a.override(o,"open",');
 	const end = canonical.indexOf('),e.$wrap=', start);
 	assert.ok(start >= 0 && end > start, 'Locate the shipped window.open override');
+	if (inaccessible) Object.defineProperty(nativeWindow, "location", { get() { throw new Error("cross origin"); } });
+	const meta = { url:new URL("https://play.geforcenow.com/mall/"), base:"https://play.geforcenow.com/mall/" };
 	let hook;
 	vm.runInNewContext(canonical.slice(start, end + 1), {
 		o:receiver,
 		a:{ override(target, name, handler) { assert.equal(target, receiver); assert.equal(name, 'open'); hook = handler; } },
-		e:{ rewriteUrl(url) { rewrites.push(url); return `proxy:${url}`; } }
+		p(popup, inheritedMeta) { initialized.push({popup, inheritedMeta}); },
+		e:{ meta, rewriteUrl(url) { rewrites.push(url); return `proxy:${url}`; } }
 	});
-	const native = function (...args) { calls.push({ receiver:this, args }); return nativeWindow; };
-	return { calls, rewrites, receiver, nativeWindow, open:(...args) => hook(native, receiver, args) };
+	const native = function (...args) { calls.push({ receiver:this, args }); return blocked ? null : nativeWindow; };
+	return { calls, rewrites, initialized, meta, receiver, nativeWindow, open:(...args) => hook(native, receiver, args) };
 }
 
 test('GeForce same-tab sign-in stays in its frame and returns the native window', () => {
@@ -54,6 +57,29 @@ test('opening an empty window does not invent a URL or lose its native return va
 	assert.equal(f.open(), f.nativeWindow);
 	assert.deepEqual(f.rewrites, []);
 	assert.deepEqual(f.calls[0].args, []);
+});
+
+test('blank account windows get their own proxy realm before the async redirect', () => {
+	for (const args of [[], [''], [undefined], [null], ['about:blank', 'epic_login', 'popup,width=520,height=640']]) {
+		const f = fixture();
+		assert.equal(f.open(...args), f.nativeWindow);
+		assert.equal(f.initialized.length, 1, 'initialize the native blank window synchronously');
+		assert.equal(f.initialized[0].popup, f.nativeWindow);
+		assert.equal(f.initialized[0].inheritedMeta, f.meta, 'relative redirects inherit the opener URL');
+		if (!args.length || args[0] == null || args[0] === '') {
+			assert.deepEqual(f.rewrites, [], 'do not turn an empty URL into a proxied undefined URL');
+			assert.deepEqual(f.calls[0].args, args);
+		}
+	}
+});
+
+test('blocked popups and inaccessible named windows retain native behavior', () => {
+	const blocked = fixture({blocked:true});
+	assert.equal(blocked.open('', 'epic_login'), null);
+	assert.deepEqual(blocked.initialized, []);
+	const inaccessible = fixture({inaccessible:true});
+	assert.equal(inaccessible.open('', 'epic_login'), inaccessible.nativeWindow);
+	assert.deepEqual(inaccessible.initialized, []);
 });
 
 test('the generated browser asset includes the same fix as its canonical source', () => {

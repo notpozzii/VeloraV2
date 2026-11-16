@@ -29,6 +29,8 @@
 	import { createTabFrames } from '$lib/lethe/tab-frames.js';
 	import { createBrowserSearchBridge } from '$lib/utils/browser/desktop-search-bridge.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
+	import RelaySettings from '$lib/utils/settings/relay-settings.svelte';
+	import { relaySelection } from '$lib/lethe/relay-config.js';
 	import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
 	import { subscribeSettings } from '$lib/utils/settingsSync.js';
 	let tabs = $state([]);
@@ -45,6 +47,7 @@
 	const tabFrames = createTabFrames(async () => (await prepareBrowserEngine('sj2')).controller);
 	onDestroy(() => tabFrames.clear());
 	let customWisp = $state('');
+	let backupWisp = $state('');
 	let searchEngine = $state('google');
 	let car = $state('libcurl');
 	let bookmarks = $state([]);
@@ -57,7 +60,7 @@
 		if (browserDestroyed) throw new DOMException('Browser closed', 'AbortError');
 		if (startupError) throw startupError;
 		if (previewMode) throw new Error('Open the browser from your desktop to browse.');
-		return runtime.prepare(engine ?? letheEngine, car, customWisp || undefined);
+		return runtime.prepare(engine ?? letheEngine, car, customWisp || undefined, backupWisp || undefined);
 	}
 	let activeFrame = $derived(frames.find((frame) => frame.id === $activeTab));
 	let draggedTab = null;
@@ -119,11 +122,12 @@
 			addTab();
 
 			// hydrate saved settings
-			const [lethe, savedCar, wisp, engine, marks, intercept, LastPopupIntStateX] = await Promise.all(
+			const [lethe, savedCar, wisp, backup, engine, marks, intercept, LastPopupIntStateX] = await Promise.all(
 				[
 					loadSetting('lethe', 'sj2'),
 					loadSetting('car', 'libcurl'),
 					loadSetting('customWisp', ''),
+					loadSetting('backupWisp', ''),
 					loadSetting('searchEngine', 'google'),
 					loadSetting('bookmarks', [], JSON.parse),
 					loadSetting('popupInterceptor', true, (raw) => raw === 'true'),
@@ -134,6 +138,7 @@
 			letheEngine = lethe;
 			car = savedCar;
 			customWisp = wisp;
+			backupWisp = relaySelection(wisp).backupWisp;
 			searchEngine = engine;
 			bookmarks = marks;
 			LastPopupIntState = LastPopupIntStateX;
@@ -184,6 +189,7 @@
 			if (key === 'lethe') letheEngine = value;
 			else if (key === 'car') car = value;
 			else if (key === 'customWisp') customWisp = value;
+			else if (key === 'backupWisp') backupWisp = value;
 			else if (key === 'searchEngine') searchEngine = value;
 		})
 	);
@@ -213,7 +219,7 @@
 			if (isAutoConnection(selectedEngine, car)) {
 				if (signal?.aborted || !frames.includes(target) || target.navigation !== navigation) return;
 				tabFrames.release(target.id);
-				target.url = autoLauncherUrl(fixedUrl, selectedEngine, car, customWisp);
+				target.url = autoLauncherUrl(fixedUrl, selectedEngine, car, customWisp, backupWisp);
 				target.displayUrl = fixedUrl;
 				return;
 			}
@@ -360,7 +366,7 @@
 	}
 	$effect(() => {
 		if (ready && !previewMode && !isAutoConnection(letheEngine, car)) {
-			runtime.prepare(letheEngine, car, customWisp || undefined).catch((error) => console.error('Could not prepare browser:', error));
+			runtime.prepare(letheEngine, car, customWisp || undefined, backupWisp || undefined).catch((error) => console.error('Could not prepare browser:', error));
 		}
 	});
 	function goBack() {
@@ -425,6 +431,7 @@
 		saveSetting('lethe', letheEngine);
 		saveSetting('car', car);
 		saveSetting('customWisp', customWisp);
+		saveSetting('backupWisp', backupWisp);
 		saveSetting('searchEngine', searchEngine);
 		saveSetting('bookmarks', $state.snapshot(bookmarks));
 		saveSetting('popupInterceptor', popupInterceptor);
@@ -521,7 +528,7 @@
 		}
 		if (useAppLoader) {
 			// Load the existing app launcher directly; it handles proxying after the user's click.
-			activeFrame.url = getGeForceLauncherUrl(customWisp, url);
+			activeFrame.url = getGeForceLauncherUrl(customWisp, url, backupWisp);
 			activeFrame.displayUrl = url;
 			activeFrame.title = 'GeForce NOW';
 			return;
@@ -648,6 +655,10 @@
 					onnavigate={(info) => handleNavigate(frame.id, info)}
 					onnewtab={(url) => openInNewTab(url)}
 					interceptEnabled={popupInterceptor}
+					relay={customWisp}
+					backupRelay={backupWisp}
+					targetUrl={frame.displayUrl}
+					onrelayfallback={backup => runtime.prepare(letheEngine, car, backup, backup)}
 				/>
 				{#if frame.id === $activeTab && !frame.url && !frame.preparing}<Home
 						{ready}
@@ -716,9 +727,9 @@
 						><option value="auto">Auto</option><option value="libcurl">Libcurl</option><option value="epoxy">Epoxy</option></select
 					></label
 				>
-				<label
-					>Wisp server<input bind:value={customWisp} placeholder="Keep blank for default" /></label
-				>
+				<RelaySettings value={customWisp} disabled={!ready} onchange={(value) => {
+					({ customWisp, backupWisp } = relaySelection(value));
+				}} />
 				<label
 					>Search engine<select bind:value={searchEngine}
 						><option value="ddg">DuckDuckGo</option><option value="brave">Brave</option><option

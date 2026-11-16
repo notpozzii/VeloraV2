@@ -1,7 +1,9 @@
 <script>
 	import '$lib/style/settings.css';
 	import { loadSetting, resetConnectionSettings } from '$lib/utils/localspace.js';
-	import { saveSettingShared } from '$lib/utils/settingsSync.js';
+	import RelaySettings from './relay-settings.svelte';
+	import { relaySelection } from '$lib/lethe/relay-config.js';
+	import { saveSettingShared, subscribeSettings } from '$lib/utils/settingsSync.js';
 	import { onMount } from 'svelte';
 	import { connectionDefaults } from '$lib/utils/connection-reset.js';
 
@@ -9,21 +11,25 @@
 	let searchEngine = $state('google');
 	let car = $state('libcurl');
 	let customWisp = $state('');
+	let backupWisp = $state('');
 	let ready = $state(false);
 	let resetting = $state(false);
 	let resetMessage = $state('');
 
 	onMount(async () => {
-		const [savedLethe, savedSearch, savedCar, savedWisp] = await Promise.all([
+		const [savedLethe, savedSearch, savedCar, savedWisp, savedBackup] = await Promise.all([
 			loadSetting('lethe', 'sj2'),
 			loadSetting('searchEngine', 'google'),
 			loadSetting('car', 'libcurl'),
-			loadSetting('customWisp', '')
+			loadSetting('customWisp', ''),
+			loadSetting('backupWisp', '')
 		]);
 		lethe = savedLethe;
 		searchEngine = savedSearch;
 		car = savedCar;
 		customWisp = savedWisp;
+		backupWisp = relaySelection(savedWisp).backupWisp;
+		if (savedBackup !== backupWisp) await saveSettingShared('backupWisp', backupWisp);
 		ready = true;
 	});
 
@@ -33,7 +39,7 @@
 		resetMessage = '';
 		try {
 			await resetConnectionSettings();
-			({ lethe, car, customWisp } = connectionDefaults);
+			({ lethe, car, customWisp, backupWisp } = connectionDefaults);
 			resetMessage = 'Connection settings reset. Reload the app and try again.';
 		} catch {
 			resetMessage = 'Could not reset connection settings. Please try again.';
@@ -53,10 +59,17 @@
 		car = value;
 		saveSettingShared('car', value);
 	}
-	function updateWisp(value) {
-		customWisp = value;
-		saveSettingShared('customWisp', value);
+	async function updateRelay(value) {
+		const selection = relaySelection(value);
+		await saveSettingShared('backupWisp', selection.backupWisp);
+		await saveSettingShared('customWisp', selection.customWisp);
+		customWisp = selection.customWisp;
+		backupWisp = selection.backupWisp;
 	}
+	onMount(() => subscribeSettings((key, value) => {
+		if (key === 'customWisp') customWisp = value;
+		else if (key === 'backupWisp') backupWisp = value;
+	}));
 
 	const proxies = [
 		{ value: 'auto', label: 'Auto (EXPERIMENTAL)' },
@@ -98,14 +111,17 @@
 </div>
 <div class="subGroup">
 	<p class="subHeading">Reset connection settings</p>
-	<p class="desc">Restore the default browser engine, transport, and relay.</p>
+	<p class="desc">Restore the default browser engine, transport, and relay selection.</p>
 	<button class="actionBtn" type="button" onclick={resetConnection} disabled={!ready || resetting}>
 		{resetting ? 'Resetting…' : 'Reset connection settings to defaults'}
 	</button>
 	{#if resetMessage}<p class="desc" role="status">{resetMessage}</p>{/if}
 </div>
-<div class="subGroup">
-	<label class="subHeading" for="settings-wisp">Custom relay</label>
-	<p class="desc">Leave blank to use the default Wisp server.</p>
-	<input id="settings-wisp" class="textInput" type="text" placeholder="wss://…" bind:value={customWisp} oninput={(e) => updateWisp(e.currentTarget.value)} />
+<div class="subGroup relay-group">
+	<p class="subHeading">Relay</p>
+	<RelaySettings value={customWisp} disabled={!ready || resetting} onchange={updateRelay} />
 </div>
+
+<style>
+	:global(.settings-shell) .relay-group { overflow: visible; }
+</style>

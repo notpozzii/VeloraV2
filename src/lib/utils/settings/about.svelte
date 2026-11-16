@@ -1,7 +1,7 @@
 <script>
 	import '$lib/style/settings.css';
 
-	const version = 'v1.4';
+	const version = 'v1.5';
 	const info = [
 		{ key: 'Version', value: version },
 		{ key: 'Developer', value: 'pozzi' },
@@ -86,10 +86,6 @@
 				<div class="infoRow">
 					<span class="infoKey">DC User</span>
 					<span class="infoVal">notpozzii</span>
-				</div>
-				<div class="infoRow">
-					<span class="infoKey">Email</span>
-					<span class="infoVal">Unknown</span>
 				</div>
 			</div>
 		</div>
