@@ -46,3 +46,4 @@ curate-deleted.json
 /static/site-restore.js
 
 /static/connection-help.js
+/static/relay-transport.mjs

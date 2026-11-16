@@ -103,10 +103,10 @@
 		window.addEventListener('message', receive);
 		(async () => {
 			try {
-				const [selectedCar, wisp] = await Promise.all([
-					loadSetting('car', 'libcurl'), loadSetting('customWisp', '')
+				const [selectedCar, wisp, backupWisp] = await Promise.all([
+					loadSetting('car', 'libcurl'), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
 				]);
-				controller = await createPrismController(selectedCar === 'epoxy' ? 'epoxy' : 'libcurl', wisp || undefined);
+				controller = await createPrismController(selectedCar === 'epoxy' ? 'epoxy' : 'libcurl', wisp || undefined, backupWisp || undefined);
 				if (!alive) return;
 				connectionContext = { relay: wisp ? 'custom' : 'default', transport: selectedCar === 'epoxy' ? 'epoxy' : 'libcurl' };
 				network = createRobloxNetwork(controller, result => {

@@ -11,6 +11,7 @@
 	import '$lib/style/os.css';
 	import '$lib/style/desktop-glass.css';
 	import { onMount } from 'svelte';
+	import { isLauncherProbe } from '$lib/utils/launcher-ready.js';
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import DynamicIsland from '$lib/utils/os/dynamic-island.svelte';
@@ -91,6 +92,7 @@
 			!/\s/.test(launcherQuery)
 	);
 	let customWisp = $state('');
+	let backupWisp = $state('');
 	let fullscreen = $state(false);
 	let hydrated = $state(false);
 	let navSizeMulti = $state(24);
@@ -124,7 +126,7 @@
 		},
 		{
 			id: 6,
-			url: getGeForceLauncherUrl(customWisp),
+			url: getGeForceLauncherUrl(customWisp, undefined, backupWisp),
 			name: 'GeForce NOW',
 			icon: sp,
 			height: '76%',
@@ -161,7 +163,8 @@
 				url: 'https://www.tiktok.com/',
 				type: 'prism',
 				transport: 'libcurlRaw',
-				...(customWisp ? { wisp: customWisp } : {})
+				...(customWisp ? { wisp: customWisp } : {}),
+				...(backupWisp ? { backupWisp } : {})
 			})}`,
 			name: 'TikTok',
 			icon: tiktokIcon,
@@ -240,6 +243,7 @@
 		saveSetting('navbarsize', navSizeMulti);
 	});
 	onMount(() => {
+		if (isLauncherProbe(window)) return;
 		applyStartupSettings();
 		shortcutModifier = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
 		const syncFullscreen = () => {
@@ -534,6 +538,7 @@
 	}
 
 	onMount(() => {
+		if (isLauncherProbe(window)) return;
 		let disposed = false;
 		const disposePanic = installPanicKey(window);
 		migrateLegacyWallpaper({ read: loadSetting, write: saveSetting }, legacyWinterWallpaper)
@@ -544,17 +549,19 @@
 			loadSetting('navbarsize', 24),
 			loadSetting('customApps', []),
 			loadSetting('customWisp', ''),
+			loadSetting('backupWisp', ''),
 			loadSetting('desktopGlassStrength', 60),
 			loadSetting('compactDock', false),
 			loadSetting(DOCK_HOVER_SETTING, DEFAULT_DOCK_HOVER_STRENGTH),
 			loadWeatherPreferences({ read: loadSetting, write: saveSettingShared }).catch(() => ({ mode: 'off', speed: 1, intensity: 60 }))
-		])).then(([background, fit, size, savedApps, wisp, strength, compact, dockStrength, weather]) => {
+		])).then(([background, fit, size, savedApps, wisp, backup, strength, compact, dockStrength, weather]) => {
 			if (disposed) return;
 			bgURL = background || mainBG;
 			bgFit = fit === 'contain' ? 'contain' : 'cover';
 			navSizeMulti = Math.max(8, Math.min(Number(size) || 24, 39));
 			customApps = Array.isArray(savedApps) ? savedApps : [];
 			customWisp = wisp || '';
+			backupWisp = backup || '';
 			glassStrength = normalizeGlassStrength(strength);
 			compactDock = compact === true;
 			dockHoverStrength = normalizeDockHoverStrength(dockStrength);
@@ -578,6 +585,7 @@
 			onSettingChange('customWisp', (value) => {
 				customWisp = value || '';
 			}),
+			onSettingChange('backupWisp', value => { backupWisp = value || ''; }),
 			onSettingChange('desktopGlassStrength', (value) => {
 				glassStrength = normalizeGlassStrength(value);
 			}),

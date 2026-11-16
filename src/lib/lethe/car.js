@@ -1,28 +1,32 @@
-export function getWispUrl(custom) {
-  return custom || 'wss://galxy.it.com/jsonn/';
+import { getRelayUrl } from './relay-fallback.js';
+import { resolveRelays } from './relay-config.js';
+
+export function getWispUrl(custom, backupWisp) {
+  return getRelayUrl(custom, backupWisp);
 }
 
 export function createConnection() {
 	return new window.BareMux.BareMuxConnection('/charon/worker.js');
 }
 
-export async function setCar(connection, car = 'libcurl', custom) {
-	const wispUrl = getWispUrl(custom);
+export async function setCar(connection, car = 'libcurl', custom, backupWisp) {
+	const { main: wispUrl, backup } = resolveRelays(custom, backupWisp);
+	const selectedWisp = getWispUrl(wispUrl, backup);
 
 	switch (car) {
 		case 'epoxy':
-			await connection.setTransport('/reflux/index.mjs', [
-				{ base: '/libbybutslightlyworse/index.mjs', wisp: wispUrl }
+			await connection.setTransport('/relay-transport.mjs', [
+				{ module: '/reflux/index.mjs', base: '/libbybutslightlyworse/index.mjs', wisp: wispUrl, backupWisp: backup, selectedWisp }
 			]);
 			break;
 		case 'libcurl':
-			await connection.setTransport('/reflux/index.mjs', [
-				{ base: '/libby/index.mjs', wisp: wispUrl }
+			await connection.setTransport('/relay-transport.mjs', [
+				{ module: '/reflux/index.mjs', base: '/libby/index.mjs', wisp: wispUrl, backupWisp: backup, selectedWisp }
 			]);
 			break;
 		case 'libcurlRaw':
-			await connection.setTransport('/libby/index.mjs', [
-				{ base: '/libby/index.mjs', wisp: wispUrl }
+			await connection.setTransport('/relay-transport.mjs', [
+				{ module: '/libby/index.mjs', base: '/libby/index.mjs', wisp: wispUrl, backupWisp: backup, selectedWisp }
 			]);
 			break;
 	}

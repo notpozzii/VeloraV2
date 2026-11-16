@@ -53,7 +53,7 @@ test('the release resets connections again after the previous migration and pres
 test('connection reads and writes share one migration rather than overwriting one another', async () => {
 	const f = fixture(), reset = createConnectionReset(f.options);
 	await Promise.all([reset.ensure(), reset.ensure(), reset.ensure(), reset.ensure()]);
-	assert.equal(f.transactions, 1); assert.equal(f.writes.length, 4);
+	assert.equal(f.transactions, 1); assert.equal(f.writes.length, Object.keys(connectionDefaults).length + 1);
 	assert.equal(isConnectionSetting('car'), true); assert.equal(isConnectionSetting('bookmarks'), false); assert.equal(isConnectionSetting('__proto__'), false);
 });
 
@@ -72,13 +72,13 @@ test('a second tab clears its old Auto history even if another tab already commi
 	const secondSession = storage([[autoKey, 'old epoxy choice']]);
 	await createConnectionReset({ ...f.options, sessionStorage:() => secondSession }).ensure();
 	assert.equal(secondSession.getItem(autoKey), null); assert.equal(secondSession.getItem(sessionKey), connectionResetVersion);
-	assert.equal(f.writes.length, 4);
+	assert.equal(f.writes.length, Object.keys(connectionDefaults).length + 1);
 });
 
 test('concurrent app frames and tabs commit one atomic reset', async () => {
 	const f = fixture();
 	await Promise.all([createConnectionReset(f.options).ensure(), createConnectionReset(f.options).ensure()]);
-	assert.equal(f.writes.length, 4); assert.equal(f.notifications.length, 3);
+	assert.equal(f.writes.length, Object.keys(connectionDefaults).length + 1); assert.equal(f.notifications.length, Object.keys(connectionDefaults).length);
 });
 
 test('failed storage does not stamp a completed reset or erase unrelated data', async () => {
@@ -113,14 +113,14 @@ test('the installed settings library supports this migration through its memory 
 	await store.clear();
 });
 
-test('manual connection reset atomically restores three defaults without touching saved data or search', async () => {
+test('manual connection reset atomically restores both relay defaults without touching saved data or search', async () => {
 	const f = fixture();
 	await restoreConnectionDefaults(f.options);
 	for (const [key, value] of Object.entries(connectionDefaults)) {
 		assert.equal(f.data.get(key), value);
 		assert.equal(f.legacy.getItem(key), null);
 	}
-	assert.deepEqual(f.writes, ['lethe', 'car', 'customWisp']);
+	assert.deepEqual(f.writes, Object.keys(connectionDefaults));
 	assert.deepEqual(f.notifications, Object.entries(connectionDefaults));
 	assert.equal(f.session.getItem(autoKey), null);
 	assert.equal(f.session.getItem('unrelated'), 'keep');
@@ -144,4 +144,16 @@ test('manual reset yields to a full site restore/reset in progress', async () =>
 	await assert.rejects(restoreConnectionDefaults({ ...f.options, resetting: () => true }), /unavailable/);
 	assert.equal(f.transactions, 0);
 	assert.equal(f.notifications.length, 0);
+});
+
+test('adding the backup setting preserves choices for users with the current reset marker', async () => {
+ const f = fixture();
+ f.data.set(connectionResetKey, connectionResetVersion);
+ f.data.set('backupWisp', 'wss://custom-backup.example/');
+ assert.equal(await createConnectionReset(f.options).ensure(), true);
+ assert.equal(f.data.get('customWisp'), 'wss://old.example/');
+ assert.equal(f.data.get('backupWisp'), 'wss://custom-backup.example/');
+ assert.equal(f.writes.length, 0);
+ await restoreConnectionDefaults(f.options);
+ assert.equal(f.data.get('backupWisp'), '');
 });

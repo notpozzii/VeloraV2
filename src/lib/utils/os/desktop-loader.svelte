@@ -1,6 +1,7 @@
 <script>
 	import { getContext, onMount, tick } from 'svelte';
 	import { STARTUP_CONTEXT } from '$lib/utils/startup.js';
+	import { notifyLauncherReady } from '$lib/utils/launcher-ready.js';
 
 	/** @type {import('svelte').Component | null} */
 	let Desktop = $state(null);
@@ -17,6 +18,7 @@
 				if (disposed) return;
 				Desktop = module.default;
 				await tick();
+				if (!disposed) notifyLauncherReady(window);
 			} catch (error) {
 				if (disposed) return;
 				console.error('Unable to load the Velora desktop', error);

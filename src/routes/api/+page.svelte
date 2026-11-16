@@ -19,6 +19,8 @@ autoSW:    legacy parameter; apps now load automatically
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { watchMediaFailures } from '$lib/utils/browser/media-failure.js';
+	import { watchPlaybackRelayFallback } from '$lib/utils/browser/relay-playback-fallback.js';
+	import { normalizeRelayUrl } from '$lib/lethe/relay-config.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
 	import ConnectionHelp from '$lib/utils/browser/connection-help.svelte';
@@ -38,11 +40,15 @@ autoSW:    legacy parameter; apps now load automatically
 	let car = $state('libcurl');
 	let prismController;
 	let prismFrame;
+	let activeEngine = 'sj2';
+	let activeCar = 'libcurl';
 
 	const apiUrl = $derived(normalizeWebUrl($page.url.searchParams.get('url')));
 	const apiType = $derived($page.url.searchParams.get('type'));
 	const apiTransport = $derived($page.url.searchParams.get('transport'));
-	const apiWisp = $derived($page.url.searchParams.get('wisp') || undefined);
+	const apiWisp = $derived(normalizeRelayUrl($page.url.searchParams.get('wisp')) || undefined);
+
+	const apiBackupWisp = $derived(normalizeRelayUrl($page.url.searchParams.get('backupWisp')) || undefined);
 
 	onMount(() => {
 		if (apiUrl === null) return;
@@ -51,6 +57,13 @@ autoSW:    legacy parameter; apps now load automatically
 			return watchMediaFailures(iframeEl, failure => { mediaFailure = failure; });
 		}
 	});
+	onMount(() => watchPlaybackRelayFallback(iframeEl, {
+		relay: () => apiWisp,
+		backup: () => apiBackupWisp,
+		url: () => apiUrl,
+		prepare: backup => runtime.prepare(activeEngine, activeCar, backup, backup),
+		report: message => { autoStatus = message; }
+	}));
 
 	async function start() {
 		if (starting) return;
@@ -69,11 +82,13 @@ autoSW:    legacy parameter; apps now load automatically
 		if (['auto', 'libcurl', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
 		const automatic = isAutoConnection(apiType, car);
 		await auto.open({
-			url: apiUrl, engine: apiType || 'sj2', car, wisp: apiWisp, signal: launchAbort.signal,
+			url: apiUrl, engine: apiType || 'sj2', car, wisp: apiWisp, backupWisp: apiBackupWisp, signal: launchAbort.signal,
 			onattempt: ({ engine, car: selectedCar, attempt }) => {
 				if (automatic) autoStatus = `${attempt > 1 ? 'Trying' : 'Connecting'} · ${engine === 'uv' ? 'Ultraviolet' : engine.toUpperCase()} / ${selectedCar === 'epoxy' ? 'Epoxy' : 'Libcurl'}`;
 			},
-			async load(session) {
+			async load(session, candidate) {
+				activeEngine = session.engine;
+				activeCar = candidate.car;
 				if (automatic) { resetProxyFrame(iframeEl); iframeEl.src = 'about:blank'; }
 				await prepareProxyFrame(iframeEl, { signal: launchAbort.signal });
 				if (session.engine === 'uv') await session.connect();

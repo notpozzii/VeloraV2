@@ -5,6 +5,10 @@ import { browser } from '$app/environment';
 import localspace from 'localspace';
 import { resetInProgress } from './reset-core.js';
 import { connectionDefaults, createConnectionReset, isConnectionSetting, restoreConnectionDefaults } from './connection-reset.js';
+import { createRelayOrderMigration } from './relay-order.js';
+import { createPreferencesReset } from './preferences-reset.js';
+import { preferencesDefaults, isPreference } from './preferences-defaults.js';
+import { isLauncherProbe } from './launcher-ready.js';
 
 // One namespaced store for all Galaxy settings (IndexedDB, falling back to
 // localStorage/memory automatically). Null on the server — there is no storage
@@ -24,8 +28,38 @@ const connectionReset = browser ? createConnectionReset({
 	resetting: () => resetInProgress(),
 	notify: (key, value) => channel?.postMessage({ key, value })
 }) : null;
+const relayOrder = browser ? createRelayOrderMigration({
+	store,
+	legacyStorage: () => window.localStorage,
+	sessionStorage: () => window.sessionStorage,
+	lock: navigator.locks?.request ? work => navigator.locks.request('velora:connection-defaults', work) : undefined,
+	resetting: () => resetInProgress(),
+	notify: (key, value) => channel?.postMessage({ key, value })
+}) : null;
+
+const preferencesReset = browser ? createPreferencesReset({
+ store,
+ legacyStorage: () => window.localStorage,
+ sessionStorage: () => window.sessionStorage,
+ lock: navigator.locks?.request ? work => navigator.locks.request('velora:connection-defaults', work) : undefined,
+ resetting: () => resetInProgress(),
+ notify: (key, value) => {
+  channel?.postMessage({ key, value });
+  if (key === 'theme' && typeof BroadcastChannel !== 'undefined') {
+   const themeChannel = new BroadcastChannel('galaxy-theme');
+   themeChannel.postMessage(value);
+   themeChannel.close();
+  }
+ }
+}) : null;
+
+export async function ensureSettingsDefaults() {
+ if (!browser || isLauncherProbe(window)) return true;
+ return await preferencesReset.ensure();
+}
 
 export async function resetConnectionSettings() {
+ await ensureSettingsDefaults();
 	await connectionReset?.ensure();
 	await restoreConnectionDefaults({
 		store, legacyStorage: () => window.localStorage, sessionStorage: () => window.sessionStorage,
@@ -67,8 +101,12 @@ export function onSettingChange(key, callback) {
  */
 export async function loadSetting(key, fallback, migrate = (raw) => raw) {
 	if (!browser || !store || resetInProgress()) return fallback;
+	const preferencesReady = await ensureSettingsDefaults();
+	if (resetInProgress()) return fallback;
+	if (!preferencesReady && isPreference(key)) return structuredClone(preferencesDefaults[key]);
 	if (isConnectionSetting(key)) {
 		if (!await connectionReset.ensure()) return connectionDefaults[key];
+		await relayOrder.ensure();
 		if (resetInProgress()) return fallback;
 	}
 
@@ -108,7 +146,11 @@ export async function saveSetting(key, value) {
 	// rejections here (quota exceeded, IndexedDB blocked) instead of leaking an
 	// unhandled promise rejection.
 	try {
-		if (isConnectionSetting(key)) await connectionReset.ensure();
+		if (!await ensureSettingsDefaults()) return;
+		if (isConnectionSetting(key)) {
+			await connectionReset.ensure();
+			await relayOrder.ensure();
+		}
 		if (resetInProgress()) return;
 		await store.setItem(key, value);
 		if (resetInProgress()) return;

@@ -1,5 +1,13 @@
 [
 	{
+		"name": "Cloud Desktop",
+		"url": "https://relay.velora.uno/desktop/",
+		"image": "apps/cloud-desktop.svg",
+		"genre": "Utilities",
+		"type": "direct",
+		"subtitle": "Linux desktop · Access code required"
+	},
+	{
 		"name": "Roblox",
 		"url": "/roblox/",
 		"image": "apps/roblox.svg",
