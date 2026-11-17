@@ -24,7 +24,7 @@
 	let z = $state(1);
 	let minimizedStat = $state(false);
 	let rightSplit = $state(false);
-	let taskbarHeight = $state(70);
+	let taskbarHeight = $state(64);
 	let windowElement;
 	let appFrame;
 	let fullscreenError = $state('');
@@ -191,7 +191,7 @@
 	let maximizedStat = $state(false);
 	export async function updateTaskbarHeight(dockSize) {
 		const size = dockSize ?? await loadSetting('navbarsize', 24);
-		taskbarHeight = 46 + (Number(size) || 0);
+		taskbarHeight = 56 + (Number(size) || 0);
 		if (mounted) checkBoundaries();
 	}
 	export function openBrowserSearch(query) {

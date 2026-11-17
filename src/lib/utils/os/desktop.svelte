@@ -714,7 +714,7 @@
 	}}
 />
 
-<div class="velora-desktop glass-desktop" class:fullscreen style:--dock-height={`${30 + navSizeMulti}px`}
+<div class="velora-desktop glass-desktop" class:fullscreen style:--dock-height={`${40 + navSizeMulti}px`}
 	style:--glass-blur={`${Math.round(glassStrength * 0.4)}px`}
 	style:--glass-opacity={0.96 - glassStrength * 0.0044}
 	style:--glass-border={0.12 + glassStrength * 0.0018}
@@ -1075,7 +1075,7 @@
 				e.stopPropagation();
 				launcherSearch = '';
 				launcherOpen = !launcherOpen;
-			}}><span class="dock-visual"><Icon name="apps" size={18} /></span><span class="dock-tooltip">All apps</span></button></div>
+			}}><span class="dock-visual"><Icon name="apps" size={21} /></span><span class="dock-tooltip">All apps</span></button></div>
 		<span class="dock-divider"></span>
 		<div class="dock-apps" class:many-apps={apps.length > 8} oncontextmenu={(e) => openMenu(e, 'navBar')}>
 			{#each apps as app (app.id)}
@@ -1102,7 +1102,7 @@
 					onmouseenter={(e) => hoverStart(e, app.id)}
 					onmouseleave={hoverEnd}
 				>
-					<span class="dock-visual"><AppIcon {app} dock size={Math.round(14 + navSizeMulti * 0.75)} /></span><span class="dock-tooltip"
+					<span class="dock-visual"><AppIcon {app} size={Math.round(25 + navSizeMulti * 0.55)} /></span><span class="dock-tooltip"
 						>{app.name}</span
 					><span class="dock-indicator"></span>
 				</button></div>
@@ -1114,7 +1114,7 @@
 			onclick={personalize}
 			aria-label="Change wallpaper"
 			title="Change wallpaper"
-			><span class="dock-visual"><Icon name="desktop" size={18} /></span><span class="dock-tooltip">Wallpaper</span></button></div>
+			><span class="dock-visual"><Icon name="desktop" size={21} /></span><span class="dock-tooltip">Wallpaper</span></button></div>
 	</DesktopDock>
 
 	{#if dragging}<div class="dock-resize-shield" aria-hidden="true"></div>{/if}
