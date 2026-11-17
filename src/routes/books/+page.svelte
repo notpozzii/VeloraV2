@@ -1,7 +1,7 @@
 <!-- The game catalog integration originated in Endis. Velora's library interface is maintained here. -->
 <script lang="ts">
 	import type { Game } from '$lib/books/types';
-	import { collectTags, formatTag, TOP_GAME_IDS } from '$lib/books/catalog';
+	import { collectTags, formatTag } from '$lib/books/catalog';
 	import { favorites } from '$lib/books/favorites.svelte';
 	import { trackVisit } from '$lib/books/history';
 	import { intersect } from '$lib/books/intersect';
@@ -17,7 +17,6 @@
 	let sort = $state('az');
 	let displayedCount = $state(48);
 	let activeGame = $state<Game | null>(null);
-	const topGameOrder = new Map(TOP_GAME_IDS.map((id, index) => [id, index]));
 	const categories = $derived(
 		collectTags(data.games).map((id) => ({
 			id,
@@ -35,8 +34,6 @@
 				(collection !== 'saved' || favorites.has(game.id))
 		);
 		return games.sort((a, b) => {
-			const topOrder = (topGameOrder.get(a.id) ?? TOP_GAME_IDS.length) - (topGameOrder.get(b.id) ?? TOP_GAME_IDS.length);
-			if (topOrder) return topOrder;
 			const favoriteOrder = Number(favorites.has(b.id)) - Number(favorites.has(a.id));
 			if (favoriteOrder) return favoriteOrder;
 			return sort === 'za'

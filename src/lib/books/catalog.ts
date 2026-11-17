@@ -21,21 +21,6 @@ function fromRoot(path: string): string {
 // Upstream source for refreshing catalog.json, not a page-load dependency.
 export const CATALOG_URL = fromRoot('gmes.json');
 
-export const TOP_GAME_IDS = ['baseball-irish', 'kickball-irish'];
-const topGames: Game[] = [{
-	id: TOP_GAME_IDS[0],
-	name: 'baseball.irish',
-	thumb: '/game-covers/baseball-irish.svg',
-	url: 'https://baseball.irish/',
-	tags: ['sports']
-}, {
-	id: TOP_GAME_IDS[1],
-	name: 'kickball.irish',
-	thumb: '/game-covers/kickball-irish.svg',
-	url: 'https://kickball.irish/',
-	tags: ['sports']
-}];
-
 interface RawGame {
 	file_name?: string;
 	title?: string;
@@ -85,7 +70,7 @@ export function normalize(raw: RawGame[]): Game[] {
 // The list ships with Velora. A failed connection to the game host must not
 // prevent the library opening; only launching games needs that connection.
 export async function loadCatalog(): Promise<Game[]> {
-	return [...topGames, ...normalize(bundledCatalog).filter((game) => !topGames.some((top) => game.id === top.id || game.url === top.url))];
+	return normalize(bundledCatalog);
 }
 
 export function collectTags(games: Game[]): string[] {
