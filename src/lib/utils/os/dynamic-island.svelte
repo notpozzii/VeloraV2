@@ -207,7 +207,7 @@
 
 <style>
 	.desktop-top-controls {
-		--island-width: min(248px, calc(100vw - 136px));
+		--island-width: min(208px, calc(100vw - 136px));
 		position: absolute;
 		top: max(12px, env(safe-area-inset-top));
 		left: 50%;
@@ -243,7 +243,7 @@
 	.island-brand { display: grid; place-items: center; width: 40px; height: 38px; flex: none; border-radius: 50%; }
 	.island-brand img { display: block; width: 32px; height: 32px; max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
 	.island-brand:hover { background: #ffffff0b; }
-	.island-toggle { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; height: 38px; padding: 0 3px 0 5px; border: 0; border-radius: 19px; background: transparent; text-align: left; }
+	.island-toggle { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 38px; padding: 0 3px 0 5px; border: 0; border-radius: 19px; background: transparent; text-align: left; }
 	.island-toggle:hover .island-chevron { color: #d3e5b0; }
 	.desktop-search-anchor { position: absolute; top: 0; left: calc(var(--island-width) + 10px); z-index: 10001; width: 46px; height: 46px; color: #f2f4ed; }
 	.desktop-search-anchor.obscured { opacity: 0; visibility: hidden; pointer-events: none; }
