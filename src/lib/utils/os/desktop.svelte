@@ -15,7 +15,7 @@
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import veloraMark from '$lib/assets/velora-mark.svg';
-	import DynamicIsland from '$lib/utils/os/dynamic-island.svelte';
+	import DesktopControls from '$lib/utils/os/desktop-controls.svelte';
 	import DesktopDock from '$lib/utils/os/desktop-dock.svelte';
 	import { createDockResize } from './dock-resize.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
@@ -83,6 +83,7 @@
 	let bgFit = $state('cover');
 	let wallpaperOpen = $state(false);
 	let glassOpen = $state(false);
+	let desktopControlsOpen = $state(false);
 	let glassStrength = $state(60);
 	let launcherOpen = $state(false);
 	let launcherSearch = $state('');
@@ -616,6 +617,7 @@
 	}
 	function toggleLauncher(event) {
 		event?.stopPropagation();
+		desktopControlsOpen = false;
 		launcherSearch = '';
 		launcherError = '';
 		launcherOpen = !launcherOpen;
@@ -714,6 +716,7 @@
 		}
 		if (e.key === 'Escape') {
 			glassOpen = false;
+			desktopControlsOpen = false;
 			closeAddApp();
 			closeMenu();
 			launcherOpen = false;
@@ -734,21 +737,6 @@
 	></div>
 	<div class="desktop-shade"></div>
 	<WeatherEffects mode={weatherMode} speed={weatherSpeed} intensity={weatherIntensity} />
-	<DynamicIsland
-		time={timeString}
-		date={dateString}
-		activity={$windowList.find((win) => win.sender === $activeSignal && !win.minimized)?.name || ''}
-		browserUrl={onlineUrl('/slate')}
-		downloadUrl={onlineUrl('/download')}
-		external={!!appOrigin}
-		{fullscreen}
-		onexpand={() => { closeMenu(); launcherOpen = false; previewOpen = false; }}
-		onglass={openGlass}
-		onwidgets={(event) => { closeMenu(); launcherOpen = false; widgetBoard?.togglePicker(event); }}
-		onfullscreen={toggleFullscreen}
-		onwallpaper={personalize}
-		onsearch={browseFromLauncher}
-	/>
 	<Notifications />
 	<main
 		class="desktop-workspace"
@@ -1056,7 +1044,7 @@
 			{/each}
 		</div>
 	{/if}
-	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || menuOpen || previewOpen || dragging}>
+	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || desktopControlsOpen || menuOpen || previewOpen || dragging}>
 		<div
 			class="navResize"
 			onmousedown={startNavResize}
@@ -1103,8 +1091,15 @@
 			{/each}
 		</div>
 		{#snippet tray()}
-			<div class="taskbar-clock" title={dateString}><span>{timeString}</span><span>{taskbarDate}</span></div>
-			<button class="taskbar-personalize" type="button" onclick={personalize} aria-label="Change wallpaper" title="Change wallpaper"><Icon name="desktop" size={18} /></button>
+			<DesktopControls
+				time={timeString} date={dateString} shortDate={taskbarDate}
+				browserUrl={onlineUrl('/slate')} downloadUrl={onlineUrl('/download')}
+				external={!!appOrigin} {fullscreen} bind:open={desktopControlsOpen}
+				onexpand={() => { closeMenu(); launcherOpen = false; previewOpen = false; }}
+				onglass={openGlass}
+				onwidgets={(event) => { closeMenu(); launcherOpen = false; widgetBoard?.togglePicker(event); }}
+				onfullscreen={toggleFullscreen} onwallpaper={personalize} onsearch={browseFromLauncher}
+			/>
 		{/snippet}
 	</DesktopDock>
 
