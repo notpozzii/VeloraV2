@@ -174,9 +174,9 @@
 	align-items: center;
 	justify-content: center;
 	padding: 4px 138px;
-	background: #20282ee0;
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
+	background: rgba(24, 32, 38, calc(var(--glass-opacity, .696) * .65));
+	backdrop-filter: blur(clamp(0px, var(--glass-blur, 24px), 32px)) saturate(var(--glass-saturation, 130%));
+	-webkit-backdrop-filter: blur(clamp(0px, var(--glass-blur, 24px), 32px)) saturate(var(--glass-saturation, 130%));
 	border: 0;
 	border-top: 1px solid #ffffff1a;
 	border-radius: 0;
