@@ -1,10 +1,9 @@
 <script>
-	import { onMount, onDestroy, tick } from 'svelte';
+	import { onDestroy, tick } from 'svelte';
 	import { dockMagnification } from './dock-magnification.js';
 	import { DEFAULT_DOCK_HOVER_STRENGTH } from './dock-settings.js';
-	let { compact = false, keepOpen = false, hoverStrength = DEFAULT_DOCK_HOVER_STRENGTH, children } = $props();
+	let { compact = false, keepOpen = false, hoverStrength = DEFAULT_DOCK_HOVER_STRENGTH, children, tray } = $props();
 	let expanded = $state(false);
-	let contentWidth = $state(0);
 	let root;
 	let content;
 	let trigger = $state(null);
@@ -12,13 +11,6 @@
 	let hovering = false;
 	const isOpen = $derived(!compact || expanded || keepOpen);
 	$effect(() => { if (!compact) expanded = false; });
-	onMount(() => {
-		const measure = () => { contentWidth = Math.ceil(content.getBoundingClientRect().width); };
-		const observer = new ResizeObserver(measure);
-		observer.observe(content);
-		measure();
-		return () => observer.disconnect();
-	});
 	onDestroy(() => clearTimeout(closeTimer));
 	function enter(event) {
 		if (event.pointerType !== 'mouse') return;
@@ -55,34 +47,35 @@
 	}}
 />
 
-<nav class="desktop-dock" class:compact class:dock-open={isOpen} aria-label="App dock" bind:this={root}
+<nav class="desktop-dock" class:compact class:dock-open={isOpen} aria-label="App taskbar" bind:this={root}
 	use:dockMagnification={{ enabled: isOpen, strength: hoverStrength }}
-	style:--dock-content-width={`${contentWidth}px`}
 	onpointerenter={enter} onpointerleave={leave}
 	onfocusout={(event) => { if (!root?.contains(event.relatedTarget)) scheduleClose(); }}>
 	{#if compact}
 		<button class="dock-compact-trigger" type="button" bind:this={trigger} onclick={open}
-			aria-label="Expand app dock" aria-expanded={isOpen} aria-controls="desktop-dock-content"
-			aria-hidden={isOpen} inert={isOpen} title="Apps">
+			aria-label="Show taskbar" aria-expanded={isOpen} aria-controls="desktop-dock-content"
+			aria-hidden={isOpen} inert={isOpen} title="Show taskbar">
 			<span class="dock-grip" aria-hidden="true"></span>
 		</button>
 	{/if}
 	<div class="dock-content" id="desktop-dock-content" bind:this={content} inert={!isOpen} aria-hidden={!isOpen}>
 		{@render children()}
 	</div>
+	{#if tray}<div class="taskbar-tray" inert={!isOpen} aria-hidden={!isOpen}>{@render tray()}</div>{/if}
 </nav>
 
 <style>
-	.desktop-dock { --dock-padding: 10px; --dock-viewport-gap: 28px; }
-	.dock-content { display: flex; align-items: center; gap: 8px; width: max-content; min-width: 0; max-width: calc(100vw - var(--dock-viewport-gap) - var(--dock-padding) - var(--dock-padding) - 2px); height: calc(var(--dock-height) - 14px); }
-	.desktop-dock.compact { width: calc(var(--dock-content-width) + var(--dock-padding) + var(--dock-padding) + 2px); transition: width 360ms cubic-bezier(.22,1,.36,1), height 360ms cubic-bezier(.22,1,.36,1), border-radius 360ms; }
-	.compact .dock-content { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); opacity: 1; visibility: visible; transition: opacity 160ms ease 100ms, visibility 0s; }
-	.desktop-dock.compact:not(.dock-open) { width: 156px; height: 26px; padding: 0; border-radius: 14px; }
-	.compact:not(.dock-open) .dock-content { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 90ms ease, visibility 0s linear 100ms; }
-	.dock-compact-trigger { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; width: 100%; padding: 0 15px; border: 0; border-radius: inherit; background: transparent; color: var(--os-text); cursor: pointer; transition: opacity 100ms ease 100ms; }
-	.dock-compact-trigger::before { content: ''; position: absolute; inset: -9px -6px; }
-	.dock-grip { width: 48px; height: 3px; flex: none; border-radius: 3px; background: var(--os-accent); opacity: .35; }
-	.dock-open .dock-compact-trigger { opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 80ms ease; }
-	@media(max-width:480px) { .desktop-dock { --dock-padding: 6px; --dock-viewport-gap: 16px; } .dock-content { gap: 3px; } }
-	@media(prefers-reduced-motion:reduce) { .desktop-dock.compact,.compact .dock-content,.dock-compact-trigger { transition: none; } }
+	.desktop-dock { --taskbar-side-space: 138px; }
+	.dock-content { display: flex; align-items: center; gap: 4px; width: max-content; min-width: 0; max-width: calc(100vw - var(--taskbar-side-space) * 2); height: calc(var(--dock-height) - 8px); }
+	.desktop-dock.compact { width: 100%; transition: height 220ms cubic-bezier(.22,1,.36,1); }
+	.compact .dock-content { opacity: 1; visibility: visible; transition: opacity 120ms ease 80ms; }
+	.desktop-dock.compact:not(.dock-open) { height: 3px; padding-top: 0; padding-bottom: 0; border: 0; }
+	.compact:not(.dock-open) :is(.dock-content, .taskbar-tray) { opacity: 0; visibility: hidden; pointer-events: none; }
+	.dock-compact-trigger { position: absolute; inset: 0; width: 100%; padding: 0; border: 0; background: transparent; cursor: pointer; }
+	.dock-compact-trigger::before { content: ''; position: absolute; inset: -12px 0 0; }
+	.dock-grip { display: block; width: 56px; height: 3px; margin: auto; border-radius: 2px; background: var(--os-accent); opacity: .6; }
+	.dock-open .dock-compact-trigger { opacity: 0; visibility: hidden; pointer-events: none; }
+	.taskbar-tray { position: absolute; right: 10px; top: 0; bottom: 0; display: flex; align-items: center; gap: 10px; }
+	@media(max-width:760px) { .desktop-dock { --taskbar-side-space: 8px; } .taskbar-tray { display: none; } }
+	@media(prefers-reduced-motion:reduce) { .desktop-dock.compact,.compact .dock-content { transition: none; } }
 </style>

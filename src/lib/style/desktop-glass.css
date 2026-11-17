@@ -5,7 +5,6 @@
 .velora-desktop.glass-desktop .dynamic-island,
 .velora-desktop.glass-desktop .desktop-search-surface,
 .velora-desktop.glass-desktop .desktop-search-trigger,
-.velora-desktop.glass-desktop .desktop-dock,
 .velora-desktop.glass-desktop .desktop-command,
 .velora-desktop.glass-desktop .app-launcher,
 .velora-desktop.glass-desktop .contextMenu,
@@ -39,8 +38,10 @@
 	box-shadow: inset 0 1px 0 rgba(255, 255, 255, var(--glass-shine, 0.09));
 }
 
-.velora-desktop.glass-desktop .dock-apps:not(.many-apps) {
-	overflow: visible;
+@media (min-width: 761px) {
+	.velora-desktop.glass-desktop .dock-apps:not(.many-apps) {
+		overflow: visible;
+	}
 }
 
 .velora-desktop .glass-settings {

@@ -14,6 +14,7 @@
 	import { isLauncherProbe } from '$lib/utils/launcher-ready.js';
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
+	import veloraMark from '$lib/assets/velora-mark.svg';
 	import DynamicIsland from '$lib/utils/os/dynamic-island.svelte';
 	import DesktopDock from '$lib/utils/os/desktop-dock.svelte';
 	import { createDockResize } from './dock-resize.js';
@@ -61,6 +62,7 @@
 	let hoverTimeout = null;
 	let timeString = $state('');
 	let dateString = $state('');
+	let taskbarDate = $state('');
 	let weatherMode = $state('off');
 	let weatherSpeed = $state(1);
 	let weatherIntensity = $state(60);
@@ -535,6 +537,7 @@
 		const now = new Date();
 		timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 		dateString = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+		taskbarDate = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' });
 	}
 
 	onMount(() => {
@@ -714,7 +717,7 @@
 	}}
 />
 
-<div class="velora-desktop glass-desktop" class:fullscreen style:--dock-height={`${40 + navSizeMulti}px`}
+<div class="velora-desktop glass-desktop" class:fullscreen style:--dock-height={`${24 + navSizeMulti}px`}
 	style:--glass-blur={`${Math.round(glassStrength * 0.4)}px`}
 	style:--glass-opacity={0.96 - glassStrength * 0.0044}
 	style:--glass-border={0.12 + glassStrength * 0.0018}
@@ -1075,7 +1078,8 @@
 				e.stopPropagation();
 				launcherSearch = '';
 				launcherOpen = !launcherOpen;
-			}}><span class="dock-visual"><Icon name="apps" size={21} /></span><span class="dock-tooltip">All apps</span></button></div>
+			}}><span class="dock-visual"><img class="taskbar-start-logo" src={veloraMark} alt="" /></span><span class="dock-tooltip">Start</span></button></div>
+		<button class="taskbar-search" type="button" aria-label="Search apps or the web" onclick={toggleLauncher}><Icon name="search" size={17} /><span>Search</span></button>
 		<span class="dock-divider"></span>
 		<div class="dock-apps" class:many-apps={apps.length > 8} oncontextmenu={(e) => openMenu(e, 'navBar')}>
 			{#each apps as app (app.id)}
@@ -1102,19 +1106,16 @@
 					onmouseenter={(e) => hoverStart(e, app.id)}
 					onmouseleave={hoverEnd}
 				>
-					<span class="dock-visual"><AppIcon {app} size={Math.round(25 + navSizeMulti * 0.55)} /></span><span class="dock-tooltip"
+					<span class="dock-visual"><AppIcon {app} size={Math.round(12 + navSizeMulti * 0.75)} /></span><span class="dock-tooltip"
 						>{app.name}</span
 					><span class="dock-indicator"></span>
 				</button></div>
 			{/each}
 		</div>
-		<span class="dock-divider"></span>
-		<div class="dock-wave-item"><button
-			class="dock-personalize"
-			onclick={personalize}
-			aria-label="Change wallpaper"
-			title="Change wallpaper"
-			><span class="dock-visual"><Icon name="desktop" size={21} /></span><span class="dock-tooltip">Wallpaper</span></button></div>
+		{#snippet tray()}
+			<div class="taskbar-clock" title={dateString}><span>{timeString}</span><span>{taskbarDate}</span></div>
+			<button class="taskbar-personalize" type="button" onclick={personalize} aria-label="Change wallpaper" title="Change wallpaper"><Icon name="desktop" size={18} /></button>
+		{/snippet}
 	</DesktopDock>
 
 	{#if dragging}<div class="dock-resize-shield" aria-hidden="true"></div>{/if}
