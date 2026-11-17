@@ -799,21 +799,24 @@
 				};
 			}}
 		>
+			<div class="launcher-top">
+				<div class="start-brand"><img src={veloraMark} alt="" /><span>velora</span></div>
+				<button class="launcher-close" type="button" onclick={() => (launcherOpen = false)} aria-label="Close Start menu"><Icon name="close" size={17} /></button>
+			</div>
 			<div class="launcher-search-row">
 				<label class="launcher-search"><Icon name="search" size={17} /><input
 					placeholder="Search apps and the web" aria-label="Search apps or the web"
 					bind:value={launcherSearch} onkeydown={submitLauncher} disabled={launcherBusy}
 					oninput={() => (launcherError = '')} /></label>
-				<button class="launcher-close" type="button" onclick={() => (launcherOpen = false)} aria-label="Close Start menu"><Icon name="close" size={16} /></button>
 			</div>
 			<div class="launcher-heading">
-				<h2>{launcherQuery ? 'Search results' : 'Pinned'}</h2>
+				<h2>{launcherQuery ? 'Search results' : 'Your apps'}</h2>
 				<button type="button" onclick={() => launchSystemApp(4)} disabled={!hydrated || launcherBusy}>All apps<Icon name="forward" size={13} /></button>
 			</div>
-			<div class="launcher-grid" class:searching={!!launcherQuery} aria-label={launcherQuery ? 'Search results' : 'Pinned apps'}>
+			<div class="launcher-grid" class:searching={!!launcherQuery} aria-label={launcherQuery ? 'Search results' : 'Your apps'}>
 				{#each filteredApps as app (app.id)}
 					<button onclick={() => launchApp(app)} disabled={!hydrated || launcherBusy} title={app.name}>
-						<AppIcon {app} size={40} />
+						<AppIcon {app} size={42} />
 						<span class="launcher-app-copy"><strong>{app.name}</strong>{#if launcherQuery}<small>{appDetails[app.id] || 'Custom app'}</small>{/if}</span>
 					</button>
 				{/each}
@@ -849,10 +852,9 @@
 			{/if}
 			{#if launcherError}<p class="launcher-error" role="alert">{launcherError}</p>{/if}
 			<div class="launcher-footer">
-				<div class="start-brand"><img src={veloraMark} alt="" /><span>Velora</span></div>
 				<div class="start-actions">
+					<button type="button" onclick={personalize} aria-label="Personalize desktop"><Icon name="desktop" size={17} /><span>Personalize</span></button>
 					<button type="button" onclick={() => launchSystemApp(5)} disabled={!hydrated} aria-label="Open Settings"><Icon name="settings" size={17} /><span>Settings</span></button>
-					<button type="button" onclick={personalize} aria-label="Personalize desktop" title="Personalize desktop"><Icon name="desktop" size={18} /></button>
 				</div>
 			</div>
 		</dialog>
