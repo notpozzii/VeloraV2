@@ -174,36 +174,19 @@
 	align-items: center;
 	justify-content: center;
 	padding: 4px 138px;
-	background:
-		linear-gradient(180deg, #ffffff1f, #ffffff05 46%, #ffffff0b),
-		rgba(12, 22, 29, calc(var(--glass-opacity, .696) * .48));
-	backdrop-filter: blur(clamp(0px, var(--glass-blur, 24px), 24px)) saturate(175%);
-	-webkit-backdrop-filter: blur(clamp(0px, var(--glass-blur, 24px), 24px)) saturate(175%);
+	background: #20282ee0;
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
 	border: 0;
-	border-top: 1px solid #ffffff66;
+	border-top: 1px solid #ffffff1a;
 	border-radius: 0;
-	box-shadow: inset 0 1px 0 #ffffff2b, inset 0 -1px 0 #ffffff14, 0 -6px 24px #06101826;
+	box-shadow: none;
 }
-.velora-desktop .desktop-dock::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	z-index: -1;
-	border-radius: inherit;
-	pointer-events: none;
-	background: linear-gradient(115deg, transparent 12%, #ffffff12 24%, transparent 38%, transparent 72%, #ffffff0a 86%, transparent);
-	opacity: .65;
-	transition: opacity 180ms ease;
-}
-.velora-desktop .desktop-dock:hover::before { opacity: 1; }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
 	.velora-desktop .desktop-dock { background: #202a32f0; }
 }
 @media (prefers-contrast: more) {
 	.velora-desktop .desktop-dock { background: #17212aeb; border-top-color: #ffffff80; }
-}
-@media (prefers-reduced-motion: reduce) {
-	.velora-desktop .desktop-dock::before { transition: none; }
 }
 .velora-desktop .navResize {
 	position: absolute;
