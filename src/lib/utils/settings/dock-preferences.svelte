@@ -51,12 +51,12 @@
 
 <div class="settings-card dock-preferences">
 	<div class="setting-row">
-		<div class="setting-copy"><h2>Compact dock</h2><p>Keep the dock small and expand it on hover. You can also tap to open it.</p></div>
-		<button class="setting-switch" type="button" role="switch" aria-label="Compact dock" aria-checked={compact}
+		<div class="setting-copy"><h2>Compact taskbar</h2><p>Hide the taskbar until you hover at the bottom of the screen. You can also tap the bottom edge.</p></div>
+		<button class="setting-switch" type="button" role="switch" aria-label="Compact taskbar" aria-checked={compact}
 			disabled={!ready || saving} onclick={toggle}><span></span></button>
 	</div>
 	<div class="setting-row hover-strength-row">
-		<div class="setting-copy"><h2><label for="dock-hover-strength">Dock animation strength</label></h2><p>Adjust how much icons grow and rise on hover. Set to 0% to turn it off.</p></div>
+		<div class="setting-copy"><h2><label for="dock-hover-strength">Taskbar animation strength</label></h2><p>Adjust how much icons grow and rise on hover. Set to 0% to turn it off.</p></div>
 		<div class="hover-strength-control">
 			<output for="dock-hover-strength">{strength}%</output>
 			<input id="dock-hover-strength" type="range" min="0" max="100" step="1" value={strength}
