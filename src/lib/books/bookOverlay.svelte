@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Game } from './types';
+	import { GAMES_BASE } from './config';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
 
 	let { game, onclose }: { game: Game | null; onclose: () => void } = $props();
@@ -9,7 +10,7 @@
 	const src = $derived.by(() => {
 		if (!game) return '';
 		if (!proxied) return game.url;
-		const url = encodeURIComponent(new URL(game.url, 'https://gtest.5.188.124.68.nip.io/').href);
+		const url = encodeURIComponent(new URL(game.url, GAMES_BASE).href);
 		return `/api?url=${url}&type=glass&transport=libcurlRaw&autoSW=true`;
 	});
 	$effect(() => { if (game) recordActivity('app-open', { target: src }); });

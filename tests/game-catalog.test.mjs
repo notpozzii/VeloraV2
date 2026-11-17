@@ -30,7 +30,7 @@ test('the packaged catalog keeps game URLs, tags and stable favorite IDs', async
   assert.equal(new Set(games.map(game => game.id)).size, games.length);
   const game = games.find(game => game.name === '10 Minutes Till Dawn');
   assert.equal(game.id, '10-minutes-till-dawn');
-  assert.equal(game.url, 'https://gtest.5.188.124.68.nip.io/books/gmes/10-minutes-till-dawn/index.html');
+  assert.equal(game.url, 'https://galxy.it.com/books/gmes/10-minutes-till-dawn/index.html');
   assert.ok(game.tags.includes('shooter'));
   assert.ok(games.every(game => game.name && game.id && Array.isArray(game.tags)));
 });
