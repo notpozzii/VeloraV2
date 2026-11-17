@@ -65,8 +65,8 @@
 </nav>
 
 <style>
-	.desktop-dock { --taskbar-side-space: 138px; }
-	.dock-content { display: flex; align-items: center; gap: 4px; width: max-content; min-width: 0; max-width: calc(100vw - var(--taskbar-side-space) * 2); height: calc(var(--dock-height) - 8px); }
+	.desktop-dock { --taskbar-tray-space: 138px; }
+	.dock-content { display: flex; align-items: center; gap: 4px; width: max-content; min-width: 0; max-width: 100%; height: calc(var(--dock-height) - 8px); }
 	.desktop-dock.compact { width: 100%; transition: height 220ms cubic-bezier(.22,1,.36,1); }
 	.compact .dock-content { opacity: 1; visibility: visible; transition: opacity 120ms ease 80ms; }
 	.desktop-dock.compact:not(.dock-open) { height: 3px; padding-top: 0; padding-bottom: 0; border: 0; }
@@ -76,6 +76,6 @@
 	.dock-grip { display: block; width: 56px; height: 3px; margin: auto; border-radius: 2px; background: var(--os-accent); opacity: .6; }
 	.dock-open .dock-compact-trigger { opacity: 0; visibility: hidden; pointer-events: none; }
 	.taskbar-tray { position: absolute; right: 10px; top: 0; bottom: 0; display: flex; align-items: center; gap: 10px; }
-	@media(max-width:760px) { .desktop-dock { --taskbar-side-space: 8px; } .taskbar-tray { display: none; } }
+	@media(max-width:760px) { .desktop-dock { --taskbar-tray-space: 88px; } .taskbar-tray { right: 8px; } .taskbar-tray :global(.taskbar-personalize) { display: none; } }
 	@media(prefers-reduced-motion:reduce) { .desktop-dock.compact,.compact .dock-content { transition: none; } }
 </style>
