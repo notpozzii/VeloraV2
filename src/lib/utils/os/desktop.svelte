@@ -610,6 +610,10 @@
 		launcherOpen = false;
 		openWindow(app.url, app.name, app.height, app.width, app.top, app.left, app.id);
 	}
+	function launchSystemApp(id) {
+		const app = baseApps.find((entry) => entry.id === id);
+		if (app) launchApp(app);
+	}
 	function toggleLauncher(event) {
 		event?.stopPropagation();
 		launcherSearch = '';
@@ -781,8 +785,9 @@
 	{#if launcherOpen}
 		<dialog
 			class="app-launcher"
+			id="velora-start-menu"
 			aria-modal="true"
-			aria-label="App launcher"
+			aria-label="Start menu"
 			onclose={() => (launcherOpen = false)}
 			onclick={(e) => {
 				e.stopPropagation();
@@ -806,42 +811,32 @@
 				};
 			}}
 		>
-			<div class="launcher-heading">
-				<div>
-					<h2>Apps and search</h2>
-				</div>
-				<button
-					class="menubar-icon"
-					onclick={() => (launcherOpen = false)}
-					aria-label="Close app launcher"><Icon name="close" size={18} /></button
-				>
+			<div class="launcher-search-row">
+				<label class="launcher-search"><Icon name="search" size={17} /><input
+					placeholder="Search apps and the web" aria-label="Search apps or the web"
+					bind:value={launcherSearch} onkeydown={submitLauncher} disabled={launcherBusy}
+					oninput={() => (launcherError = '')} /></label>
+				<button class="launcher-close" type="button" onclick={() => (launcherOpen = false)} aria-label="Close Start menu"><Icon name="close" size={16} /></button>
 			</div>
-			<label class="launcher-search"
-				><Icon name="search" size={19} /><input
-					placeholder="Search apps or enter a URL"
-					aria-label="Search apps or the web"
-					bind:value={launcherSearch}
-					onkeydown={submitLauncher}
-					disabled={launcherBusy}
-					oninput={() => (launcherError = '')}
-					{@attach (node) => {
-						node.focus();
-					}}
-				/><kbd>ESC</kbd></label
-			>
-			{#if filteredApps.length}
-				<div class="launcher-grid" aria-label="Matching apps">
-					{#each filteredApps as app (app.id)}
-						<button onclick={() => launchApp(app)} disabled={!hydrated || launcherBusy}>
-							<AppIcon {app} size={46} /><span class="launcher-app-copy"
-								><strong>{app.name}</strong><small
-									>{appDetails[app.id] || 'Your own corner of the web'}</small
-								></span
-							><Icon name="arrow" size={16} />
-						</button>
-					{/each}
-				</div>
-			{/if}
+			<div class="launcher-heading">
+				<h2>{launcherQuery ? 'Search results' : 'Pinned'}</h2>
+				<button type="button" onclick={() => launchSystemApp(4)} disabled={!hydrated || launcherBusy}>All apps<Icon name="forward" size={13} /></button>
+			</div>
+			<div class="launcher-grid" class:searching={!!launcherQuery} aria-label={launcherQuery ? 'Search results' : 'Pinned apps'}>
+				{#each filteredApps as app (app.id)}
+					<button onclick={() => launchApp(app)} disabled={!hydrated || launcherBusy} title={app.name}>
+						<AppIcon {app} size={40} />
+						<span class="launcher-app-copy"><strong>{app.name}</strong>{#if launcherQuery}<small>{appDetails[app.id] || 'Custom app'}</small>{/if}</span>
+					</button>
+				{/each}
+				{#if !launcherQuery}
+					<button class="launcher-add-app" type="button" onclick={() => { launcherOpen = false; openAddApp(); }} disabled={!hydrated}>
+						<span class="start-add-icon"><Icon name="plus" size={22} /></span><span class="launcher-app-copy"><strong>Add app</strong></span>
+					</button>
+				{:else if !filteredApps.length}
+					<p class="no-apps">No matching apps.</p>
+				{/if}
+			</div>
 			{#if launcherQuery}
 				<button
 					class="launcher-web-result"
@@ -866,12 +861,11 @@
 			{/if}
 			{#if launcherError}<p class="launcher-error" role="alert">{launcherError}</p>{/if}
 			<div class="launcher-footer">
-				<button
-					onclick={() => {
-						launcherOpen = false;
-						openAddApp();
-					}}><Icon name="plus" size={15} />Add your own app</button
-				><button onclick={personalize}><Icon name="settings" size={15} />Personalize</button>
+				<div class="start-brand"><img src={veloraMark} alt="" /><span>Velora</span></div>
+				<div class="start-actions">
+					<button type="button" onclick={() => launchSystemApp(5)} disabled={!hydrated} aria-label="Open Settings"><Icon name="settings" size={17} /><span>Settings</span></button>
+					<button type="button" onclick={personalize} aria-label="Personalize desktop" title="Personalize desktop"><Icon name="desktop" size={18} /></button>
+				</div>
 			</div>
 		</dialog>
 	{/if}
@@ -1072,13 +1066,10 @@
 		<div class="dock-wave-item"><button
 			class="dock-launcher"
 			class:active={launcherOpen}
-			aria-label="Open app launcher"
+			aria-label="Open Start menu"
+			aria-controls="velora-start-menu"
 			aria-expanded={launcherOpen}
-			onclick={(e) => {
-				e.stopPropagation();
-				launcherSearch = '';
-				launcherOpen = !launcherOpen;
-			}}><span class="dock-visual"><img class="taskbar-start-logo" src={veloraMark} alt="" /></span><span class="dock-tooltip">Start</span></button></div>
+			onclick={toggleLauncher}><span class="dock-visual"><img class="taskbar-start-logo" src={veloraMark} alt="" /></span><span class="dock-tooltip">Start</span></button></div>
 		<span class="dock-divider"></span>
 		<div class="dock-apps" class:many-apps={apps.length > 8} oncontextmenu={(e) => openMenu(e, 'navBar')}>
 			{#each apps as app (app.id)}
