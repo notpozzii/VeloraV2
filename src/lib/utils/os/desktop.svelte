@@ -73,7 +73,7 @@
 		2: 'Game library',
 		4: 'App library',
 		7: 'Watch short videos',
-		8: 'Play Roblox in a new tab',
+		8: 'Play Roblox',
 		5: 'Settings'
 	};
 	const filteredApps = $derived(
@@ -302,13 +302,7 @@
 		}
 		return false;
 	}
-	function openRobloxTab() {
-		window.open(onlineUrl('/roblox/'), '_blank', 'noopener,noreferrer');
-		previewOpen = false;
-		closeMenu();
-	}
 	function openWindow(url, name, height, width, top, left, appId) {
-		if (appId === 8) { openRobloxTab(); return; }
 		try {
 			if (localStorage.getItem('firstVisit') !== 'false') {
 				localStorage.setItem('firstVisit', 'false');
@@ -362,7 +356,6 @@
 	}
 
 	function openNewWindow(url, name, height, width, top, left, appId) {
-		if (appId === 8) { openRobloxTab(); return; }
 		let uniqueSender = `${appId}-${Date.now()}`;
 		let newName = String(name) + ' (' + getAppWindows(appId).length + ')';
 		name = newName;
@@ -897,7 +890,7 @@
 							menuSender.appId
 						)}
 				>
-					{menuSender.appId === 8 ? 'Open in New Tab' : 'Open New Window'}
+					Open New Window
 				</button>
 				{#if isCustomApp(menuSender.appId)}
 					<button class="menuOption danger" onclick={() => removeApp(menuSender.appId)}>
