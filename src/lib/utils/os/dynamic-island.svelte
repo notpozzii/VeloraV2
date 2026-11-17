@@ -207,7 +207,7 @@
 
 <style>
 	.desktop-top-controls {
-		--island-width: min(248px, calc(100vw - 136px));
+		--island-width: min(216px, calc(100vw - 136px));
 		position: absolute;
 		top: max(12px, env(safe-area-inset-top));
 		left: 50%;
@@ -229,7 +229,7 @@
 		overflow: hidden;
 		contain: layout;
 		border: 1px solid #e9edde26;
-		border-radius: 25px;
+		border-radius: 18px;
 		background: #17271dee;
 		color: #f2f4ed;
 		box-shadow: 0 8px 26px #03080638, inset 0 1px 0 #ffffff08;
@@ -240,10 +240,10 @@
 	}
 	.dynamic-island.expanded { width: var(--island-open-width); height: 204px; border-radius: 23px; }
 	.island-summary { display: flex; align-items: center; height: 34px; padding: 0 10px 0 3px; }
-	.island-brand { display: grid; place-items: center; width: 40px; height: 32px; flex: none; border-radius: 50%; }
+	.island-brand { display: grid; place-items: center; width: 36px; height: 32px; flex: none; border-radius: 50%; }
 	.island-brand img { display: block; width: 28px; height: 28px; max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none; }
 	.island-brand:hover { background: #ffffff0b; }
-	.island-toggle { display: flex; align-items: center; gap: 11px; flex: 1; min-width: 0; height: 32px; padding: 0 3px 0 5px; border: 0; border-radius: 19px; background: transparent; text-align: left; }
+	.island-toggle { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; height: 32px; padding: 0 3px 0 5px; border: 0; border-radius: 19px; background: transparent; text-align: left; }
 	.island-toggle:hover .island-chevron { color: #d3e5b0; }
 	.desktop-search-anchor { position: absolute; top: 0; left: calc(var(--island-width) + 10px); z-index: 10001; width: 36px; height: 36px; color: #f2f4ed; }
 	.desktop-search-anchor.obscured { opacity: 0; visibility: hidden; pointer-events: none; }
