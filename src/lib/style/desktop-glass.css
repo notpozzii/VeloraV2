@@ -1,10 +1,7 @@
 .velora-desktop.glass-desktop .desktop-workspace {
-	inset: 84px 0 calc(var(--dock-height) + 36px);
+	inset: 0 0 calc(var(--dock-height) + 36px);
 }
 
-.velora-desktop.glass-desktop .dynamic-island,
-.velora-desktop.glass-desktop .desktop-search-surface,
-.velora-desktop.glass-desktop .desktop-search-trigger,
 .velora-desktop.glass-desktop .desktop-command,
 .velora-desktop.glass-desktop .contextMenu,
 .velora-desktop.glass-desktop .previewPanel,
@@ -39,10 +36,10 @@
 
 .velora-desktop .glass-settings {
 	position: fixed;
-	inset: 82px 22px auto auto;
+	inset: auto 10px calc(var(--dock-height) + 12px) auto;
 	margin: 0;
 	width: min(330px, calc(100vw - 30px));
-	max-height: calc(100dvh - 110px);
+	max-height: calc(100dvh - var(--dock-height) - 28px);
 	overflow: auto;
 	padding: 22px;
 	border-radius: 19px;
@@ -120,7 +117,8 @@
 
 @media (max-width: 480px) {
 	.velora-desktop .glass-settings {
-		top: 72px;
-		right: 15px;
+		top: auto;
+		bottom: calc(var(--dock-height) + 8px);
+		right: 8px;
 	}
 }
