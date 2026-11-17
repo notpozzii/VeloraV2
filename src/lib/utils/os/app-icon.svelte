@@ -1,12 +1,11 @@
 <script>
 	import Icon from '$lib/utils/browser/icon.svelte';
-	let { app, size = 42, dock = false } = $props();
+	let { app, size = 42 } = $props();
 	const symbols = { 1: 'globe', 2: 'games', 4: 'apps', 5: 'settings' };
 </script>
 
 <span
 	class="os-app-icon"
-	class:dock
 	class:browser={app.id === 1}
 	class:games={app.id === 2}
 	class:library={app.id === 4}
@@ -19,7 +18,7 @@
 	{#if app.id === 6}
 		<img src={app.icon} alt="" />
 	{:else if symbols[app.id]}
-		<Icon name={symbols[app.id]} size={Math.round(size * (dock ? 0.76 : 0.53))} />
+		<Icon name={symbols[app.id]} size={Math.round(size * 0.53)} />
 	{:else}
 		<img src={app.icon} alt="" />
 	{/if}
@@ -82,13 +81,4 @@
 		filter: brightness(0) saturate(100%) invert(89%) sepia(18%) saturate(529%) hue-rotate(36deg)
 			brightness(98%) contrast(91%);
 	}
-	.dock {
-		background: transparent;
-		color: #e0e3e7;
-		border-radius: 6px;
-		box-shadow: none;
-	}
-	.dock img { width: 82%; height: 82%; }
-	.dock.geforce img { filter: none; }
-	.dock.roblox img { width: 100%; height: 100%; }
 </style>

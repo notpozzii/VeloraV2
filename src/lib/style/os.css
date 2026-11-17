@@ -173,16 +173,15 @@
 	max-width: calc(100% - 28px);
 	display: flex;
 	align-items: center;
-	gap: 6px;
-	padding: 7px 8px;
-	background: #1c1d20eb;
-	backdrop-filter: blur(18px);
-	-webkit-backdrop-filter: blur(18px);
-	border: 1px solid #ffffff14;
-	border-radius: 12px;
+	gap: 8px;
+	padding: 7px 10px;
+	background: #1b241fe8;
+	backdrop-filter: blur(32px) saturate(110%);
+	border: 1px solid #f0f1de26;
+	border-radius: 18px;
 	box-shadow:
-		0 8px 24px #00000038,
-		inset 0 1px 0 #ffffff06;
+		0 10px 32px #07110a33,
+		inset 0 1px 0 #ffffff05;
 }
 .velora-desktop .navResize {
 	position: absolute;
@@ -196,7 +195,7 @@
 	display: flex;
 	height: 100%;
 	align-items: center;
-	gap: 4px;
+	gap: 5px;
 	min-width: 0;
 	overflow-x: auto;
 	overflow-y: hidden;
@@ -213,7 +212,7 @@
 	place-items: center;
 	border: 1px solid transparent;
 	background: transparent;
-	border-radius: 7px;
+	border-radius: 12px;
 	padding: 4px;
 	transition:
 		background 160ms,
@@ -221,12 +220,12 @@
 }
 .velora-desktop .dock-launcher,
 .velora-desktop .dock-personalize {
-	color: #bfc3ca;
+	color: #c9d8bc;
 }
 .velora-desktop .dock-app:hover,
 .velora-desktop .dock-launcher:hover,
 .velora-desktop .dock-personalize:hover {
-	background: #ffffff0c;
+	background: #f5f7ec09;
 	transform: translateY(-3px);
 }
 .velora-desktop .dock-wave-item {
@@ -241,7 +240,7 @@
 	bottom: var(--dock-lift, 0px);
 	width: 100%;
 	height: calc((var(--dock-height) - 14px) * var(--dock-scale, 1));
-	border-radius: calc(7px * var(--dock-scale, 1));
+	border-radius: calc(12px * var(--dock-scale, 1));
 	transform: none;
 	transition: background 160ms, border-color 160ms;
 }
@@ -258,8 +257,8 @@
 }
 .velora-desktop .dock-app.active,
 .velora-desktop .dock-launcher.active {
-	background: #ffffff09;
-	border-color: transparent;
+	background: #e6efdb10;
+	border-color: #e6efdb0d;
 }
 .velora-desktop .dock-tooltip {
 	display: block;
@@ -270,12 +269,12 @@
 	white-space: nowrap;
 	pointer-events: none;
 	opacity: 0;
-	background: #26272af5;
-	border: 1px solid #ffffff1c;
+	background: #1f2922f5;
+	border: 1px solid #e6efdb22;
 	border-radius: 6px;
-	padding: 6px 8px;
-	font-size: 11px;
-	color: #f2f3f5;
+	padding: 7px 10px;
+	font-size: 10px;
+	color: #eff1e5;
 	transition:
 		opacity 140ms,
 		transform 140ms;
@@ -297,18 +296,18 @@
 	transition: width 180ms;
 }
 .velora-desktop .dock-app.running .dock-indicator {
-	background: #9ba0a9;
+	background: #829376;
 }
 .velora-desktop .dock-app.active .dock-indicator {
 	background: var(--os-accent);
-	width: 7px;
+	width: 12px;
 }
 .velora-desktop .dock-divider {
-	height: 18px;
+	height: 25px;
 	width: 1px;
 	flex-shrink: 0;
-	background: #ffffff1c;
-	margin: 0 2px;
+	background: #edf4dd14;
+	margin: 0 3px;
 }
 .velora-desktop .app-launcher {
 	margin: 0;

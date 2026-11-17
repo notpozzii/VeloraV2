@@ -73,8 +73,8 @@
 </nav>
 
 <style>
-	.desktop-dock { --dock-padding: 8px; --dock-viewport-gap: 28px; }
-	.dock-content { display: flex; align-items: center; gap: 6px; width: max-content; min-width: 0; max-width: calc(100vw - var(--dock-viewport-gap) - var(--dock-padding) - var(--dock-padding) - 2px); height: calc(var(--dock-height) - 14px); }
+	.desktop-dock { --dock-padding: 10px; --dock-viewport-gap: 28px; }
+	.dock-content { display: flex; align-items: center; gap: 8px; width: max-content; min-width: 0; max-width: calc(100vw - var(--dock-viewport-gap) - var(--dock-padding) - var(--dock-padding) - 2px); height: calc(var(--dock-height) - 14px); }
 	.desktop-dock.compact { width: calc(var(--dock-content-width) + var(--dock-padding) + var(--dock-padding) + 2px); transition: width 360ms cubic-bezier(.22,1,.36,1), height 360ms cubic-bezier(.22,1,.36,1), border-radius 360ms; }
 	.compact .dock-content { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); opacity: 1; visibility: visible; transition: opacity 160ms ease 100ms, visibility 0s; }
 	.desktop-dock.compact:not(.dock-open) { width: 156px; height: 26px; padding: 0; border-radius: 14px; }
