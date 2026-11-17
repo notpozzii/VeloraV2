@@ -1079,7 +1079,6 @@
 				launcherSearch = '';
 				launcherOpen = !launcherOpen;
 			}}><span class="dock-visual"><img class="taskbar-start-logo" src={veloraMark} alt="" /></span><span class="dock-tooltip">Start</span></button></div>
-		<button class="taskbar-search" type="button" aria-label="Search apps or the web" onclick={toggleLauncher}><Icon name="search" size={17} /><span>Search</span></button>
 		<span class="dock-divider"></span>
 		<div class="dock-apps" class:many-apps={apps.length > 8} oncontextmenu={(e) => openMenu(e, 'navBar')}>
 			{#each apps as app (app.id)}
