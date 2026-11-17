@@ -174,19 +174,12 @@
 	align-items: center;
 	justify-content: flex-start;
 	padding: 4px var(--taskbar-tray-space, 104px) 4px 10px;
-	background: rgba(24, 32, 38, calc(var(--glass-opacity, .696) * .65));
-	backdrop-filter: blur(clamp(0px, var(--glass-blur, 24px), 32px)) saturate(var(--glass-saturation, 130%));
-	-webkit-backdrop-filter: blur(clamp(0px, var(--glass-blur, 24px), 32px)) saturate(var(--glass-saturation, 130%));
+	background: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 	border: 0;
-	border-top: 1px solid #ffffff1a;
 	border-radius: 0;
 	box-shadow: none;
-}
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-	.velora-desktop .desktop-dock { background: #202a32f0; }
-}
-@media (prefers-contrast: more) {
-	.velora-desktop .desktop-dock { background: #17212aeb; border-top-color: #ffffff80; }
 }
 .velora-desktop .navResize {
 	position: absolute;
