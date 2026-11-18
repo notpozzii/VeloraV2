@@ -66,7 +66,7 @@
 
 <style>
 	.desktop-dock { --taskbar-tray-space: 104px; }
-	.dock-content { display: flex; align-items: center; gap: 4px; width: max-content; min-width: 0; max-width: 100%; height: calc(var(--dock-height) - 8px); }
+	.dock-content { display: flex; align-items: center; gap: 4px; width: max-content; min-width: 0; max-width: 100%; height: var(--dock-height); padding: 4px 6px; }
 	.desktop-dock.compact { width: 100%; transition: height 220ms cubic-bezier(.22,1,.36,1); }
 	.compact .dock-content { opacity: 1; visibility: visible; transition: opacity 120ms ease 80ms; }
 	.desktop-dock.compact:not(.dock-open) { height: 3px; padding-top: 0; padding-bottom: 0; border: 0; }
