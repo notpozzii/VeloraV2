@@ -33,7 +33,8 @@ test('the direct SVG contains the current desktop and its hosted assets are pack
 	const document = svg.replace(/<script\b[\s\S]*?<\/script>/g, '');
 	assert.ok(!/<iframe\b/i.test(document), 'no hosted desktop wrapper');
 	assert.match(svg, /velora-svg-body/);
-	assert.match(svg, /desktop-controls-panel/);
+	assert.match(svg, /start-shortcuts/);
+	assert.doesNotMatch(svg, /taskbar-clock|desktop-controls-panel/);
 	assert.match(svg, /dock-compact-trigger/);
 	assert.doesNotMatch(svg, /Desktop runs from this file|portable-note/);
 	const script = svg.match(/<script type="application\/ecmascript"><!\[CDATA\[([\s\S]*?)\]\]><\/script>/)?.[1];

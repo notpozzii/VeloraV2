@@ -15,7 +15,7 @@
 	import mainBG from '$lib/img/bg/highlands.jpg';
 	import AppIcon from '$lib/utils/os/app-icon.svelte';
 	import veloraMark from '$lib/assets/velora-mark.svg';
-	import DesktopControls from '$lib/utils/os/desktop-controls.svelte';
+	import StartShortcuts from '$lib/utils/os/start-shortcuts.svelte';
 	import DesktopDock from '$lib/utils/os/desktop-dock.svelte';
 	import { createDockResize } from './dock-resize.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
@@ -60,9 +60,6 @@
 	let previewOpen = $state(false);
 	let previewApp = $state(null);
 	let hoverTimeout = null;
-	let timeString = $state('');
-	let dateString = $state('');
-	let taskbarDate = $state('');
 	let weatherMode = $state('off');
 	let weatherSpeed = $state(1);
 	let weatherIntensity = $state(60);
@@ -73,7 +70,6 @@
 	let bgFit = $state('cover');
 	let wallpaperOpen = $state(false);
 	let glassOpen = $state(false);
-	let desktopControlsOpen = $state(false);
 	let glassStrength = $state(60);
 	let launcherOpen = $state(false);
 	let launcherSearch = $state('');
@@ -516,13 +512,6 @@
 			previewApp = null;
 		}, 200);
 	}
-	function updateTime() {
-		const now = new Date();
-		timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-		dateString = now.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-		taskbarDate = now.toLocaleDateString([], { month: 'numeric', day: 'numeric', year: 'numeric' });
-	}
-
 	onMount(() => {
 		if (isLauncherProbe(window)) return;
 		let disposed = false;
@@ -556,8 +545,6 @@
 			weatherIntensity = weather.intensity;
 			hydrated = true;
 		});
-		updateTime();
-		const interval = setInterval(updateTime, 1000);
 		const subscriptions = [
 			onSettingChange('bg', (value) => {
 				bgURL = value || mainBG;
@@ -584,7 +571,6 @@
 		return () => {
 			disposed = true;
 			disposePanic();
-			clearInterval(interval);
 			subscriptions.forEach((unsubscribe) => unsubscribe());
 		};
 	});
@@ -595,7 +581,6 @@
 	}
 	function toggleLauncher(event) {
 		event?.stopPropagation();
-		desktopControlsOpen = false;
 		launcherSearch = '';
 		launcherError = '';
 		launcherOpen = !launcherOpen;
@@ -694,7 +679,6 @@
 		}
 		if (e.key === 'Escape') {
 			glassOpen = false;
-			desktopControlsOpen = false;
 			closeAddApp();
 			closeMenu();
 			launcherOpen = false;
@@ -816,6 +800,12 @@
 				</button>
 			{/if}
 			{#if launcherError}<p class="launcher-error" role="alert">{launcherError}</p>{/if}
+			{#if !launcherQuery}
+				<StartShortcuts {fullscreen} downloadUrl={onlineUrl('/download')} external={!!appOrigin}
+					onclose={() => (launcherOpen = false)} onbrowser={() => launchApp(getAppConfig(1))}
+					onwidgets={(event) => { closeMenu(); widgetBoard?.togglePicker(event); }}
+					onfullscreen={toggleFullscreen} onglass={openGlass} onwallpaper={personalize} />
+			{/if}
 		</dialog>
 	{/if}
 	{#if wallpaperOpen}
@@ -1005,7 +995,7 @@
 			{/each}
 		</div>
 	{/if}
-	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || desktopControlsOpen || menuOpen || previewOpen || dragging}>
+	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || menuOpen || previewOpen || dragging}>
 		<div
 			class="navResize"
 			onmousedown={startNavResize}
@@ -1051,17 +1041,6 @@
 				</button></div>
 			{/each}
 		</div>
-		{#snippet tray()}
-			<DesktopControls
-				time={timeString} date={dateString} shortDate={taskbarDate}
-				browserUrl={onlineUrl('/slate')} downloadUrl={onlineUrl('/download')}
-				external={!!appOrigin} {fullscreen} bind:open={desktopControlsOpen}
-				onexpand={() => { closeMenu(); launcherOpen = false; previewOpen = false; }}
-				onglass={openGlass}
-				onwidgets={(event) => { closeMenu(); launcherOpen = false; widgetBoard?.togglePicker(event); }}
-				onfullscreen={toggleFullscreen} onwallpaper={personalize} onsearch={browseFromLauncher}
-			/>
-		{/snippet}
 	</DesktopDock>
 
 	{#if dragging}<div class="dock-resize-shield" aria-hidden="true"></div>{/if}
