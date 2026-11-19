@@ -770,11 +770,16 @@
 			<div class="launcher-grid" aria-label={launcherQuery ? 'Search results' : 'Apps'}>
 				{#each filteredApps as app (app.id)}
 					<button onclick={() => launchApp(app)} disabled={!hydrated || launcherBusy} title={app.name}>
-						<AppIcon {app} size={36} />
+						<AppIcon {app} size={48} />
 						<span class="launcher-app-copy"><strong>{app.name}</strong></span>
 					</button>
 				{/each}
-				{#if launcherQuery && !filteredApps.length}
+				{#if !launcherQuery && apps.length === 7}
+					<button type="button" onclick={() => { launcherOpen = false; openAddApp(); }} disabled={!hydrated || launcherBusy}>
+						<span class="launcher-add-icon"><Icon name="plus" size={24} /></span>
+						<span class="launcher-app-copy"><strong>Add your app</strong></span>
+					</button>
+				{:else if launcherQuery && !filteredApps.length}
 					<p class="no-apps">No matching apps.</p>
 				{/if}
 			</div>
