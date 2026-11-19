@@ -66,16 +66,6 @@
 	let weatherMode = $state('off');
 	let weatherSpeed = $state(1);
 	let weatherIntensity = $state(60);
-	let shortcutModifier = $state('⌘');
-	const appDetails = {
-		1: 'Web browser',
-		6: 'Cloud gaming',
-		2: 'Game library',
-		4: 'App library',
-		7: 'Watch short videos',
-		8: 'Play Roblox',
-		5: 'Settings'
-	};
 	const filteredApps = $derived(
 		apps.filter((app) => app.name.toLowerCase().includes(launcherSearch.trim().toLowerCase()))
 	);
@@ -248,7 +238,6 @@
 	onMount(() => {
 		if (isLauncherProbe(window)) return;
 		applyStartupSettings();
-		shortcutModifier = /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl';
 		const syncFullscreen = () => {
 			fullscreen = !!document.fullscreenElement;
 		};
@@ -604,10 +593,6 @@
 		launcherOpen = false;
 		openWindow(app.url, app.name, app.height, app.width, app.top, app.left, app.id);
 	}
-	function launchSystemApp(id) {
-		const app = baseApps.find((entry) => entry.id === id);
-		if (app) launchApp(app);
-	}
 	function toggleLauncher(event) {
 		event?.stopPropagation();
 		desktopControlsOpen = false;
@@ -792,32 +777,20 @@
 				};
 			}}
 		>
-			<div class="launcher-top">
-				<div class="start-brand"><img src={veloraMark} alt="" /><span>velora</span></div>
-				<button class="launcher-close" type="button" onclick={() => (launcherOpen = false)} aria-label="Close Start menu"><Icon name="close" size={17} /></button>
-			</div>
 			<div class="launcher-search-row">
 				<label class="launcher-search"><Icon name="search" size={17} /><input
 					placeholder="Search apps and the web" aria-label="Search apps or the web"
 					bind:value={launcherSearch} onkeydown={submitLauncher} disabled={launcherBusy}
 					oninput={() => (launcherError = '')} /></label>
 			</div>
-			<div class="launcher-heading">
-				<h2>{launcherQuery ? 'Search results' : 'Your apps'}</h2>
-				<button type="button" onclick={() => launchSystemApp(4)} disabled={!hydrated || launcherBusy}>All apps<Icon name="forward" size={13} /></button>
-			</div>
-			<div class="launcher-grid" class:searching={!!launcherQuery} aria-label={launcherQuery ? 'Search results' : 'Your apps'}>
+			<div class="launcher-grid" aria-label={launcherQuery ? 'Search results' : 'Apps'}>
 				{#each filteredApps as app (app.id)}
 					<button onclick={() => launchApp(app)} disabled={!hydrated || launcherBusy} title={app.name}>
-						<AppIcon {app} size={42} />
-						<span class="launcher-app-copy"><strong>{app.name}</strong>{#if launcherQuery}<small>{appDetails[app.id] || 'Custom app'}</small>{/if}</span>
+						<AppIcon {app} size={36} />
+						<span class="launcher-app-copy"><strong>{app.name}</strong></span>
 					</button>
 				{/each}
-				{#if !launcherQuery}
-					<button class="launcher-add-app" type="button" onclick={() => { launcherOpen = false; openAddApp(); }} disabled={!hydrated}>
-						<span class="start-add-icon"><Icon name="plus" size={22} /></span><span class="launcher-app-copy"><strong>Add app</strong></span>
-					</button>
-				{:else if !filteredApps.length}
+				{#if launcherQuery && !filteredApps.length}
 					<p class="no-apps">No matching apps.</p>
 				{/if}
 			</div>
@@ -838,18 +811,11 @@
 								: launcherIsUrl
 									? `Go to ${launcherQuery}`
 									: `Search the web for “${launcherQuery}”`}</strong
-						><small>Open in Velora Browser</small></span
+						></span
 					>
-					<kbd>{filteredApps.length ? `${shortcutModifier} ↵` : '↵'}</kbd>
 				</button>
 			{/if}
 			{#if launcherError}<p class="launcher-error" role="alert">{launcherError}</p>{/if}
-			<div class="launcher-footer">
-				<div class="start-actions">
-					<button type="button" onclick={personalize} aria-label="Personalize desktop"><Icon name="desktop" size={17} /><span>Personalize</span></button>
-					<button type="button" onclick={() => launchSystemApp(5)} disabled={!hydrated} aria-label="Open Settings"><Icon name="settings" size={17} /><span>Settings</span></button>
-				</div>
-			</div>
 		</dialog>
 	{/if}
 	{#if wallpaperOpen}
