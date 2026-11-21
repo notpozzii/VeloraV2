@@ -28,20 +28,20 @@ function makeTransport(car, custom) {
 	return new Libcurl({ wisp });
 }
 
-export async function createPrismController(car = 'libcurl', customWisp, backupWisp) {
+export async function createPrismController(car = 'libcurl', customWisp, backupWisp, { recoverPrimary = false } = {}) {
 	if (controller) return controller;
 	if (starting) return starting;
-	starting = initialize(car, customWisp, backupWisp);
+	starting = initialize(car, customWisp, backupWisp, recoverPrimary);
 	try { return await starting; } finally { starting = null; }
 }
 
-async function initialize(car, customWisp, backupWisp) {
+async function initialize(car, customWisp, backupWisp, recoverPrimary) {
 	const [sw] = await Promise.all([
 		registerProxyWorker(),
 		loadScript('/prism/stream-transfer.js').then(() => loadScript('/prism/prism.js')).then(() => loadScript('/prism/prism.api.js')),
 		loadTransport(car)
 	]);
-	const transport = createRelayTransport(relay => makeTransport(car, relay), customWisp, { backupWisp });
+	const transport = createRelayTransport(relay => makeTransport(car, relay), customWisp, { backupWisp, recoverPrimary });
 	const { Controller, config } = window.$scramjetController;
 	config.scramjetPath = '/prism/prism.js';
 	config.injectPath = '/prism/prism.inject.js';
