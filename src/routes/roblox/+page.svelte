@@ -22,6 +22,7 @@
 	let launching = false;
 	let browserPaused = false;
 	let siteElement, engineElement, controller, channel;
+	let openingTimer;
 	let siteFrame = $state(null);
 	let network = $state(null);
 	let alive = true;
@@ -31,6 +32,7 @@
 	let savedCustomTheme = null;
 	let connectionContext = { relay: 'unknown', transport: 'unknown' };
 	const issues = $state([]);
+	const openingError = 'The Roblox connection timed out. Try again.';
 
 	function issue(text) {
 		issues.push({ time: new Date().toLocaleTimeString(), text });
@@ -39,12 +41,10 @@
 
 	async function refreshUser() {
 		if (!network || !alive) return;
-		try {
-			const next = await network.user();
-			if (!alive) return;
-			user = next;
-			return next;
-		} catch (e) { if (alive) issue(e.message || 'The sign-in check failed.'); }
+		const next = await network.user();
+		if (!alive) return;
+		user = next;
+		return next;
 	}
 
 	onMount(() => {
@@ -71,9 +71,9 @@
 			}
 			if (message?.type === 'ready') {
 				if (browserPaused) return;
-				browsing = true;
+				finishOpening();
 				if (!playing) { state = 'ready'; status = 'Browse Roblox and press Play to launch in Velora.'; }
-				void refreshUser();
+				void refreshUser().catch(e => { if (alive) issue(e.message || 'The sign-in check failed.'); });
 				return;
 			}
 			if (message?.type === 'play') { place = message.placeId; void play(); return; }
@@ -106,7 +106,7 @@
 				const [selectedCar, wisp, backupWisp] = await Promise.all([
 					loadSetting('car', 'libcurl'), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
 				]);
-				controller = await createPrismController(selectedCar === 'epoxy' ? 'epoxy' : 'libcurl', wisp || undefined, backupWisp || undefined);
+				controller = await createPrismController(selectedCar === 'epoxy' ? 'epoxy' : 'libcurl', wisp || undefined, backupWisp || undefined, { recoverPrimary: true });
 				if (!alive) return;
 				connectionContext = { relay: wisp ? 'custom' : 'default', transport: selectedCar === 'epoxy' ? 'epoxy' : 'libcurl' };
 				network = createRobloxNetwork(controller, result => {
@@ -119,17 +119,33 @@
 				// The website handles sign-in itself. Refresh the account after it
 				// opens (the ready message), rather than delaying the first page.
 				await prepareProxyFrame(siteElement, { frameUrl: '/roblox/auth.html' });
-				siteFrame.go('https://www.roblox.com/home');
-				status = 'Opening Roblox…';
+				if (alive) openBrowser('https://www.roblox.com/home');
 			} catch (e) { if (alive) { state = 'error'; error = e.message || 'Could not start the connection.'; status = 'Connection unavailable'; } }
 		})();
 		return () => window.removeEventListener('message', receive);
 	});
 
+	function openBrowser(url) {
+		clearTimeout(openingTimer);
+		status = 'Opening Roblox…';
+		siteFrame.go(url);
+		// Allow both relay attempts before offering to retry the page.
+		openingTimer = setTimeout(() => {
+			state = 'error';
+			error = openingError;
+		}, 30000);
+	}
+
+	function finishOpening() {
+		clearTimeout(openingTimer);
+		browsing = true;
+		if (error === openingError) { error = ''; state = 'ready'; }
+	}
+
 	function browserLoaded() {
 		// Show the upstream error document too if a connection fails before the
 		// Play bridge can run, instead of leaving the loading cover in place.
-		if (siteFrame && siteElement?.src.startsWith(location.origin + siteFrame.prefix)) browsing = true;
+		if (!browserPaused && siteFrame && siteElement?.src.startsWith(location.origin + siteFrame.prefix)) finishOpening();
 	}
 
 	async function play() {
@@ -141,9 +157,9 @@
 			const support = robloxPlaybackSupport(window);
 			if (!support.supported) throw new Error(support.message);
 			status = 'Checking your Roblox sign-in…';
+			error = '';
 			const signedIn = await refreshUser();
 			if (!signedIn) { error = 'Log in on Roblox, then press Play again.'; status = 'Roblox sign-in required'; return; }
-			error = '';
 			state = 'loading';
 			status = 'Loading the Roblox engine…';
 			// The account session lives in the connection's cookie jar. Release
@@ -170,13 +186,13 @@
 			await prepareProxyFrame(siteElement, { frameUrl: '/roblox/auth.html' });
 			if (!alive || playing) return;
 			browserPaused = false;
-			siteFrame.go(`https://www.roblox.com/games/${place}`);
+			openBrowser(`https://www.roblox.com/games/${place}`);
 		} catch (e) {
 			if (alive) { state = 'error'; error = e.message || 'Could not reopen Roblox.'; }
 		}
 	}
 	onDestroy(() => {
-		alive = false; channel?.close(); network?.dispose();
+		alive = false; clearTimeout(openingTimer); channel?.close(); network?.dispose();
 	});
 </script>
 
@@ -185,7 +201,7 @@
 <div class="roblox-client">
 	{#if error && !playing}<div class="session-error" role="alert"><div><p>{error}</p><ConnectionHelp {error} /></div>{#if state === 'error'}<button class="secondary" onclick={() => location.reload()}>Try again</button>{/if}</div>{/if}
 	<div class="browser" class:hidden={playing}>
-		{#if !browsing}<div class="loading" role="status"><span class="spinner"></span><strong>Opening Roblox</strong><p>The real Roblox website. Play here in Velora.</p></div>{/if}
+		{#if !browsing && state !== 'error'}<div class="loading" role="status"><span class="spinner"></span><strong>Opening Roblox</strong><p>The real Roblox website. Play here in Velora.</p></div>{/if}
 		<iframe bind:this={siteElement} onload={browserLoaded} title="Roblox website" allow="clipboard-write; fullscreen" allowfullscreen></iframe>
 	</div>
 	<iframe class="engine" class:active={playing} bind:this={engineElement} title="Roblox experience" allow="autoplay; fullscreen; gamepad; clipboard-write; cross-origin-isolated" allowfullscreen></iframe>

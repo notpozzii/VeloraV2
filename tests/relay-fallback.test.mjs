@@ -75,6 +75,49 @@ test('both relays failing does not create a retry loop', async () => {
 	assert.equal(calls, 2);
 });
 
+test('Roblox reads switch back when the selected backup stops responding', async () => {
+	const main = relay(), backup = relay(), clients = [], requests = [];
+	rememberRelayFailure(main, backup);
+	const transport = createRelayTransport(wisp => {
+		clients.push(wisp);
+		return {
+			async init() {},
+			async request(_url, method) {
+				requests.push([wisp, method]);
+				if (wisp === backup && method === 'GET') return new Promise(() => {});
+				if (wisp === backup) throw new Error('Wisp disconnected');
+				return { status: 200 };
+			}
+		};
+	}, main, { backupWisp: backup, recoverPrimary: true, timeoutMs: 20 });
+	await transport.init();
+	await assert.rejects(transport.request(remote, 'POST', 'payload', []), /Wisp disconnected/);
+	assert.deepEqual(requests, [[backup, 'POST']]);
+	const results = await Promise.all(Array.from({ length: 4 }, () => transport.request(remote, 'GET', null, [])));
+	assert.ok(results.every(result => result.status === 200));
+	assert.deepEqual(clients, [backup, main]);
+	assert.equal(transport.relay, main);
+	assert.equal(getRelayUrl(main, backup), main);
+});
+
+test('Roblox retries a failed backup initialization once against the main relay', async () => {
+	const main = relay(), backup = relay(), calls = [];
+	rememberRelayFailure(main, backup);
+	let primaryAvailable = false;
+	const transport = createRelayTransport(wisp => ({
+		async init() {
+			calls.push(wisp);
+			if (wisp === backup || !primaryAvailable) throw new Error('Wisp connection failed');
+		}
+	}), main, { backupWisp: backup, recoverPrimary: true });
+	await assert.rejects(transport.init(), /Wisp connection failed/);
+	assert.deepEqual(calls, [backup, main]);
+	assert.equal(transport.relay, backup);
+	primaryAvailable = true;
+	await transport.init();
+	assert.equal(transport.relay, main);
+});
+
 test('a media-selected backup applies to an already-created transport', async () => {
 	const custom = relay(), requests = [];
 	const handles = [() => {}, () => {}];
