@@ -2,8 +2,8 @@
 /api?url={}&type={}&transport={}&wisp={}&notif={}&autoSW={}
 
 url:       required website address; https:// is added when missing
-type:      auto, prism (SJv2, default), polygon (SJ), glass (UV)
-transport: auto, libcurl (default), libcurlRaw, epoxy
+type:      auto, sj2 (Velora SJ2, default), sj2-original, sj (SJ1), uv (Ultraviolet)
+transport: auto, libcurl (Velora Libcurl, default), libcurl-original (Libcurl), libcurlRaw, epoxy
 wisp:      wss://..., defaults to the server's own wisp
 notif:     read by /os when it opens this page in a window, not by /api itself
 autoSW:    legacy parameter; apps now load automatically
@@ -14,6 +14,7 @@ autoSW:    legacy parameter; apps now load automatically
 
 	import { page } from '$app/stores';
 	import { onMount, onDestroy } from 'svelte';
+	import { defaultEngine, defaultTransport } from '$lib/lethe/connection-options.js';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
@@ -37,11 +38,11 @@ autoSW:    legacy parameter; apps now load automatically
 	const runtime = createProxyRuntime();
 	const auto = createAutoNavigator({ prepare: (...args) => runtime.prepare(...args) });
 	let autoStatus = $state('');
-	let car = $state('libcurl');
+	let car = $state(defaultTransport);
 	let prismController;
 	let prismFrame;
-	let activeEngine = 'sj2';
-	let activeCar = 'libcurl';
+	let activeEngine = defaultEngine;
+	let activeCar = defaultTransport;
 
 	const apiUrl = $derived(normalizeWebUrl($page.url.searchParams.get('url')));
 	const apiType = $derived($page.url.searchParams.get('type'));
@@ -79,10 +80,10 @@ autoSW:    legacy parameter; apps now load automatically
 		}
 	}
 	async function startProxy() {
-		if (['auto', 'libcurl', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
+		if (['auto', 'libcurl', 'libcurl-original', 'libcurlRaw', 'epoxy'].includes(apiTransport)) car = apiTransport;
 		const automatic = isAutoConnection(apiType, car);
 		await auto.open({
-			url: apiUrl, engine: apiType || 'sj2', car, wisp: apiWisp, backupWisp: apiBackupWisp, signal: launchAbort.signal,
+			url: apiUrl, engine: apiType || defaultEngine, car, wisp: apiWisp, backupWisp: apiBackupWisp, signal: launchAbort.signal,
 			onattempt: ({ engine, car: selectedCar, attempt }) => {
 				if (automatic) autoStatus = `${attempt > 1 ? 'Trying' : 'Connecting'} · ${engine === 'uv' ? 'Ultraviolet' : engine.toUpperCase()} / ${selectedCar === 'epoxy' ? 'Epoxy' : 'Libcurl'}`;
 			},
@@ -96,8 +97,10 @@ autoSW:    legacy parameter; apps now load automatically
 					if (session.engine === 'uv') iframeEl.src = window.__uv$config.prefix + window.__uv$config.encodeUrl(apiUrl);
 					else if (session.engine === 'sj') iframeEl.src = session.polygon.encodeUrl(apiUrl);
 					else {
-						prismController = session.controller;
-						if (!prismFrame) prismFrame = prismController.createFrame(iframeEl);
+						if (!prismFrame || prismController !== session.controller) {
+							prismController = session.controller;
+							prismFrame = prismController.createFrame(iframeEl);
+						}
 						prismFrame.go(apiUrl);
 					}
 				};

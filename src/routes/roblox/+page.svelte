@@ -1,5 +1,6 @@
 <script>
 	import { onMount, onDestroy, tick } from 'svelte';
+	import { defaultTransport } from '$lib/lethe/connection-options.js';
 	import { createPrismController } from '$lib/lethe/prism.js';
 	import { loadSetting } from '$lib/utils/localspace.js';
 	import { createRobloxNetwork, parsePlace } from '$lib/roblox/network.js';
@@ -104,11 +105,12 @@
 		(async () => {
 			try {
 				const [selectedCar, wisp, backupWisp] = await Promise.all([
-					loadSetting('car', 'libcurl'), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
+					loadSetting('car', defaultTransport), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
 				]);
-				controller = await createPrismController(selectedCar === 'epoxy' ? 'epoxy' : 'libcurl', wisp || undefined, backupWisp || undefined, { recoverPrimary: true });
+				const transport = ['epoxy', 'libcurl', 'libcurl-original'].includes(selectedCar) ? selectedCar : defaultTransport;
+				controller = await createPrismController(transport, wisp || undefined, backupWisp || undefined, { recoverPrimary: true });
 				if (!alive) return;
-				connectionContext = { relay: wisp ? 'custom' : 'default', transport: selectedCar === 'epoxy' ? 'epoxy' : 'libcurl' };
+				connectionContext = { relay: wisp ? 'custom' : 'default', transport };
 				network = createRobloxNetwork(controller, result => {
 					if (result.type === 'join-request') issue(`Join request: ${result.path}; fields: ${result.fields.join(', ') || 'none'}.`);
 					if (result.type === 'join') issue(`Game join: HTTP ${result.status}, result ${result.result ?? 'unknown'}.`);

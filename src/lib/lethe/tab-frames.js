@@ -10,14 +10,15 @@ export function createTabFrames(getController) {
 		}
 	}
 	return {
-		get(id) {
+		get(id, controller) {
+			if (entries.has(id) && entries.get(id).controller !== controller) release(id);
 			if (!entries.has(id)) {
-				const entry = {};
+				const entry = { controller };
 				entries.set(id, entry);
 				entry.promise = (async () => {
-					const controller = await getController();
+					const selected = controller ?? await getController();
 					if (entries.get(id) !== entry) throw new DOMException('Tab closed', 'AbortError');
-					entry.frame = controller.createFrame();
+					entry.frame = selected.createFrame();
 					return entry.frame;
 				})().catch(error => {
 					if (entries.get(id) === entry) entries.delete(id);

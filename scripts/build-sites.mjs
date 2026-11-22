@@ -54,7 +54,7 @@ await writeFile('dist/client/_headers', `/_app/immutable/*
   Cache-Control: no-cache
 /geforce/glass/*
   Cache-Control: no-cache
-/servy.js
+/geforce/servy.js
   Cache-Control: no-store
   Service-Worker-Allowed: /geforce/
 /geforce/route-recovery.js

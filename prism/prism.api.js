@@ -1,5 +1,6 @@
 var $scramjetController;
-(() => {
+// Each controller captures the engine used by its own frames.
+globalThis.$veloraCreatePrismApi = (engine) => {
 	var e = {
 			286(e, t, r) {
 				r.d(t, { I: () => o });
@@ -9,12 +10,12 @@ var $scramjetController;
 				r.d(t, { O: () => s, x: () => o });
 				let o = '0.0.14';
 				function s() {
-					if ('undefined' == typeof $scramjet)
+					if (!engine)
 						throw Error(
 							'@mercuryworkshop/scramjet is not loaded. Load scramjet before the controller.'
 						);
 					var e = '2.0.67-alpha.2',
-						t = $scramjet.versionInfo.version;
+						t = engine.versionInfo.version;
 					if (e !== t)
 						throw Error(
 							`@mercuryworkshop/scramjet version mismatch: this build expects ${e}, but the loaded runtime is ${t}`
@@ -300,7 +301,7 @@ var $scramjetController;
 					unrewriteHtml: Y,
 					unrewriteUrl: Z,
 					versionInfo: ee
-				} = globalThis.$scramjet;
+				} = engine;
 			}
 		},
 		t = {};
@@ -860,6 +861,7 @@ var $scramjetController;
 				this.element.src = t;
 			}
 		}
-	})(),
-		($scramjetController = o));
-})();
+	})());
+	return o;
+};
+$scramjetController = globalThis.$veloraCreatePrismApi(globalThis.$scramjet);

@@ -5,11 +5,12 @@
 	import { relaySelection } from '$lib/lethe/relay-config.js';
 	import { saveSettingShared, subscribeSettings } from '$lib/utils/settingsSync.js';
 	import { onMount } from 'svelte';
+	import { defaultEngine, defaultTransport, engineChoices, transportChoices } from '$lib/lethe/connection-options.js';
 	import { connectionDefaults } from '$lib/utils/connection-reset.js';
 
-	let lethe = $state('sj2');
+	let lethe = $state(defaultEngine);
 	let searchEngine = $state('google');
-	let car = $state('libcurl');
+	let car = $state(defaultTransport);
 	let customWisp = $state('');
 	let backupWisp = $state('');
 	let ready = $state(false);
@@ -18,9 +19,9 @@
 
 	onMount(async () => {
 		const [savedLethe, savedSearch, savedCar, savedWisp, savedBackup] = await Promise.all([
-			loadSetting('lethe', 'sj2'),
+			loadSetting('lethe', defaultEngine),
 			loadSetting('searchEngine', 'google'),
-			loadSetting('car', 'libcurl'),
+			loadSetting('car', defaultTransport),
 			loadSetting('customWisp', ''),
 			loadSetting('backupWisp', '')
 		]);
@@ -71,21 +72,10 @@
 		else if (key === 'backupWisp') backupWisp = value;
 	}));
 
-	const proxies = [
-		{ value: 'auto', label: 'Auto (EXPERIMENTAL)' },
-		{ value: 'sj2', label: 'SJ2' },
-		{ value: 'sj', label: 'SJ' },
-		{ value: 'uv', label: 'Ultraviolet' }
-	];
 	const searchEngines = [
 		{ value: 'google', label: 'Google' },
 		{ value: 'ddg', label: 'DuckDuckGo' },
 		{ value: 'brave', label: 'Brave' }
-	];
-	const transports = [
-		{ value: 'auto', label: 'Auto (EXPERIMENTAL)' },
-		{ value: 'libcurl', label: 'Libcurl' },
-		{ value: 'epoxy', label: 'Epoxy' }
 	];
 </script>
 
@@ -99,13 +89,13 @@
 	<div class="setting-row">
 		<div class="setting-copy"><label for="settings-proxy">Browser engine</label><p>Auto chooses an engine and tries alternatives if the page cannot start.</p></div>
 		<select id="settings-proxy" value={lethe} onchange={(e) => selectProxy(e.currentTarget.value)}>
-			{#each proxies as proxy}<option value={proxy.value}>{proxy.label}</option>{/each}
+			{#each engineChoices as proxy}<option value={proxy.value}>{proxy.label}</option>{/each}
 		</select>
 	</div>
 	<div class="setting-row">
 		<div class="setting-copy"><label for="settings-transport">Transport</label></div>
 		<select id="settings-transport" value={car} onchange={(e) => selectTransport(e.currentTarget.value)}>
-			{#each transports as transport}<option value={transport.value}>{transport.label}</option>{/each}
+			{#each transportChoices as transport}<option value={transport.value}>{transport.label}</option>{/each}
 		</select>
 	</div>
 </div>

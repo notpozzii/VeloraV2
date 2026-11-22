@@ -26,6 +26,8 @@
 	import { search } from '$lib/lethe/search';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
 	import { isAutoConnection, autoLauncherUrl } from '$lib/lethe/auto.js';
+	import { defaultEngine, defaultTransport, engineChoices, isPrismEngine, transportChoices } from '$lib/lethe/connection-options.js';
+	import { getPrismRewriter } from '$lib/lethe/prism.js';
 	import { createTabFrames } from '$lib/lethe/tab-frames.js';
 	import { createBrowserSearchBridge } from '$lib/utils/browser/desktop-search-bridge.js';
 	import { normalizeWebUrl } from '$lib/utils/web-url.js';
@@ -41,15 +43,15 @@
 	let tabCounter = 0;
 	let inputFocused = $state(false);
 	let hydrated = $state(false);
-	let letheEngine = $state('sj2');
+	let letheEngine = $state(defaultEngine);
 	let ready = $state(false);
 	const runtime = createProxyRuntime({ interceptPopups: true });
-	const tabFrames = createTabFrames(async () => (await prepareBrowserEngine('sj2')).controller);
+	const tabFrames = createTabFrames();
 	onDestroy(() => tabFrames.clear());
 	let customWisp = $state('');
 	let backupWisp = $state('');
 	let searchEngine = $state('google');
-	let car = $state('libcurl');
+	let car = $state(defaultTransport);
 	let bookmarks = $state([]);
 	let releaseSettings;
 	const settingsReady = new Promise((resolve) => { releaseSettings = resolve; });
@@ -124,8 +126,8 @@
 			// hydrate saved settings
 			const [lethe, savedCar, wisp, backup, engine, marks, intercept, LastPopupIntStateX] = await Promise.all(
 				[
-					loadSetting('lethe', 'sj2'),
-					loadSetting('car', 'libcurl'),
+					loadSetting('lethe', defaultEngine),
+					loadSetting('car', defaultTransport),
 					loadSetting('customWisp', ''),
 					loadSetting('backupWisp', ''),
 					loadSetting('searchEngine', 'google'),
@@ -194,9 +196,8 @@
 		})
 	);
 
-	function prismEncode(fixedUrl, sjFrame) {
-		// @ts-ignore
-		return window.$scramjet.rewriteUrl(fixedUrl, sjFrame.context, {
+	function prismEncode(fixedUrl, sjFrame, engine) {
+		return getPrismRewriter(engine).rewriteUrl(fixedUrl, sjFrame.context, {
 			origin: new URL(location.href),
 			base: new URL(location.href)
 		});
@@ -228,9 +229,9 @@
 				return;
 			}
 			let encoded;
-			if (session.engine === 'sj2') {
-				const sjFrame = await tabFrames.get(target.id);
-				encoded = prismEncode(fixedUrl, sjFrame);
+			if (isPrismEngine(session.engine)) {
+				const sjFrame = await tabFrames.get(target.id, session.controller);
+				encoded = prismEncode(fixedUrl, sjFrame, session.engine);
 			} else if (session.engine === 'uv') {
 				// @ts-ignore
 				encoded = window.__uv$config.prefix + window.__uv$config.encodeUrl(fixedUrl);
@@ -426,13 +427,30 @@
 		}
 	}
 
+	// Only write connection settings in response to an edit. Values received
+	// from another page are already saved and must not be broadcast back.
+	function selectBrowserEngine(value) {
+		letheEngine = value;
+		void saveSetting('lethe', value);
+		if (value === 'auto') selectBrowserTransport('auto');
+	}
+	function selectBrowserTransport(value) {
+		car = value;
+		void saveSetting('car', value);
+	}
+	function selectBrowserRelay(value) {
+		const relay = relaySelection(value);
+		({ customWisp, backupWisp } = relay);
+		void saveSetting('backupWisp', relay.backupWisp);
+		void saveSetting('customWisp', relay.customWisp);
+	}
+	function selectBrowserSearch(value) {
+		searchEngine = value;
+		void saveSetting('searchEngine', value);
+	}
+
 	$effect(() => {
 		if (!hydrated) return;
-		saveSetting('lethe', letheEngine);
-		saveSetting('car', car);
-		saveSetting('customWisp', customWisp);
-		saveSetting('backupWisp', backupWisp);
-		saveSetting('searchEngine', searchEngine);
 		saveSetting('bookmarks', $state.snapshot(bookmarks));
 		saveSetting('popupInterceptor', popupInterceptor);
 		saveSetting('LastPopupIntState', LastPopupIntState);
@@ -716,22 +734,22 @@
 			</div>
 			<div class="settings-fields">
 				<label
-					>Proxy<select bind:value={letheEngine} disabled={!ready} onchange={(event) => { if (event.currentTarget.value === 'auto') car = 'auto'; }}
-						><option value="auto">Auto</option><option value="sj2">SJ2</option><option value="sj">SJ</option><option value="uv"
-							>Ultraviolet</option
-						></select
+					>Proxy<select value={letheEngine} disabled={!ready} onchange={(event) => selectBrowserEngine(event.currentTarget.value)}
+						>
+						{#each engineChoices as engine}<option value={engine.value}>{engine.label}</option>{/each}
+					</select
 					></label
 				>
 				<label
-					>Transport<select bind:value={car} disabled={!ready}
-						><option value="auto">Auto</option><option value="libcurl">Libcurl</option><option value="epoxy">Epoxy</option></select
+					>Transport<select value={car} disabled={!ready} onchange={(event) => selectBrowserTransport(event.currentTarget.value)}
+						>
+						{#each transportChoices as transport}<option value={transport.value}>{transport.label}</option>{/each}
+					</select
 					></label
 				>
-				<RelaySettings value={customWisp} disabled={!ready} onchange={(value) => {
-					({ customWisp, backupWisp } = relaySelection(value));
-				}} />
+				<RelaySettings value={customWisp} disabled={!ready} onchange={selectBrowserRelay} />
 				<label
-					>Search engine<select bind:value={searchEngine}
+					>Search engine<select value={searchEngine} onchange={(event) => selectBrowserSearch(event.currentTarget.value)}
 						><option value="ddg">DuckDuckGo</option><option value="brave">Brave</option><option
 							value="google">Google</option
 						></select
@@ -739,7 +757,7 @@
 				>
 			</div>
 			<div class="modal-actions">
-				<button onclick={() => { letheEngine = 'auto'; car = 'auto'; }} disabled={letheEngine === 'auto' && car === 'auto'}><Icon name="reload" size={16} />Use Auto connection</button>
+				<button onclick={() => selectBrowserEngine('auto')} disabled={letheEngine === 'auto' && car === 'auto'}><Icon name="reload" size={16} />Use Auto connection</button>
 				<button
 					onclick={() => {
 						addTab();

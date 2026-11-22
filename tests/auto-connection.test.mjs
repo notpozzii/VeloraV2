@@ -13,6 +13,8 @@ test('Auto covers all six combinations; either manual choice constrains the othe
 	assert.deepEqual(connectionCandidates('glass', 'auto'), [{engine:'uv',car:'libcurl'}, {engine:'uv',car:'epoxy'}]);
 	assert.deepEqual(connectionCandidates('auto', 'epoxy').map(x => x.engine), ['sj2','uv','sj']);
 	assert.deepEqual(connectionCandidates('polygon', 'libcurlRaw'), [{engine:'sj',car:'libcurlRaw'}]);
+	assert.deepEqual(connectionCandidates('sj2', 'libcurl'), [{engine:'sj2',car:'libcurl'}]);
+	assert.deepEqual(connectionCandidates('sj2-original', 'libcurl-original'), [{engine:'sj2-original',car:'libcurl-original'}]);
 });
 
 test('verified media defaults use exact host boundaries and ignore cached media choices', () => {
@@ -163,7 +165,7 @@ test('website error titles, HTTP failures, and articles quoting connection error
 test('all failed document loads stop at six attempts and evict only the failed cached origin', async () => {
 	const saved = storage(), cacheKey = JSON.stringify(['https://example.com', '', '']);
 	const otherKey = JSON.stringify(['https://other.example', '', '']);
-	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2', car:'epoxy', time:100 }, [otherKey]:{ engine:'uv',car:'libcurl',time:100 } }));
+	saved.setItem('velora:auto-connections:v1', JSON.stringify({ [cacheKey]:{ engine:'sj2', car:'epoxy', time:100 }, [otherKey]:{ engine:'uv',car:'libcurl-original',time:100 } }));
 	const { frame, doc } = frameFixture(); let attempts = 0;
 	const auto = createAutoNavigator({ storage:saved, now:() => 101, prepare:async engine => { attempts++; return {engine}; } });
 	await assert.rejects(auto.open({ url:'https://example.com', engine:'auto', car:'auto', load:() => waitForProxyDocument(frame, () => {

@@ -4106,6 +4106,7 @@ return { apply, construct };
 					completedElements = new WeakSet();
 					emittedLengths = new WeakMap();
 					rewrittenNodes = new WeakMap();
+					flushIndex = 0;
 					ended = !1;
 					constructor(e, t, r) {
 						((this.context = e),
@@ -4127,7 +4128,11 @@ return { apply, construct };
 					}
 					flush() {
 						let e = '';
-						for (let t of this.handler.root.childNodes) {
+						const nodes = this.handler.root.childNodes;
+						for (let index = this.flushIndex; index < nodes.length; index++) {
+							// The parser can still append to the trailing text node.
+							this.flushIndex = index;
+							const t = nodes[index];
 							let r = this.getAvailableOutput(t);
 							if (null === r) break;
 							let i = this.emittedLengths.get(t) ?? 0;
@@ -4182,7 +4187,7 @@ return { apply, construct };
 										}
 									}
 								for (let [e, n] of (0, d.nJ)(t.attribs))
-									S.includes(e) &&
+									S.has(e) &&
 										((t.attribs[`scramjet-attr-${e}`] = n),
 										(t.attribs[e] = (0, l.o)(n, `(inline ${e} on element)`, r, i)));
 							}
@@ -4319,7 +4324,7 @@ return { apply, construct };
 						})
 						.join(', ');
 				}
-				let S = [
+				let S = new d.YG([
 					'onbeforexrselect',
 					'onabort',
 					'onbeforeinput',
@@ -4420,7 +4425,7 @@ return { apply, construct };
 					'onscrollend',
 					'onscrollsnapchange',
 					'onscrollsnapchanging'
-				];
+				]);
 			},
 			2348(e, t, r) {
 				r.d(t, {

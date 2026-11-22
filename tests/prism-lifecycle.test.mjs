@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 test('concurrent tab startup shares one ready controller and unchanged settings keep its relay', async () => {
 	let clients = 0;
 	let controllers = 0;
+	let originalClients = 0;
 	let switches = 0;
 	let release;
 	const waiting = new Promise(resolve => { release = resolve; });
@@ -13,21 +14,35 @@ test('concurrent tab startup shares one ready controller and unchanged settings 
 	globalThis.document = {
 		querySelector() { return null; },
 		createElement() { return { dataset: {}, remove() {} }; },
-		head: { appendChild(script) { scripts.push(script.src); queueMicrotask(() => script.onload()); } }
+		head: { appendChild(script) {
+			scripts.push(script.src);
+			queueMicrotask(() => {
+				if (script.src === '/prism/prism.js') window.$scramjet = { kind: 'velora' };
+				if (script.src === '/prism/prism.original.js') window.$scramjet = { kind: 'original' };
+				script.onload();
+			});
+		} }
 	};
 	class Transport {
 		constructor() { clients++; }
 		async init() { await transportWaiting; this.ready = true; }
 	}
 	class Controller {
-		constructor({ transport }) { this.transport = transport; controllers++; }
+		constructor({ transport, config }) { this.transport = transport; this.config = config; controllers++; }
 		async wait() { await waiting; }
 		setTransport(transport) { this.transport = transport; switches++; }
 	}
 	globalThis.window = {
 		EpoxyTransport: { default: Transport },
 		LibcurlTransport: { LibcurlClient: Transport },
-		$scramjetController: { Controller, config: { codec: {} } }
+		LibcurlOriginalTransport: { LibcurlClient: class extends Transport {
+			constructor() { super(); originalClients++; }
+		} },
+		$veloraCreatePrismApi(runtime) {
+			return { Controller: class extends Controller {
+				constructor(options) { super(options); this.runtime = runtime; }
+			} };
+		}
 	};
 	const sw = { scriptURL: 'https://velora.example/servy.js' };
 	Object.defineProperty(globalThis, 'navigator', { configurable: true, value: {
@@ -56,5 +71,14 @@ test('concurrent tab startup shares one ready controller and unchanged settings 
 	assert.equal(clients, 2);
 	await prism.setPrismTransport('libcurl');
 	assert.equal(clients, 2);
+	const original = await prism.createPrismController('libcurl-original', undefined, undefined, { engine: 'sj2-original' });
+	assert.notEqual(original, controller);
+	assert.equal(original.runtime.kind, 'original');
+	assert.equal(controller.runtime.kind, 'velora');
+	assert.equal(original.config.scramjetPath, '/prism/prism.original.js');
+	assert.equal(controller.config.scramjetPath, '/prism/prism.js');
+	assert.equal(originalClients, 1);
+	await prism.setPrismTransport('libcurl-original', undefined, undefined, 'sj2-original');
+	assert.equal(switches, 1, 'the original transport is already selected on that controller');
 	assert.equal(scripts.filter(path => path === '/prism/prism.api.js').length, 1);
 });
