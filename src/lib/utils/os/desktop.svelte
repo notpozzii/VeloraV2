@@ -1000,7 +1000,7 @@
 			{/each}
 		</div>
 	{/if}
-	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || menuOpen || previewOpen || dragging}>
+	<DesktopDock compact={compactDock} hoverStrength={dockHoverStrength} keepOpen={launcherOpen || menuOpen || previewOpen || dragging} onsearch={browseFromLauncher} searchDisabled={!hydrated}>
 		<div
 			class="navResize"
 			onmousedown={startNavResize}
