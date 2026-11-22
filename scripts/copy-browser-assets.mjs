@@ -1,4 +1,4 @@
-import { cpSync, mkdirSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { buildSync } from 'esbuild';
 import { epoxyPath } from '@mercuryworkshop/epoxy-transport';
 import { libcurlPath } from '@mercuryworkshop/libcurl-transport';
@@ -28,3 +28,30 @@ for (const [source, folder] of [
     filter: p => !p.split(/[\\/]/).includes('.git')
   });
 }
+
+// The legacy engines use the BareMux v1 interface. Port the same startup
+// optimization to that build while preserving its request and response types.
+const legacyLibcurl = readFileSync('static/libby/index.mjs', 'utf8');
+const clientMarker = '// src/main.ts\nvar LibcurlClient = class {';
+const startup = /  async init\(\) \{\n    if \(this\.transport\)[\s\S]*?(?=    libcurl\.set_websocket\(this\.wisp\);)/;
+if (!legacyLibcurl.includes(clientMarker) || !startup.test(legacyLibcurl)) {
+  throw new Error('Update the Velora startup patch for this legacy Libcurl build.');
+}
+const optimizedLibcurl = legacyLibcurl
+  .replace(clientMarker, clientMarker.replace('var LibcurlClient', 'let wasmStartup;\nvar LibcurlClient'))
+  .replace(startup, `  #initialization;
+  init() {
+    return (this.#initialization ??= this.#initialize().finally(() => {
+      this.#initialization = undefined;
+    }));
+  }
+  async #initialize() {
+    if (this.transport) libcurl.transport = this.transport;
+    if (!libcurl.ready) {
+      wasmStartup ??= Promise.resolve(libcurl.load_wasm()).finally(() => {
+        wasmStartup = undefined;
+      });
+      await wasmStartup;
+    }
+`);
+writeFileSync('static/libby/index.velora.mjs', optimizedLibcurl);

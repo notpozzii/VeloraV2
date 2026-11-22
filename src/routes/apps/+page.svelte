@@ -4,6 +4,7 @@
 	import appCatalog from '$lib/a/a.json';
 	import { onMount, onDestroy } from 'svelte';
 	import { browser } from '$app/environment';
+	import { defaultEngine, defaultTransport } from '$lib/lethe/connection-options.js';
 	import { createProxyRuntime } from '$lib/lethe/runtime.js';
 	import { prepareProxyFrame, resetProxyFrame } from '$lib/lethe/prepare-frame.js';
 	import { isAutoConnection, autoLauncherUrl } from '$lib/lethe/auto.js';
@@ -56,8 +57,8 @@
 	let activityUrl = '';
 	let iframeEl;
 	const runtime = createProxyRuntime();
-	let car = $state('libcurl');
-	let preferredEngine = 'sj2';
+	let car = $state(defaultTransport);
+	let preferredEngine = defaultEngine;
 	let customWisp = '';
 	let backupWisp = '';
 	let resolveSettings;
@@ -164,7 +165,7 @@
 	onMount(async () => {
 		try {
 			[preferredEngine, car, customWisp, backupWisp] = await Promise.all([
-				loadSetting('lethe', 'sj2'), loadSetting('car', 'libcurl'), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
+				loadSetting('lethe', defaultEngine), loadSetting('car', defaultTransport), loadSetting('customWisp', ''), loadSetting('backupWisp', '')
 			]);
 		} catch {} finally { resolveSettings(); }
 		if (!isAutoConnection(preferredEngine, car)) void runtime.prepare(preferredEngine, car, customWisp || undefined, backupWisp || undefined).catch(() => {});

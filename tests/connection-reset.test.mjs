@@ -157,3 +157,52 @@ test('adding the backup setting preserves choices for users with the current res
  await restoreConnectionDefaults(f.options);
  assert.equal(f.data.get('backupWisp'), '');
 });
+
+test('the last default pair switches to Velora Libcurl once and keeps both relays', async () => {
+	const f = fixture();
+	f.data.set(connectionResetKey, '2026-11-22.2');
+	f.data.set('lethe', 'sj2');
+	f.data.set('car', 'libcurl-original');
+	f.data.set('backupWisp', 'wss://backup.example/');
+	await Promise.all([createConnectionReset(f.options).ensure(), createConnectionReset(f.options).ensure()]);
+
+	assert.equal(f.data.get('lethe'), 'sj2');
+	assert.equal(f.data.get('car'), 'libcurl');
+	assert.equal(f.data.get('customWisp'), 'wss://old.example/');
+	assert.equal(f.data.get('backupWisp'), 'wss://backup.example/');
+	assert.deepEqual(f.writes, ['car', connectionResetKey]);
+	assert.deepEqual(f.notifications, [['car', 'libcurl']]);
+
+	f.data.set('lethe', 'sj2');
+	f.data.set('car', 'libcurl-original');
+	await createConnectionReset(f.options).ensure();
+	assert.equal(f.data.get('lethe'), 'sj2');
+	assert.equal(f.data.get('car'), 'libcurl-original');
+});
+
+test('a previous mixed pair is kept, even when one field matches the old default', async () => {
+	const f = fixture();
+	f.data.set(connectionResetKey, '2026-10-30.1');
+	f.data.set('lethe', 'sj2');
+	await createConnectionReset(f.options).ensure();
+	assert.equal(f.data.get('lethe'), 'sj2');
+	assert.equal(f.data.get('car'), 'epoxy');
+	assert.deepEqual(f.writes, [connectionResetKey]);
+	assert.deepEqual(f.notifications, []);
+});
+
+test('the earlier plain SJ2 and Libcurl default pair switches both settings', async () => {
+	const f = fixture();
+	f.data.set(connectionResetKey, '2026-11-22.1');
+	f.data.set('lethe', 'sj2-original');
+	f.data.set('car', 'libcurl-original');
+	f.data.set('backupWisp', 'wss://backup.example/');
+	await createConnectionReset(f.options).ensure();
+
+	assert.equal(f.data.get('lethe'), 'sj2');
+	assert.equal(f.data.get('car'), 'libcurl');
+	assert.equal(f.data.get('customWisp'), 'wss://old.example/');
+	assert.equal(f.data.get('backupWisp'), 'wss://backup.example/');
+	assert.deepEqual(f.writes, ['lethe', 'car', connectionResetKey]);
+	assert.deepEqual(f.notifications, [['lethe', 'sj2'], ['car', 'libcurl']]);
+});

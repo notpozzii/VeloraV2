@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import { readFileSync } from 'node:fs';
+import { isPrismEngine } from '../src/lib/lethe/connection-options.js';
 import { normalizeWebUrl } from '../src/lib/utils/web-url.js';
 
 test('saved addresses normalize domains while preserving paths, ports, queries and fragments', () => {
@@ -34,7 +35,7 @@ function fixture(overrides = {}) {
 		bookmarkListOpen: true, inputEl: { blur() {} }, bookmarks: [], bookmarkMenu: true,
 		bookmarkError: '', activeFrameURL: '', activeFrameTitle: '', activeFrameEngine: 'sj2',
 		popupInterceptor: true, LastPopupIntState: true,
-		search: value => value, isAutoConnection: () => false,
+		search: value => value, isPrismEngine, isAutoConnection: () => false,
 		async prepareBrowserEngine(engine) { engines.push(engine); return { engine: 'sj2' }; },
 		tabFrames: { async get(id) { return { id }; } },
 		prismEncode: (url, target) => `/prism/${target.id}/${encodeURIComponent(url)}`,

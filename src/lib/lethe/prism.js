@@ -5,71 +5,97 @@ import { resolveRelays } from './relay-config.js';
 import { codec } from './codec.js';
 import { createRelayTransport } from './relay-fallback.js';
 
-let controller;
-let starting;
-let transportKey;
-let updates = Promise.resolve();
+const states = new Map();
+let assetQueue = Promise.resolve();
 
-async function loadTransport(car) {
-	await loadScript(car === 'epoxy' ? '/prism/libbyworse.js' : '/prism/libby.js');
+function stateFor(engine) {
+	if (!states.has(engine)) states.set(engine, { updates: Promise.resolve() });
+	return states.get(engine);
 }
 
-function makeTransport(car, custom) {
-	const wisp = custom;
-	if (car === 'epoxy') {
-		const Epoxy = window.EpoxyTransport.default ?? window.EpoxyTransport;
-		return new Epoxy({ wisp });
+function loadEngine(state, engine) {
+	const path = engine === 'sj2-original' ? '/prism/prism.original.js' : '/prism/prism.js';
+	// The classic bundles assign to the same global. Capture each IIFE's
+	// exports before the other one can load.
+	const job = assetQueue.catch(() => {}).then(async () => {
+		await loadScript('/prism/stream-transfer.js');
+		if (!state.runtime) {
+			await loadScript(path);
+			state.runtime = window.$scramjet;
+		}
+		await loadScript('/prism/prism.api.js');
+		return { api: window.$veloraCreatePrismApi(state.runtime), path };
+	});
+	assetQueue = job;
+	return job;
+}
+
+async function transportConstructor(car) {
+	let bundle;
+	switch (car) {
+		case 'epoxy':
+			await loadScript('/prism/libbyworse.js');
+			bundle = window.EpoxyTransport;
+			break;
+		case 'libcurl-original':
+			await loadScript('/prism/libby.original.js');
+			bundle = window.LibcurlOriginalTransport;
+			break;
+		default:
+			await loadScript('/prism/libby.js');
+			bundle = window.LibcurlTransport;
 	}
-
-	const Libcurl =
-		window.LibcurlTransport.LibcurlClient ??
-		window.LibcurlTransport.default ??
-		window.LibcurlTransport;
-	return new Libcurl({ wisp });
+	return bundle.LibcurlClient ?? bundle.default ?? bundle;
 }
 
-export async function createPrismController(car = 'libcurl', customWisp, backupWisp, { recoverPrimary = false } = {}) {
-	if (controller) return controller;
-	if (starting) return starting;
-	starting = initialize(car, customWisp, backupWisp, recoverPrimary);
-	try { return await starting; } finally { starting = null; }
+function connectionKey(car, relay, backup) {
+	return JSON.stringify([car, getWispUrl(relay, backup), resolveRelays(relay, backup).backup]);
 }
 
-async function initialize(car, customWisp, backupWisp, recoverPrimary) {
-	const [sw] = await Promise.all([
-		registerProxyWorker(),
-		loadScript('/prism/stream-transfer.js').then(() => loadScript('/prism/prism.js')).then(() => loadScript('/prism/prism.api.js')),
-		loadTransport(car)
+export async function createPrismController(car = 'libcurl', customWisp, backupWisp, { recoverPrimary = false, engine = 'sj2' } = {}) {
+	const state = stateFor(engine);
+	if (state.controller) return state.controller;
+	if (state.starting) return state.starting;
+	state.starting = initialize(state, engine, car, customWisp, backupWisp, recoverPrimary);
+	try { return await state.starting; } finally { state.starting = null; }
+}
+
+async function initialize(state, engine, car, customWisp, backupWisp, recoverPrimary) {
+	const [serviceworker, { api, path }, Transport] = await Promise.all([
+		registerProxyWorker(), loadEngine(state, engine), transportConstructor(car)
 	]);
-	const transport = createRelayTransport(relay => makeTransport(car, relay), customWisp, { backupWisp, recoverPrimary });
-	const { Controller, config } = window.$scramjetController;
-	config.scramjetPath = '/prism/prism.js';
-	config.injectPath = '/prism/prism.inject.js';
-	config.wasmPath = '/prism/prism.wasm';
-	config.codec.encode = codec.encode;
-	config.codec.decode = codec.decode;
-	const next = new Controller({ serviceworker: sw, transport });
-	// Compile the engine and connect the relay together, rather than serially.
-	await Promise.all([next.wait(), transport.init()]);
-	controller = next;
-	transportKey = JSON.stringify([car, getWispUrl(customWisp, backupWisp), resolveRelays(customWisp, backupWisp).backup]);
+	const transport = createRelayTransport(wisp => new Transport({ wisp }), customWisp, { backupWisp, recoverPrimary });
+	const controller = new api.Controller({
+		serviceworker,
+		transport,
+		config: { scramjetPath: path, injectPath: '/prism/prism.inject.js', wasmPath: '/prism/prism.wasm', codec }
+	});
+	await Promise.all([controller.wait(), transport.init()]);
+	state.controller = controller;
+	state.transportKey = connectionKey(car, customWisp, backupWisp);
 	return controller;
-}
-export function setPrismTransport(car, customWisp, backupWisp) {
-	const update = async () => {
-		if (starting) await starting;
-		const key = JSON.stringify([car, getWispUrl(customWisp, backupWisp), resolveRelays(customWisp, backupWisp).backup]);
-		if (!controller || key === transportKey) return;
-		await loadTransport(car);
-		const transport = createRelayTransport(relay => makeTransport(car, relay), customWisp, { backupWisp });
-		await transport.init();
-		controller.setTransport(transport);
-		transportKey = key;
-	};
-	updates = updates.catch(() => {}).then(update);
-	return updates;
 }
 
-export function getPrismController() {
-	return controller;
+export function setPrismTransport(car, customWisp, backupWisp, engine = 'sj2') {
+	const state = stateFor(engine);
+	const update = async () => {
+		if (state.starting) await state.starting;
+		const key = connectionKey(car, customWisp, backupWisp);
+		if (!state.controller || key === state.transportKey) return;
+		const Transport = await transportConstructor(car);
+		const transport = createRelayTransport(wisp => new Transport({ wisp }), customWisp, { backupWisp });
+		await transport.init();
+		state.controller.setTransport(transport);
+		state.transportKey = key;
+	};
+	state.updates = state.updates.catch(() => {}).then(update);
+	return state.updates;
+}
+
+export function getPrismController(engine = 'sj2') {
+	return states.get(engine)?.controller;
+}
+
+export function getPrismRewriter(engine) {
+	return states.get(engine)?.runtime;
 }

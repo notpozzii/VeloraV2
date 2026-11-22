@@ -55,8 +55,8 @@ export function activityReason(error) {
 function safeDetails(input, base) {
 	const detail = {};
 	const strings = {
-		engine: ['sj2', 'sj', 'uv', 'auto'],
-		transport: ['libcurl', 'libcurlRaw', 'epoxy', 'auto'],
+		engine: ['sj2', 'sj2-original', 'sj', 'uv', 'auto'],
+		transport: ['libcurl', 'libcurl-original', 'libcurlRaw', 'epoxy', 'auto'],
 		reason: ['Cancelled', 'Timed out', 'Access restricted', 'Network error', 'Unknown error'],
 		method: ['log', 'info', 'debug', 'warn', 'error'],
 		kind: ['fetch', 'xmlhttprequest', 'script', 'css', 'img', 'iframe', 'link', 'video', 'audio', 'other'],

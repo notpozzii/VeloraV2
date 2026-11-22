@@ -7701,12 +7701,14 @@ Several C libraries are used, and their licenses are listed below:
 	})();
 
 	// src/main.ts
+	let wasmStartup;
 	var LibcurlClient = class {
 		session;
 		wisp;
 		proxy;
 		transport;
 		connections;
+		#initialization;
 		constructor(options) {
 			this.wisp = options.wisp ?? options.websocket;
 			this.transport = options.transport;
@@ -7725,16 +7727,19 @@ Several C libraries are used, and their licenses are listed below:
 				}
 			}
 		}
-		async init() {
+		init() {
+			return (this.#initialization ??= this.#initialize().finally(() => {
+				this.#initialization = undefined;
+			}));
+		}
+		async #initialize() {
 			if (this.transport) libcurl.transport = this.transport;
 			if (!libcurl.ready) {
-				await new Promise((resolve, reject) => {
-					libcurl.onload = () => {
-						console.log('loaded libcurl.js v' + libcurl.version.lib);
-						this.ready = true;
-						resolve(null);
-					};
+				// Clients using this bundle share one WebAssembly instance.
+				wasmStartup ??= Promise.resolve(libcurl.load_wasm()).finally(() => {
+					wasmStartup = undefined;
 				});
+				await wasmStartup;
 			}
 			libcurl.set_websocket(this.wisp);
 			this.session = new libcurl.HTTPSession({
@@ -7744,7 +7749,6 @@ Several C libraries are used, and their licenses are listed below:
 			this.ready = libcurl.ready;
 			if (this.ready) {
 				console.log('running libcurl.js v' + libcurl.version.lib);
-				return;
 			}
 		}
 		ready = false;

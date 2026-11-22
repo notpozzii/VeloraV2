@@ -1,14 +1,14 @@
 import { recordActivity, activityReason } from '../utils/developer/diagnostics.js';
-const engineName = (value) => ['uv', 'glass'].includes(value) ? 'uv' : ['sj', 'polygon'].includes(value) ? 'sj' : 'sj2';
+import { defaultEngine, defaultTransport, normalizeEngine, normalizeTransport } from './connection-options.js';
 export const isAutoConnection = (engine, transport) => engine === 'auto' || transport === 'auto';
 
 export function connectionCandidates(engine = 'auto', transport = 'auto', url = '', remembered) {
 	let host = '';
 	try { host = new URL(url).hostname; } catch {}
 	const geforce = host === 'geforcenow.com' || host.endsWith('.geforcenow.com') || host === 'nvidia.com' || host.endsWith('.nvidia.com');
-	const engines = engine === 'auto' ? (geforce ? ['uv', 'sj2', 'sj'] : ['sj2', 'uv', 'sj']) : [engineName(engine)];
+	const engines = engine === 'auto' ? (geforce ? ['uv', defaultEngine, 'sj'] : [defaultEngine, 'uv', 'sj']) : [normalizeEngine(engine)];
 	// GeForce's verified Libcurl route omits optional request-filter plugins.
-	const transports = transport === 'auto' ? [geforce ? 'libcurlRaw' : 'libcurl', 'epoxy'] : [ ['libcurl', 'libcurlRaw', 'epoxy'].includes(transport) ? transport : 'libcurl' ];
+	const transports = transport === 'auto' ? [geforce ? 'libcurlRaw' : defaultTransport, 'epoxy'] : [normalizeTransport(transport)];
 	const candidates = engines.flatMap(engine => transports.map(car => ({ engine, car })));
 	// Known media profiles take priority over a merely successful document load.
 	const media = geforce || host === 'tiktok.com' || host.endsWith('.tiktok.com');
@@ -18,7 +18,7 @@ export function connectionCandidates(engine = 'auto', transport = 'auto', url = 
 }
 
 export function autoLauncherUrl(url, engine, transport, wisp = '', backupWisp = '') {
-	return `/api?${new URLSearchParams({ url, type: engine || 'sj2', transport: transport || 'libcurl', ...(wisp ? { wisp } : {}), ...(backupWisp ? { backupWisp } : {}) })}`;
+	return `/api?${new URLSearchParams({ url, type: engine || defaultEngine, transport: transport || defaultTransport, ...(wisp ? { wisp } : {}), ...(backupWisp ? { backupWisp } : {}) })}`;
 }
 
 function checkAbort(signal) {

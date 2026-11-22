@@ -69,7 +69,7 @@ test('changing only backup reconfigures SJ2 and UV while repeated choices reuse 
  const calls = [];
  const dependencies = {
   async createPrismController() { return {}; },
-  async setPrismTransport(...args) { calls.push(['sj2', ...args]); },
+  async setPrismTransport(car, main, backup, engine) { calls.push([engine, car, main, backup]); },
   async loadScript() {}, async registerProxyWorker() {}, createConnection() { return {}; },
   async setCar(_connection, ...args) { calls.push(['uv', ...args]); },
   async bindProxyTransport() {}

@@ -1,3 +1,4 @@
+import { defaultEngine, defaultTransport, isPrismEngine, normalizeEngine, normalizeTransport } from './connection-options.js';
 import { loadScript } from './loader.js';
 import { registerProxyWorker } from './serviceworker.js';
 import { createConnection, setCar } from './car.js';
@@ -25,8 +26,9 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 	let legacyTransportKey;
 	let popupsReady = false;
 	return {
-		prepare(engine = 'sj2', car = 'libcurl', wisp, backupWisp) {
-			engine = ['uv', 'glass'].includes(engine) ? 'uv' : ['sj', 'polygon'].includes(engine) ? 'sj' : 'sj2';
+		prepare(engine = defaultEngine, car = defaultTransport, wisp, backupWisp) {
+			engine = normalizeEngine(engine);
+			car = normalizeTransport(car);
 			const key = JSON.stringify([engine, car, wisp || '', backupWisp || '']);
 			if (requestedKey === key && pending) return pending;
 			const prepare = async () => {
@@ -37,9 +39,9 @@ export function createProxyRuntime({ interceptPopups = false, dependencies = def
 				}
 				recordActivity('connection-start', { engine, transport: car });
 				let result;
-				if (engine === 'sj2') {
-					const controller = await d.createPrismController(car, wisp, backupWisp);
-					await d.setPrismTransport(car, wisp, backupWisp);
+				if (isPrismEngine(engine)) {
+					const controller = await d.createPrismController(car, wisp, backupWisp, { engine });
+					await d.setPrismTransport(car, wisp, backupWisp, engine);
 					result = { engine, controller };
 				} else {
 					await Promise.all([

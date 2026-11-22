@@ -1,3 +1,4 @@
+import { defaultTransport } from './connection-options.js';
 import { getRelayUrl } from './relay-fallback.js';
 import { resolveRelays } from './relay-config.js';
 
@@ -9,7 +10,7 @@ export function createConnection() {
 	return new window.BareMux.BareMuxConnection('/charon/worker.js');
 }
 
-export async function setCar(connection, car = 'libcurl', custom, backupWisp) {
+export async function setCar(connection, car = defaultTransport, custom, backupWisp) {
 	const { main: wispUrl, backup } = resolveRelays(custom, backupWisp);
 	const selectedWisp = getWispUrl(wispUrl, backup);
 
@@ -20,8 +21,9 @@ export async function setCar(connection, car = 'libcurl', custom, backupWisp) {
 			]);
 			break;
 		case 'libcurl':
+		case 'libcurl-original':
 			await connection.setTransport('/relay-transport.mjs', [
-				{ module: '/reflux/index.mjs', base: '/libby/index.mjs', wisp: wispUrl, backupWisp: backup, selectedWisp }
+				{ module: '/reflux/index.mjs', base: car === 'libcurl' ? '/libby/index.velora.mjs' : '/libby/index.mjs', wisp: wispUrl, backupWisp: backup, selectedWisp }
 			]);
 			break;
 		case 'libcurlRaw':

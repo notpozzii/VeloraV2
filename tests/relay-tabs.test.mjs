@@ -130,3 +130,16 @@ test('closing a tab during startup does not leak a frame or affect another tab',
 	await assert.rejects(closed, { name: 'AbortError' });
 	assert.deepEqual(controller.frames, [await kept]);
 });
+
+test('switching one browser tab to the original engine attaches it to the new controller', async () => {
+	const velora = controllerFixture();
+	const original = controllerFixture();
+	const frames = createTabFrames();
+	const otherTab = await frames.get(2, velora);
+	await frames.get(1, velora);
+
+	const switched = await frames.get(1, original);
+	assert.deepEqual(velora.frames, [otherTab]);
+	assert.deepEqual(original.frames, [switched]);
+	assert.equal(await frames.get(1, original), switched);
+});
