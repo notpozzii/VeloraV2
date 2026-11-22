@@ -27,8 +27,6 @@
 	import { loadWeatherPreferences, normalizeWeatherMode, normalizeWeatherSpeed, normalizeWeatherIntensity } from './weather.js';
 	import { saveSettingShared } from '$lib/utils/settingsSync.js';
 	import Icon from '$lib/utils/browser/icon.svelte';
-	import { requestBrowserSearch } from '$lib/utils/browser/desktop-search-request.js';
-	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { getGeForceLauncherUrl } from '$lib/utils/browser/geforce.js';
 	import browser from '$lib/img/icons/earthWhite.png';
 	import g from '$lib/img/icons/controller.png';
@@ -77,10 +75,6 @@
 	let launcherSearch = $state('');
 	let launcherBusy = $state(false);
 	let launcherError = $state('');
-	let desktopBrowserOpen = $state(false);
-	let desktopBrowserUrl = $state('');
-	let desktopBrowserFrame = $state(null);
-	let desktopBrowserRequest = 0;
 	const launcherQuery = $derived(launcherSearch.trim());
 	const launcherIsUrl = $derived(
 		/^(https?:\/\/|[a-z0-9.-]+\.[a-z]{2,}(?:[/:?#]|$))/i.test(launcherQuery) &&
@@ -377,7 +371,6 @@
 	}
 
 	function focusWindow(sender) {
-		desktopBrowserOpen = false;
 		focusWindowTop.set(sender);
 		previewOpen = false;
 	}
@@ -584,7 +577,6 @@
 
 	function launchApp(app) {
 		launcherOpen = false;
-		desktopBrowserOpen = false;
 		openWindow(app.url, app.name, app.height, app.width, app.top, app.left, app.id);
 	}
 	function toggleLauncher(event) {
@@ -599,13 +591,27 @@
 		launcherBusy = true;
 		launcherError = '';
 		try {
-			const accepted = desktopBrowserOpen && !appOrigin && desktopBrowserFrame?.contentWindow
-				? await requestBrowserSearch(desktopBrowserFrame.contentWindow, value)
-				: false;
-			if (!accepted) {
-				desktopBrowserUrl = onlineUrl(`/slate?${new URLSearchParams({ q: value, embedded: '1', request: String(++desktopBrowserRequest) })}`);
+			const browserApp = getAppConfig(1);
+			const existing = getAppWindows(1).at(-1);
+			let accepted = false;
+			if (existing && !appOrigin) {
+				const index = $windowList.findIndex((entry) => entry.id === existing.id);
+				accepted = (await windowComps[index]?.openBrowserSearch(value)) || false;
+				if (accepted) focusWindow(existing.sender);
 			}
-			desktopBrowserOpen = true;
+			if (!accepted) {
+				const url = `/slate?${new URLSearchParams({ q: value })}`;
+				const open = existing ? openNewWindow : openWindow;
+				open(
+					url,
+					browserApp.name,
+					browserApp.height,
+					browserApp.width,
+					browserApp.top,
+					browserApp.left,
+					browserApp.id
+				);
+			}
 			launcherOpen = false;
 			return true;
 		} catch (error) {
@@ -615,11 +621,6 @@
 		} finally {
 			launcherBusy = false;
 		}
-	}
-	function handleDesktopBrowserMessage(event) {
-		if (!desktopBrowserOpen || event.source !== desktopBrowserFrame?.contentWindow) return;
-		if (event.origin !== new URL(desktopBrowserUrl, location.href).origin) return;
-		if (event.data?.type === 'velora:desktop-browser-close') desktopBrowserOpen = false;
 	}
 	function submitLauncher(event) {
 		if (event.key !== 'Enter' || event.isComposing) return;
@@ -667,7 +668,6 @@
 
 <svelte:head><title>Velora — Desktop</title></svelte:head>
 <svelte:window
-	onmessage={handleDesktopBrowserMessage}
 	onclick={() => {
 		closeMenu();
 		launcherOpen = false;
@@ -678,7 +678,6 @@
 			toggleLauncher(e);
 		}
 		if (e.key === 'Escape') {
-			desktopBrowserOpen = false;
 			glassOpen = false;
 			closeAddApp();
 			closeMenu();
@@ -708,11 +707,6 @@
 	>
 	</main>
 	<WidgetBoard bind:this={widgetBoard} {apps} windows={$windowList} ready={hydrated} onlaunch={launchApp} onfocus={focusWindow} />
-	{#if desktopBrowserOpen}
-		<section class="desktop-browser-surface" aria-label="Velora web browser">
-			<iframe bind:this={desktopBrowserFrame} src={desktopBrowserUrl} title="Velora web browser" allow={`${mediaPermissions}; cross-origin-isolated`} allowfullscreen></iframe>
-		</section>
-	{/if}
 
 	{#if glassOpen}
 		<dialog class="glass-settings" aria-label="Liquid glass" onclose={() => (glassOpen = false)}
@@ -1080,10 +1074,6 @@
 </div>
 
 <style>
-	.desktop-browser-surface { position: absolute; inset: 0 0 calc(var(--dock-height) + 8px); z-index: 9000; overflow: hidden; background: #181b16; animation: browser-appear 180ms cubic-bezier(.22,1,.36,1) both; }
-	.desktop-browser-surface iframe { display: block; width: 100%; height: 100%; border: 0; background: #181b16; }
-	@keyframes browser-appear { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-	@media (prefers-reduced-motion: reduce) { .desktop-browser-surface { animation: none; } }
 	.dock-resize-shield { position: fixed; inset: 0; z-index: 2147483646; cursor: ns-resize; }
 	.desktop-module-notice { position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 10003; margin: 0; padding: 12px 18px; border-radius: 10px; background: #1e281f; color: #eff4e8; font: 13px/1.5 system-ui,sans-serif; }
 	.desktop-module-notice button { margin-left: 8px; border: 0; border-radius: 5px; padding: 4px 8px; color: #20281b; background: #d3e5b0; cursor: pointer; }
