@@ -53,41 +53,6 @@ body {
 .browser-shell svg {
 	flex-shrink: 0;
 }
-.browser-shell.embedded {
-	grid-template-rows: minmax(0, 1fr);
-}
-.desktop-web-controls {
-	position: absolute;
-	top: 12px;
-	left: 12px;
-	z-index: 30;
-	display: flex;
-	align-items: center;
-	gap: 2px;
-	max-width: calc(100% - 24px);
-	height: 40px;
-	padding: 4px;
-	border: 1px solid rgba(237, 244, 221, .18);
-	border-radius: 13px;
-	background: rgba(20, 31, 25, .84);
-	backdrop-filter: blur(18px) saturate(130%);
-	-webkit-backdrop-filter: blur(18px) saturate(130%);
-	box-shadow: 0 5px 20px rgba(0, 0, 0, .18);
-}
-.browser-shell .desktop-web-controls .icon-button {
-	flex: none;
-	width: 31px;
-	height: 31px;
-	border-radius: 9px;
-	color: #e7f0dc;
-}
-.browser-shell .desktop-web-controls .desktop-web-close {
-	margin-left: 3px;
-	border-left: 1px solid rgba(237, 244, 221, .14);
-}
-.browser-shell.embedded .frameContainer {
-	grid-row: 1;
-}
 .browser-shell .icon-button {
 	display: grid;
 	place-items: center;
