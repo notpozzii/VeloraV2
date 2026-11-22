@@ -22,6 +22,7 @@ function fromRoot(path: string): string {
 export const CATALOG_URL = fromRoot('gmes.json');
 
 interface RawGame {
+	id?: string;
 	file_name?: string;
 	title?: string;
 	thumb?: string | null;
@@ -51,7 +52,7 @@ export function normalize(raw: RawGame[]): Game[] {
 	for (const z of raw ?? []) {
 		if (!z?.file_name || !z?.title) continue;
 
-		const id = slugOf(z.file_name);
+		const id = z.id || slugOf(z.file_name);
 		if (!id || seen.has(id)) continue;
 		seen.add(id);
 
