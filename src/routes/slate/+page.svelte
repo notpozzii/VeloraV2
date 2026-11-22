@@ -1,5 +1,6 @@
 <script>
 	import '$lib/style/browser.css';
+	import { page } from '$app/state';
 	import Tab from '$lib/utils/browser/tab.svelte';
 	import Iframe from '$lib/utils/browser/iframe.svelte';
 	import Home from '$lib/utils/browser/home.svelte';
@@ -43,7 +44,7 @@
 	let hydrated = $state(false);
 	let letheEngine = $state('sj2');
 	let ready = $state(false);
-	let embedded = $state(false);
+	const embedded = $derived(page.url.searchParams.has('embedded'));
 	const runtime = createProxyRuntime({ interceptPopups: true });
 	const tabFrames = createTabFrames(async () => (await prepareBrowserEngine('sj2')).controller);
 	onDestroy(() => tabFrames.clear());
@@ -119,7 +120,6 @@
 	}
 	onMount(async () => {
 		try {
-			embedded = new URLSearchParams(location.search).has('embedded');
 			LastPopupIntState = popupInterceptor;
 			addTab();
 
@@ -175,7 +175,7 @@
 			host: window,
 			async onSearch({ query: nextQuery, newTab }, signal) {
 				if (signal.aborted) return;
-				if (newTab || !activeFrame) addTab();
+				if ((newTab && !embedded) || !activeFrame) addTab();
 				await tick();
 				if (!signal.aborted) await navigateTo(nextQuery, { signal });
 			},
@@ -267,8 +267,10 @@
 		}
 		lastOpenedUrl = targetUrl;
 		lastOpenedTime = currentTime;
-		addTab();
-		await tick();
+		if (!embedded) {
+			addTab();
+			await tick();
+		}
 		navigateTo(targetUrl);
 	}
 
@@ -548,8 +550,11 @@
 		if ((event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'l') {
 			event.preventDefault();
 			event.stopPropagation();
-			toolbarInput?.focus();
-			toolbarInput?.select();
+			if (embedded) void openPalette(true);
+			else {
+				toolbarInput?.focus();
+				toolbarInput?.select();
+			}
 		}
 	}
 
@@ -600,7 +605,16 @@
 <svelte:head><title>Velora — Browser</title></svelte:head>
 <svelte:window onkeydown={handleShortcut} />
 
-<div class="browser-shell">
+<div class="browser-shell" class:embedded>
+	{#if embedded}
+		<nav class="desktop-web-controls" aria-label="Web controls">
+			<button class="icon-button" onclick={goBack} aria-label="Back" title="Back"><Icon name="back" size={17} /></button>
+			<button class="icon-button" onclick={goForward} aria-label="Forward" title="Forward"><Icon name="forward" size={17} /></button>
+			<button class="icon-button" onclick={reloadTab} aria-label="Reload" title="Reload"><Icon name="reload" size={16} /></button>
+			<button class="icon-button desktop-web-close" onclick={() => window.parent.postMessage({ type: 'velora:desktop-browser-close' }, '*')} aria-label="Back to desktop" title="Back to desktop"><Icon name="close" size={17} /></button>
+		</nav>
+	{/if}
+	{#if !embedded}
 	<header class="browser-chrome" aria-label="Browser controls">
 		<div class="tab-row">
 			<img class="browser-brand" src={veloraLogo} alt="Velora" />
@@ -611,11 +625,7 @@
 				{/each}
 			</div>
 			<button class="icon-button new-tab-button" onclick={addTab} aria-label="New tab" title="New tab"><Icon name="plus" size={18} /></button>
-			{#if embedded}
-				<button class="desktop-return" onclick={() => window.parent.postMessage({ type: 'velora:desktop-browser-close' }, '*')} aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></button>
-			{:else}
-				<a class="desktop-return" href="/os" target="_top" aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></a>
-			{/if}
+			<a class="desktop-return" href="/os" target="_top" aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></a>
 		</div>
 		<div class="browser-toolbar">
 			<nav class="navigation-controls" aria-label="Page navigation">
@@ -639,6 +649,7 @@
 			</div>
 		</div>
 	</header>
+	{/if}
 
 	<main class="frameContainer" aria-label="Webpage" use:frameShortcuts>
 		{#if fullscreenError}<div class="media-notice" role="alert">
