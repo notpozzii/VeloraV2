@@ -43,6 +43,7 @@
 	let hydrated = $state(false);
 	let letheEngine = $state('sj2');
 	let ready = $state(false);
+	let embedded = $state(false);
 	const runtime = createProxyRuntime({ interceptPopups: true });
 	const tabFrames = createTabFrames(async () => (await prepareBrowserEngine('sj2')).controller);
 	onDestroy(() => tabFrames.clear());
@@ -118,6 +119,7 @@
 	}
 	onMount(async () => {
 		try {
+			embedded = new URLSearchParams(location.search).has('embedded');
 			LastPopupIntState = popupInterceptor;
 			addTab();
 
@@ -609,7 +611,11 @@
 				{/each}
 			</div>
 			<button class="icon-button new-tab-button" onclick={addTab} aria-label="New tab" title="New tab"><Icon name="plus" size={18} /></button>
-			<a class="desktop-return" href="/os" target="_top" aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></a>
+			{#if embedded}
+				<button class="desktop-return" onclick={() => window.parent.postMessage({ type: 'velora:desktop-browser-close' }, '*')} aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></button>
+			{:else}
+				<a class="desktop-return" href="/os" target="_top" aria-label="Back to desktop" title="Back to desktop"><Icon name="desktop" size={16} /><span>Back to desktop</span></a>
+			{/if}
 		</div>
 		<div class="browser-toolbar">
 			<nav class="navigation-controls" aria-label="Page navigation">
