@@ -20,6 +20,7 @@ autoSW:    legacy parameter; apps now load automatically
 	import { createAutoNavigator, isAutoConnection, waitForProxyDocument } from '$lib/lethe/auto.js';
 	import { mediaPermissions } from '$lib/utils/browser/media-permissions.js';
 	import { watchMediaFailures } from '$lib/utils/browser/media-failure.js';
+	import { watchGeForceAdHandoff } from '$lib/utils/browser/geforce-ad-handoff.js';
 	import { watchPlaybackRelayFallback } from '$lib/utils/browser/relay-playback-fallback.js';
 	import { normalizeRelayUrl } from '$lib/lethe/relay-config.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
@@ -55,7 +56,9 @@ autoSW:    legacy parameter; apps now load automatically
 		if (apiUrl === null) return;
 		void start();
 		if (new URL(apiUrl).hostname === 'play.geforcenow.com') {
-			return watchMediaFailures(iframeEl, failure => { mediaFailure = failure; });
+			const stopWatchingErrors = watchMediaFailures(iframeEl, failure => { mediaFailure = failure; });
+			const stopWatchingAds = watchGeForceAdHandoff(iframeEl);
+			return () => { stopWatchingErrors(); stopWatchingAds(); };
 		}
 	});
 	onMount(() => watchPlaybackRelayFallback(iframeEl, {

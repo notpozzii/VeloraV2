@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mediaFailureDetails, watchMediaFailures } from '../src/lib/utils/browser/media-failure.js';
+import { watchGeForceAdHandoff } from '../src/lib/utils/browser/geforce-ad-handoff.js';
 
 test('media reports distinguish download, decode, and source failures without exposing signed URLs', () => {
 	const detail = mediaFailureDetails({ error: { code: 4, message: 'Failed opening https://ads.example/video?token=secret and blob:https://ads.example/private-id' }, currentSrc: 'blob:https://velora.test/private-id' }, 'https://velora.test');
@@ -41,4 +42,64 @@ test('the monitor reads native decoder errors across nested ad frames and releas
 	poll();
 	stop();
 	assert.equal(cleared, true);
+});
+
+test('GeForce ad handoff gives stalled ad endings one reversible viewport change', () => {
+	class Frame { get contentDocument() { return this.doc; } }
+	const frame = new Frame();
+	const sizes = new Map([['width', '100%']]);
+	frame.style = {
+		getPropertyValue: key => sizes.get(key),
+		getPropertyPriority: () => '',
+		setProperty: (key, value) => sizes.set(key, value),
+		removeProperty: key => sizes.delete(key)
+	};
+	frame.clientWidth = 900;
+
+	const video = { currentSrc: 'blob:ad', currentTime: 3, duration: 12 };
+	const child = new Frame();
+	child.doc = { querySelectorAll: selector => selector === 'video' ? [video] : [] };
+	const adPlayer = {
+		querySelectorAll: selector => selector === 'iframe' ? [child] : [],
+		getClientRects: () => [1]
+	};
+	let activePlayer = null;
+	frame.doc = { querySelector: selector => selector === '#imaPreStreamContainer' ? activePlayer : null };
+	let now = 0, scan, restore;
+	const stop = watchGeForceAdHandoff(frame, {
+		HTMLIFrameElement: Frame, document: { hidden: false }, performance: { now: () => now },
+		setInterval: fn => { scan = fn; return 1; }, clearInterval: () => {},
+		setTimeout: fn => { restore = fn; return 2; }, clearTimeout: () => {}
+	});
+	function advance(ms) { now += ms; scan(); }
+
+	video.currentTime = 12;
+	advance(2000);
+	assert.equal(sizes.get('width'), '100%', 'non-ad playback is left alone');
+
+	activePlayer = adPlayer;
+	video.currentTime = 4;
+	advance(500);
+	advance(2000);
+	assert.equal(sizes.get('width'), '100%', 'a stall mid-ad does not trigger this recovery');
+
+	video.currentTime = 11.7;
+	advance(500);
+	advance(1500);
+	assert.equal(sizes.get('width'), '100%');
+	advance(500);
+	assert.equal(sizes.get('width'), '892px');
+	restore();
+	advance(3000);
+	assert.equal(sizes.get('width'), '100%', 'the same ending does not trigger multiple resizes');
+
+	video.currentTime = 1;
+	advance(500);
+	video.currentTime = 12;
+	video.ended = true;
+	advance(500);
+	advance(2000);
+	assert.equal(sizes.get('width'), '892px', 'a second playback can recover on the same element');
+	stop();
+	assert.equal(sizes.get('width'), '100%', 'teardown restores a resize in progress');
 });
