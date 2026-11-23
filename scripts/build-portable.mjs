@@ -5,6 +5,9 @@ import { resolve, dirname, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
+const portableOrigin = 'https://velorastudy.s3.us-east-2.amazonaws.com';
+const directOrigin = 'https://velora-e7f56.web.app';
+const portableAssetPath = '/portable/assets/';
 let pending;
 export function buildPortable() {
 	return pending ??= generate();
@@ -16,7 +19,7 @@ async function compileDesktop(assetLoader) {
 		entryPoints: ['src/lib/downloads/portable/main.js'],
 		bundle: true, write: false, outfile: 'portable.js', format: 'iife',
 		platform: 'browser', conditions: ['browser'], target: 'es2022', minify: true, legalComments: 'none',
-		...(assetLoader === 'file' ? { publicPath: 'https://velorastudy.s3.us-east-2.amazonaws.com/portable/assets/', assetNames: '[name]-[hash]' } : {}),
+		...(assetLoader === 'file' ? { publicPath: portableOrigin + portableAssetPath, assetNames: '[name]-[hash]' } : {}),
 		alias: { '$lib': resolve(root, 'src/lib'), '$app/environment': resolve(root, 'src/lib/downloads/portable/environment.js'),
 			'$lib/utils/localspace.js': resolve(root, 'src/lib/downloads/portable/settings.js'),
 			'$lib/utils/cloak.js': resolve(root, 'src/lib/downloads/portable/startup.js') },
@@ -33,7 +36,7 @@ async function compileDesktop(assetLoader) {
 			bundle.onLoad({ filter: /.*/, namespace: 'portable-css' }, args => ({ contents: css.get(args.path), loader: 'css', resolveDir: root }));
 			bundle.onLoad({ filter: /curated-wallpapers\.json$/ }, async ({ path }) => {
 				const entries = JSON.parse(await readFile(path, 'utf8'));
-				for (const entry of entries) for (const key of ['src', 'thumbnail']) entry[key] = new URL(entry[key], 'https://velorastudy.s3.us-east-2.amazonaws.com').href;
+				for (const entry of entries) for (const key of ['src', 'thumbnail']) entry[key] = new URL(entry[key], portableOrigin).href;
 				return { contents: JSON.stringify(entries), loader: 'json' };
 			});
 		} }]
@@ -61,13 +64,31 @@ async function generate() {
 	for (const asset of compact.assets) await writeFile(resolve(assets, basename(asset.path)), asset.contents);
 	const adapter = await readFile(resolve(root, 'src/lib/downloads/portable/svg-document.js'), 'utf8');
 	const svgTemplate = await readFile(resolve(root, 'src/lib/downloads/velora.svg'), 'utf8');
-	const svg = svgTemplate
-		.replace('<!-- PORTABLE_STYLE -->', () => `<style>${cdata(styleForSvg(compact.style))}</style>`)
-		.replace('<!-- PORTABLE_SCRIPT -->', () => `<script type="application/ecmascript">${cdata(adapter + '\n' + compact.script)}</script>`);
+	function renderSvg(script, style) {
+		return svgTemplate
+			.replace('<!-- PORTABLE_STYLE -->', () => `<style>${cdata(styleForSvg(style))}</style>`)
+			.replace('<!-- PORTABLE_SCRIPT -->', () => `<script type="application/ecmascript">${cdata(adapter + '\n' + script)}</script>`);
+	}
+
+	const svg = renderSvg(compact.script, compact.style);
 	const svgOutput = resolve(root, 'static/portable/velora.svg');
 	await writeFile(svgOutput, svg);
-	await writeFile(resolve(root, 'static/velora-direct.svg'), svg);
-	return { output, svgOutput, bytes: Buffer.byteLength(html), svgBytes: Buffer.byteLength(svg) };
+
+	// A jsDelivr SVG is a document on the CDN origin. Firebase serves the app
+	// routes and images; inlined fonts need no cross-origin permission.
+	let directStyle = compact.style.replaceAll(portableOrigin, directOrigin);
+	for (const asset of compact.assets) {
+		const name = basename(asset.path);
+		const format = name.match(/\.(otf|ttf|woff2?)$/i)?.[1].toLowerCase();
+		if (!format) continue;
+		const url = directOrigin + portableAssetPath + name;
+		const font = Buffer.from(asset.contents).toString('base64');
+		directStyle = directStyle.replaceAll(url, `data:font/${format};base64,${font}`);
+	}
+	const directSvg = renderSvg(compact.script.replaceAll(portableOrigin, directOrigin), directStyle);
+	const directSvgOutput = resolve(root, 'static/velora-direct.svg');
+	await writeFile(directSvgOutput, directSvg);
+	return { output, svgOutput, directSvgOutput, bytes: Buffer.byteLength(html), svgBytes: Buffer.byteLength(svg) };
 }
 function styleForSvg(style) {
 	return style + 'html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#17221c}#portable-startup{position:fixed;inset:0;display:grid;place-items:center;color:#e8efdf;font:16px system-ui}';

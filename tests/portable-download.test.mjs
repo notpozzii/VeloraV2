@@ -25,10 +25,9 @@ test('the portable artifact bundles executable desktop code and all initial asse
 	assert.ok(built.bytes < 20 * 1024 * 1024, 'download must fit the static asset size limit');
 });
 
-test('the direct SVG contains the current desktop and its hosted assets are packaged', async () => {
+test('the downloaded SVG contains the current desktop and its hosted assets are packaged', async () => {
 	const built = await buildPortable();
 	const svg = await readFile(built.svgOutput, 'utf8');
-	assert.equal(svg, await readFile(new URL('../static/velora-direct.svg', import.meta.url), 'utf8'));
 	assert.ok(!/<!-- PORTABLE_(?:STYLE|SCRIPT) -->/.test(svg), 'SVG build markers are replaced');
 	const document = svg.replace(/<script\b[\s\S]*?<\/script>/g, '');
 	assert.ok(!/<iframe\b/i.test(document), 'no hosted desktop wrapper');
@@ -44,6 +43,24 @@ test('the direct SVG contains the current desktop and its hosted assets are pack
 	assert.ok(assets.length > 10, 'images remain compact hosted assets');
 	for (const asset of assets) await access(new URL('../static' + new URL(asset).pathname, import.meta.url));
 	assert.ok(built.svgBytes < 1024 * 1024, 'the direct SVG stays compact');
+});
+
+test('the jsDelivr SVG uses Firebase for launch and images and embeds its fonts', async () => {
+	const { directSvgOutput } = await buildPortable();
+	const svg = await readFile(directSvgOutput, 'utf8');
+	assert.doesNotMatch(svg, /\.amazonaws\.com/);
+	const script = svg.match(/<script type="application\/ecmascript"><!\[CDATA\[([\s\S]*?)\]\]><\/script>/)?.[1];
+	assert.ok(script, 'the desktop executes inside the direct SVG');
+	assert.match(script, /https:\/\/velora-e7f56\.web\.app/);
+	assert.doesNotThrow(() => new Script(script.replaceAll(']]]]><![CDATA[>', ']]>')));
+	const style = svg.match(/<style><!\[CDATA\[([\s\S]*?)\]\]><\/style>/)?.[1];
+	assert.ok(style);
+	assert.match(style, /data:font\/(?:otf|ttf|woff2?);base64,/);
+	assert.doesNotMatch(style, /https?:[^)'" ]+\.(?:otf|ttf|woff2?)\b/i);
+	const assets = [...new Set(svg.match(/https:\/\/velora-e7f56\.web\.app\/portable\/assets\/[\w.-]+/g))];
+	assert.ok(assets.length > 10, 'images stay hosted');
+	for (const asset of assets) await access(new URL('../static' + new URL(asset).pathname, import.meta.url));
+	assert.ok(Buffer.byteLength(svg) < 2 * 1024 * 1024, 'only fonts are added to the SVG');
 });
 
 test('portable preferences stay usable when file storage is denied and notify local listeners', async () => {
