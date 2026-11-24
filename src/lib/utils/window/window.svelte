@@ -12,6 +12,7 @@
 	import { get } from 'svelte/store';
 	import { loadSetting } from '$lib/utils/localspace.js';
 	import { recordActivity } from '$lib/utils/developer/diagnostics.js';
+	import DirectPanel from '$lib/downloads/portable/direct-panel.svelte';
 	import {
 		topZ,
 		windowList,
@@ -40,8 +41,11 @@
 		top,
 		left,
 		id = Date.now(),
-		sender
+		sender,
+		directMode = false,
+		appOrigin = ''
 	} = $props();
+	const localPanel = $derived(directMode && ['/slate', '/apps', '/books', '/settings'].includes(new URL(url, appOrigin).pathname));
 	setTop();
 	// svelte-ignore state_referenced_locally
 	let x = $state(left);
@@ -609,7 +613,9 @@
 				aria-label="Dismiss fullscreen message">×</button
 			>
 		</p>{/if}
-	<iframe
+	{#if localPanel}
+		<DirectPanel {url} {appOrigin} />
+	{:else}<iframe
 		bind:this={appFrame}
 		onload={() => recordActivity('app-load', { target: url })}
 		onerror={() => recordActivity('app-error', { target: url })}
@@ -619,7 +625,7 @@
 		src={url}
 		title={name}
 		style:pointer-events={draggingState ? 'none' : 'auto'}
-	></iframe>
+	></iframe>{/if}
 </div>
 
 <div

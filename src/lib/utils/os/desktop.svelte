@@ -40,7 +40,7 @@
 	import faviconFetch from 'favicon-fetch';
 	import tiktokIcon from '../../../../static/img/tiktok-dock.svg';
 	import robloxIcon from '$lib/assets/roblox-dock.png';
-	let { appOrigin = '' } = $props();
+	let { appOrigin = '', directMode = false } = $props();
 	const onlineUrl = (url) => appOrigin ? new URL(url, appOrigin).href : url;
 	// Small menu entrances do not need the full window animation engine.
 	function enter(node, transform, duration) {
@@ -1058,6 +1058,8 @@
 		<Window
 			bind:this={windowComps[i]}
 			url={onlineUrl(window.url)}
+			{directMode}
+			{appOrigin}
 			name={window.name}
 			height={window.height}
 			width={window.width}

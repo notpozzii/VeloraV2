@@ -5,6 +5,7 @@
 	import { installGameKeyboard } from '$lib/utils/browser/game-keyboard.js';
 	import { installRestoreCoordinator } from '$lib/utils/restore-core.js';
 	const standaloneAppOrigin = 'https://velorastudy.s3.us-east-2.amazonaws.com';
+	const directMode = location.hostname === 'cdn.jsdelivr.net';
 	let appOrigin = $state();
 
 	async function resolveAppOrigin(signal) {
@@ -42,4 +43,4 @@
 	});
 </script>
 
-{#if appOrigin !== undefined}<Desktop {appOrigin} />{/if}
+{#if appOrigin !== undefined}<Desktop {appOrigin} {directMode} />{/if}
